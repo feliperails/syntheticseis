@@ -40,12 +40,15 @@ add_library(InvertSeisLibrary
     core/src/Core.h
     core/src/Core.cpp
     core/src/CoreDefs.h
-    core/src/Entity.cpp
-    core/src/Entity.h
-    core/src/DomainObject.h
-    core/src/DomainObject.cpp
     core/src/MetaClass.h
     core/src/MetaClass.cpp
+
+    data/src/Dictionary.h
+    data/src/Dictionary.cpp
+    data/src/Entity.h
+    data/src/Entity.cpp
+    data/src/DomainObject.h
+    data/src/DomainObject.cpp
 
     # storage
     storage/src/Storage.h
@@ -91,6 +94,7 @@ add_executable(InvertSeis
 add_executable(InvertSeisTest
     cmake/TestMain.cpp
     core/test/CoreTest.cpp
+    data/test/DataTest.cpp
     dataIO/test/DataIOTest.cpp
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
@@ -125,11 +129,33 @@ target_link_libraries(InvertSeisTest
     PUBLIC Qt5::Test
     PUBLIC InvertSeisLibrary
     PUBLIC GTest::GTest
-#    PUBLIC GMock::GMock
-)
+    #    PUBLIC GMock::GMock
+    )
+
+
 
 if(WIN32)
-    target_compile_definitions(InvertSeisTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY )
+    target_compile_definitions(InvertSeisTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
+
+    include(GetPrerequisites)
+
+    #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
+    set(SEARCH_PREFIX_PATH ${GTest_ROOT} ${Qt5_DIR})
+    MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
+    set(_search_paths ${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH})
+    string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
+
+    add_custom_command(TARGET InvertSeisTest
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+        #COMMAND copy_if_different
+        -DTARGET_EXEC_NAME=InvertSeisTest.exe
+        -DTARGET_EXEC_DIR=${CMAKE_BINARY_DIR}/bin
+        -DPREREQUISITES_DEST_DIR=${CMAKE_BINARY_DIR}/bin
+        -DSEARCH_PATHS=${_search_paths}
+        #-DTARGET_LOCAL_DEPS=$<TARGET_FILE:${InvertSeisTest}>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
+
 endif()
 
 install(FILES README.md
@@ -145,7 +171,7 @@ enable_testing()
 add_test(
     NAME InvertSeisTest
     COMMAND InvertSeisTest
-)
+    )
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/CPackConfig.cmake)
     include(${CMAKE_SOURCE_DIR}/CPackConfig.cmake)

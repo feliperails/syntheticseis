@@ -25,10 +25,9 @@ set(CMAKE_AUTOUIC ON)
 #add_subdirectory(widgets)
 #add_subdirectory(app)
 
-
 find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui)
 
-add_executable(InvertSeis
+add_library(InvertSeisLibrary
     core/src/Core.h
     core/src/Core.cpp
     core/src/CoreDefs.h
@@ -67,9 +66,19 @@ add_executable(InvertSeis
     # gui
     widgets/src/Widgets.h
     widgets/src/Widgets.cpp
+    )
 
-    # app
+add_executable(InvertSeis
+     # app
     app/src/main.cpp
+    )
+
+add_executable(InvertSeisTest
+    cmake/TestMain.cpp
+    core/test/CoreTest.cpp
+    dataIO/test/DataIOTest.cpp
+    domain/test/DomainTest.cpp
+    storage/test/StorageTest.cpp
     )
 
 #add_library(InvertSeisMock SHARED mock/CoreMock.h mock/CoreMock.cpp)
@@ -80,11 +89,25 @@ add_executable(InvertSeis
 #    )
 
 #add_library(InvertSeisCoreTest SHARED test/CoreTest.cpp)
+include(GenerateExportHeader)
+generate_export_header(InvertSeisLibrary BASE_NAME InvertSeis)
+
+target_link_libraries(InvertSeisLibrary
+    PUBLIC Qt5::Core
+    PUBLIC Qt5::Gui
+    PUBLIC Qt5::Widgets)
 
 target_link_libraries(InvertSeis
     PUBLIC Qt5::Core
     PUBLIC Qt5::Gui
-    PUBLIC Qt5::Widgets)
+    PUBLIC Qt5::Widgets
+    PUBLIC InvertSeisLibrary)
+
+target_link_libraries(InvertSeisTest
+    PUBLIC Qt5::Core
+    PUBLIC Qt5::Gui
+    PUBLIC Qt5::Widgets
+    PUBLIC InvertSeisLibrary)
 
 install(FILES README.md
     version.txt

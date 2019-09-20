@@ -3,5 +3,9 @@
 namespace invertseis {
 namespace core {
 
+DomainObject::~DomainObject()
+{
+}
+
 }
 }

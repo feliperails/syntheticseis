@@ -1,23 +1,23 @@
-#ifndef INC_INVERTSEIS_METACLASS_H
-#define INC_INVERTSEIS_METACLASS_H
+//#ifndef INC_INVERTSEIS_METACLASS_H
+//#define INC_INVERTSEIS_METACLASS_H
 
-#include <QObject>
+//#include <QObject>
 
-namespace invertseis {
-namespace core {
+//namespace invertseis {
+//namespace core {
 
-class Metaclass
-{
-public:
+//class Metaclass
+//{
+//public:
 
-    QString toString() const;
+//    QString toString() const;
 
-private:
-    QString m_data;
-};
+//private:
+//    QString m_data;
+//};
 
-//#define METACLASS(child, parent) private: static Metaclass m_staticMetaclass; public: static MetaClass staticMetaclass{ return m_staticMetaclass; } MetaClass staticMetaclass{ return m_staticMetaclass; }
+////#define METACLASS(child, parent) private: static Metaclass m_staticMetaclass; public: static MetaClass staticMetaclass{ return m_staticMetaclass; } MetaClass staticMetaclass{ return m_staticMetaclass; }
 
-} // namespace core
-} // namespace invertseis
-#endif
+//} // namespace core
+//} // namespace invertseis
+//#endif

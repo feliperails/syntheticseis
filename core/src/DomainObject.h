@@ -10,8 +10,8 @@ namespace core {
 
 class DomainObject
 {
-public:    
-    virtual Metaclass metaclass() const = 0;
+public:
+    virtual ~DomainObject();
 };
 
 } // namespace core

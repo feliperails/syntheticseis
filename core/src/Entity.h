@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <QObject>
+#include <QUuid>
 
 namespace invertseis {
 namespace core {
@@ -16,27 +17,24 @@ class Entity : public QObject
     Q_OBJECT
 
 public:
-    Entity(std::shared_ptr<DomainObject> domainObject, const QString& name);
+    Entity(const QUuid& uuid, std::shared_ptr<DomainObject> domainObject, const QString& name);
     virtual ~Entity();
 
     std::shared_ptr<DomainObject> domainObject() const;
-    DomainObject& mutableDomainObject();
-
-    Metaclass domainType() const;
+    void setDomainObject(std::shared_ptr<DomainObject>);
 
     void setName(const QString& name);
     QString name() const;
 
-private:
-    void dataAdded();
-    void dataAboutToBeModified();
-    void dataModified();
-    void dataAboutToRemoved();
-    void dataRemoved();
+    QUuid uuid() const;
 
-    void entityChanged();
-    void entityAboutToBeRemoved();
-    void entityAboutToChange();
+private:
+    void domainDataAboutToBeModified();
+    void domainDataModified();
+    void domainDataAboutToRemoved();
+    void domainDataRemoved();
+
+    void nameChanged();
 
 private:
     Q_DECLARE_PRIVATE(Entity)

@@ -3,6 +3,8 @@ file(STRINGS "version.txt" VERSION_STRING)
 
 project (InvertSeis LANGUAGES CXX VERSION ${VERSION_STRING})
 
+#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/FindGMock.cmake)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
@@ -25,18 +27,25 @@ set(CMAKE_AUTOUIC ON)
 #add_subdirectory(widgets)
 #add_subdirectory(app)
 
-find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui)
+find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui Test)
+find_package(Threads REQUIRED)
+find_package(GTest REQUIRED)
+#find_package(GMock REQUIRED)
+
+include_directories(${GTEST_INCLUDE_DIR})
 
 add_library(InvertSeisLibrary
+
+    # core
     core/src/Core.h
     core/src/Core.cpp
     core/src/CoreDefs.h
-    #    src/Entity.cpp
-    #    src/Entity.h
-    #    src/DomainObject.h
-    #    src/DomainObject.cpp
-    #    src/MetaClass.h
-    #    src/MetaClass.cpp
+    core/src/Entity.cpp
+    core/src/Entity.h
+    core/src/DomainObject.h
+    core/src/DomainObject.cpp
+    core/src/MetaClass.h
+    core/src/MetaClass.cpp
 
     # storage
     storage/src/Storage.h
@@ -45,10 +54,16 @@ add_library(InvertSeisLibrary
     # domain
     domain/src/Domain.h
     domain/src/Domain.cpp
+    domain/src/EclipseGrid.h
+    domain/src/EclipseGrid.cpp
 
     # dataIO
     dataIO/src/DataIO.h
     dataIO/src/DataIO.cpp
+    dataIO/src/reader/EclipseGridReader.h
+    dataIO/src/reader/EclipseGridReader.cpp
+    dataIO/src/writer/EclipseGridWriter.h
+    dataIO/src/writer/EclipseGridWriter.cpp
 
     # gui
     gui/src/Gui.h
@@ -59,17 +74,17 @@ add_library(InvertSeisLibrary
     gui/src/SplashScreen.ui
     gui/src/images/Images.qrc
 
-    # gui
+    # projectManager
     projectManager/src/ProjectManager.h
     projectManager/src/ProjectManager.cpp
 
-    # gui
+    # widgets
     widgets/src/Widgets.h
     widgets/src/Widgets.cpp
     )
 
 add_executable(InvertSeis
-     # app
+    # app
     app/src/main.cpp
     )
 
@@ -107,7 +122,15 @@ target_link_libraries(InvertSeisTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Gui
     PUBLIC Qt5::Widgets
-    PUBLIC InvertSeisLibrary)
+    PUBLIC Qt5::Test
+    PUBLIC InvertSeisLibrary
+    PUBLIC GTest::GTest
+#    PUBLIC GMock::GMock
+)
+
+if(WIN32)
+    target_compile_definitions(InvertSeisTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY )
+endif()
 
 install(FILES README.md
     version.txt
@@ -115,7 +138,14 @@ install(FILES README.md
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
     )
 
+
+
 enable_testing()
+
+add_test(
+    NAME InvertSeisTest
+    COMMAND InvertSeisTest
+)
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/CPackConfig.cmake)
     include(${CMAKE_SOURCE_DIR}/CPackConfig.cmake)

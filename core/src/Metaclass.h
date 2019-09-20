@@ -10,6 +10,10 @@ class Metaclass
 {
 public:
 
+    QString toString() const;
+
+private:
+    QString m_data;
 };
 
 //#define METACLASS(child, parent) private: static Metaclass m_staticMetaclass; public: static MetaClass staticMetaclass{ return m_staticMetaclass; } MetaClass staticMetaclass{ return m_staticMetaclass; }

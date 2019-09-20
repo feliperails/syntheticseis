@@ -7,7 +7,9 @@ class EntityPrivate
 {
 public:
     Q_DECLARE_PUBLIC(Entity)
-    explicit EntityPrivate(Entity* q, const DomainObject& domainObject);
+    explicit EntityPrivate(Entity* q,
+                           std::shared_ptr<DomainObject> domainObject,
+                           const QString& name);
 
     Entity* q_ptr;
     std::shared_ptr<DomainObject> m_domainObject;
@@ -25,20 +27,14 @@ EntityPrivate::EntityPrivate(Entity *q,
 
 /**********************************************************/
 
-Entity::Entity()
-    : d_ptr(new EntityPrivate())
+Entity::Entity(std::shared_ptr<DomainObject> domainObject, const QString &name)
+    : d_ptr(new EntityPrivate(this, domainObject, name))
 {
 }
 
 Entity::~Entity()
 {
     delete d_ptr;
-}
-
-Entity::Entity(std::shared_ptr<DomainObject> domainObject,
-               const QString& name)
-    : d_ptr(new EntityPrivate(this, domainObject, name))
-{
 }
 
 std::shared_ptr<DomainObject> Entity::domainObject() const
@@ -51,13 +47,13 @@ Metaclass Entity::domainType() const
 {
     Q_D(const Entity);
     if(d->m_domainObject.get()){
-        return d->m_domainObject->metaClass();
+        return d->m_domainObject->metaclass();
     }
 
     return Metaclass();
 }
 
-void Entity::setName(const QString& name)const
+void Entity::setName(const QString& name)
 {
     Q_D(Entity);
     d->m_name = name;

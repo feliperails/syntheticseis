@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <data/src/Entity.h>
+#include <data/src/EntityManager.h>
 #include <data/mock/DomainObjectMock.h>
 
 TEST(DataTest, EntityDomainObjectRetrieveTest)
@@ -23,4 +23,40 @@ TEST(DataTest, EntityDomainObjectRetrieveTest)
     ASSERT_TRUE(!e3.name().isEmpty());
     ASSERT_TRUE(e3.uuid().isNull());
     ASSERT_EQ(e3.name(), QString("e3"));
+}
+
+TEST(DataTest, EntityManagerTest)
+{
+    using namespace invertseis::data;
+    EntityManager em;
+    EXPECT_TRUE(em.entities().isEmpty());
+    EXPECT_FALSE(em.createEntity(QUuid(), QString()));
+    EXPECT_FALSE(em.createEntity(QUuid::createUuid(), QString()));
+    EXPECT_FALSE(em.createEntity(QUuid(), QString("test")));
+    EXPECT_TRUE(em.entities().isEmpty());
+
+    Entity* e1 = em.createEntity(QUuid::createUuid(), QString("e1"));
+    EXPECT_TRUE(e1);
+
+    Entity* e2 = em.createEntity(QUuid::createUuid(), QString("e2"));
+    EXPECT_TRUE(e2);
+
+    Entity* e3 = em.createEntity(QUuid::createUuid(), QString("e3"));
+    EXPECT_TRUE(e3);
+
+    Entity* e4 = em.createEntity(QUuid::createUuid(), QString("e4"));
+    EXPECT_TRUE(e4);
+
+    EXPECT_EQ(em.entities().size(), 4);
+
+    EXPECT_TRUE(em.entities().contains(e1));
+    EXPECT_TRUE(em.entities().contains(e2));
+    EXPECT_TRUE(em.entities().contains(e3));
+    EXPECT_TRUE(em.entities().contains(e4));
+
+    EXPECT_TRUE(em.removeEntity(e1));
+    EXPECT_EQ(em.entities().size(), 3);
+
+    EXPECT_FALSE(em.removeEntity(e1));
+    EXPECT_EQ(em.entities().size(), 3);
 }

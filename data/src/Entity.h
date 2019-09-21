@@ -1,5 +1,5 @@
-#ifndef INC_INVERTSEIS_ENTITY_H
-#define INC_INVERTSEIS_ENTITY_H
+#ifndef INC_INVERTSEIS_DATA_ENTITY_H
+#define INC_INVERTSEIS_DATA_ENTITY_H
 
 #include "DomainObject.h"
 
@@ -34,6 +34,8 @@ Q_SIGNALS:
     void domainDataRemoved();
 
     void nameChanged();
+
+    void aboutToBeRemoved();
 
 private:
     Q_DECLARE_PRIVATE(Entity)

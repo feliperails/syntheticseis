@@ -49,6 +49,8 @@ add_library(InvertSeisLibrary
     data/src/Dictionary.cpp
     data/src/Entity.h
     data/src/Entity.cpp
+    data/src/EntityManager.h
+    data/src/EntityManager.cpp
     data/src/DomainObject.h
     data/src/DomainObject.cpp
 

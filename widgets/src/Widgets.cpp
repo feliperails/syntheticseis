@@ -3,9 +3,5 @@
 namespace invertseis {
 namespace widgets {
 
-void Widgets::init()
-{
-}
-
 }
 }

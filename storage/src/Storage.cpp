@@ -11,17 +11,13 @@ static QPointer<Storage> s_instance = nullptr;
 
 Storage::Storage()
 {
-    Q_ASSERT_X(s_instance.isNull(), "Storage::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(s_instance.isNull(), "Storage::instance()", "Está chamada só pode ser realiza uma única vez.");
     s_instance = QPointer<Storage>(this);
-}
-
-void Storage::init()
-{
 }
 
 Storage& Storage::instance()
 {
-    Q_ASSERT_X(!s_instance.isNull(), "Storage::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(!s_instance.isNull(), "Storage::instance()", "Está chamada só pode ser realiza uma única vez.");
     return *s_instance;
 }
 

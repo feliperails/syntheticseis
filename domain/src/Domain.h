@@ -2,6 +2,7 @@
 #define INC_INVERTSEIS_DOMAIN_H
 
 #include "SeismicWaveVelocityDictionary.h"
+#include "LithologyDictionary.h"
 
 #include <memory>
 
@@ -13,13 +14,18 @@ class Domain: public QObject
     Q_OBJECT
 public:
     Domain();
-    void init();
     static Domain& instance();
 
     static SeismicWaveVelocityDictionary& seismicWaveVelocityDictionary();
 
+    static LithologyDictionary& lithologyDictionary();
+
+private:
+    void init();
+
 private:
     std::unique_ptr<SeismicWaveVelocityDictionary> m_seismicWaveVelocityDictionary;
+    std::unique_ptr<LithologyDictionary> m_lithologyDictionary;
 };
 
 } // namespace domain

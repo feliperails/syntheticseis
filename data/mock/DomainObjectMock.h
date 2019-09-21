@@ -6,10 +6,16 @@
 namespace invertseis {
 namespace data {
 
-class DomainObjectMock : public data::DomainObject
+class FirstObjectMock : public data::DomainObject
 {
 public:
-    DomainObjectMock();
+    FirstObjectMock();
+};
+
+class SecondObjectMock : public data::DomainObject
+{
+public:
+    SecondObjectMock();
 };
 
 } // namespace data

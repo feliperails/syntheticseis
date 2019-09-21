@@ -1,4 +1,6 @@
 #include "core/src/Core.h"
+#include "geometry//src/Geometry.h"
+#include "data/src/Data.h"
 #include "storage/src/Storage.h"
 #include "dataIO/src/DataIo.h"
 #include "domain/src/Domain.h"
@@ -46,25 +48,30 @@ int main()
     int ret = -1;
     try{
         invertseis::core::Core core;
-        core.init();
+        Q_UNUSED(core);
+
+        invertseis::geometry::Geometry geometry;
+        Q_UNUSED(geometry);
+
+        invertseis::data::Data data;
+        Q_UNUSED(data);
 
         invertseis::domain::Domain domain;
-        domain.init();
+        Q_UNUSED(domain);
 
         invertseis::dataIO::DataIO dataIO;
-        dataIO.init();
+        Q_UNUSED(dataIO);
 
         invertseis::storage::Storage storage;
-        storage.init();
+        Q_UNUSED(storage);
 
         invertseis::gui::Gui gui;
-        gui.init();
 
         invertseis::projectManager::ProjectManager projectManager;
-        projectManager.init();
+        Q_UNUSED(projectManager);
 
         invertseis::widgets::Widgets widgets;
-        widgets.init();
+        Q_UNUSED(widgets);
 
         gui.startApplication();
         gui.mainWindow().setWindowState(Qt::WindowMaximized);

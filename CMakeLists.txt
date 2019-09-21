@@ -43,6 +43,11 @@ add_library(InvertSeisLibrary
     core/src/MetaClass.h
     core/src/MetaClass.cpp
 
+    geometry/src/Geometry.h
+    geometry/src/Geometry.cpp
+    geometry/src/Coordinate.h
+    geometry/src/Coordinate.cpp
+
     data/src/Data.h
     data/src/Data.cpp
     data/src/Dictionary.h
@@ -67,6 +72,8 @@ add_library(InvertSeisLibrary
     domain/src/Lithology.cpp
     domain/src/SeismicWaveVelocityDictionary.h
     domain/src/SeismicWaveVelocityDictionary.cpp
+    domain/src/LithologyDictionary.h
+    domain/src/LithologyDictionary.cpp
 
     # dataIO
     dataIO/src/DataIO.h
@@ -100,12 +107,18 @@ add_executable(InvertSeis
     )
 
 add_library(InvertSeisMock
+
+    #c ore
     core/mock/CoreMock.cpp
+
+    # geometry
+    geometry/mock/GeometryMock.cpp
 
     #data
     data/mock/DataMock.cpp
     data/mock/DomainObjectMock.cpp
 
+    # dataIO
     dataIO/mock/DataIOMock.cpp
 
     #domain
@@ -117,6 +130,7 @@ add_library(InvertSeisMock
 add_executable(InvertSeisTest
     cmake/TestMain.cpp
     core/test/CoreTest.cpp
+    geometry/test/GeometryTest.cpp
     data/test/DataTest.cpp
     dataIO/test/DataIOTest.cpp
     domain/test/DomainTest.cpp
@@ -154,7 +168,6 @@ target_link_libraries(InvertSeisMock
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )
-
 
 target_link_libraries(InvertSeisTest
     PUBLIC Qt5::Core

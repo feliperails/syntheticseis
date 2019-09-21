@@ -11,7 +11,6 @@ class ProjectManager : public QObject
     Q_OBJECT
 public:
     ProjectManager();
-    void init();
 
     static ProjectManager& instance();
 };

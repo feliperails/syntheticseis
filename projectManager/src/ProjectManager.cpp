@@ -11,17 +11,13 @@ static QPointer<ProjectManager> s_instance = nullptr;
 
 ProjectManager::ProjectManager()
 {
-    Q_ASSERT_X(s_instance.isNull(), "ProjectManager::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(s_instance.isNull(), "ProjectManager::instance()", "Está chamada só pode ser realiza uma única vez.");
     s_instance = QPointer<ProjectManager>(this);
-}
-
-void ProjectManager::init()
-{
 }
 
 ProjectManager& ProjectManager::instance()
 {
-    Q_ASSERT_X(!s_instance.isNull(), "ProjectManager::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(!s_instance.isNull(), "ProjectManager::instance()", "Está chamada só pode ser realiza uma única vez.");
     return *s_instance;
 }
 

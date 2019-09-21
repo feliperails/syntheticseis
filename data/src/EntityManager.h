@@ -4,6 +4,7 @@
 #include "Entity.h"
 
 #include <QSet>
+#include <QLinkedList>
 
 namespace invertseis {
 namespace data {
@@ -17,10 +18,30 @@ public:
     EntityManager();
     ~EntityManager();
 
-    Entity* createEntity(const QUuid& uuid, const QString& name);
+    Entity* createEntity(const QUuid& uuid, const QString& name, std::shared_ptr<DomainObject> domainObject = std::shared_ptr<DomainObject>());
+    Entity* createEntity(const QString& name, std::shared_ptr<DomainObject> domainObject = std::shared_ptr<DomainObject>());
+
     const QSet<Entity*>& entities() const;
 
+    Entity* entity(const QString& name) const;
+    Entity* entity(const QUuid& uuid) const;
+
+    template<class DomainType>
+    QLinkedList<Entity*> entities() const
+    {
+        QLinkedList<Entity*> filtered;
+        for(Entity* entity : this->entities()){
+            if(entity && std::dynamic_pointer_cast<DomainType>(entity->domainObject())){
+                filtered.push_back(entity);
+            }
+        }
+
+        return filtered;
+    }
+
     bool removeEntity(Entity* entity);
+
+
 
 private:
     Q_DECLARE_PRIVATE(EntityManager)

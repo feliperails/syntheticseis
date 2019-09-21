@@ -11,17 +11,13 @@ static QPointer<Core> s_instance = nullptr;
 
 Core::Core()
 {
-    Q_ASSERT_X(s_instance.isNull(), "Core::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(s_instance.isNull(), "Core::instance()", "Está chamada só pode ser realiza uma única vez.");
     s_instance = QPointer<Core>(this);
-}
-
-void Core::init()
-{
 }
 
 Core& Core::instance()
 {
-    Q_ASSERT_X(!s_instance.isNull(), "Core::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(!s_instance.isNull(), "Core::instance()", "Está chamada só pode ser realiza uma única vez.");
     return *s_instance;
 }
 

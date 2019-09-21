@@ -10,19 +10,21 @@ static QPointer<Data> s_instance = nullptr;
 }
 
 Data::Data()
+    : m_entityManager(std::make_unique<EntityManager>())
 {
-    Q_ASSERT_X(s_instance.isNull(), "Data::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(s_instance.isNull(), "Data::instance()", "Está chamada só pode ser realiza uma única vez.");
     s_instance = QPointer<Data>(this);
-}
-
-void Data::init()
-{
 }
 
 Data& Data::instance()
 {
-    Q_ASSERT_X(!s_instance.isNull(), "Data::instance()", "Illegal call. Application global state, can not be used without a plugin or in test environment. ");
+    Q_ASSERT_X(!s_instance.isNull(), "Data::instance()", "Está chamada só pode ser realiza uma única vez.");
     return *s_instance;
+}
+
+EntityManager& Data::entityManager()
+{
+    return *(instance().m_entityManager);
 }
 
 }

@@ -13,8 +13,6 @@ public:
     Gui();
     ~Gui();
 
-    void init();
-
     void startApplication();
 
     static Gui& instance();

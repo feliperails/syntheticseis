@@ -12,8 +12,6 @@ class DataIO : public QObject
 public:
     DataIO();
 
-    void init();
-
     static DataIO& instance();
 };
 

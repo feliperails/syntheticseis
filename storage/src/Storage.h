@@ -11,7 +11,6 @@ class Storage : public QObject
     Q_OBJECT
 public:
     Storage();
-    void init();
 
     Storage& instance();
 };

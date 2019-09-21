@@ -3,9 +3,14 @@
 namespace invertseis {
 namespace data {
 
-DomainObjectMock::DomainObjectMock()
+FirstObjectMock::FirstObjectMock()
 {
 }
+
+SecondObjectMock::SecondObjectMock()
+{
+}
+
 
 } // namespace data
 } // namespace invertseis

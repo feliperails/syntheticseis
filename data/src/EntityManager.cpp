@@ -41,18 +41,55 @@ EntityManager::~EntityManager()
     delete d_ptr;
 }
 
-Entity* EntityManager::createEntity(const QUuid& uuid, const QString& name)
+Entity* EntityManager::createEntity(const QUuid& uuid, const QString& name, std::shared_ptr<DomainObject> domainObject)
 {
     Q_D(EntityManager);
     if(name.isEmpty() || uuid.isNull()){
         return nullptr;
     }
 
-    Entity* e = new Entity(uuid, std::shared_ptr<DomainObject>(), name);
+    Entity* e = new Entity(uuid, domainObject, name);
 
     d->m_entities.insert(e);
 
     return e;
+}
+
+Entity* EntityManager::createEntity(const QString& name, std::shared_ptr<DomainObject> domainObject)
+{
+    return createEntity(QUuid::createUuid(), name, domainObject);
+}
+
+Entity* EntityManager::entity(const QUuid& uuid) const
+{
+    if(uuid.isNull()){
+        return nullptr;
+    }
+
+    Q_D(const EntityManager);
+    for(Entity* entity : d->m_entities){
+        if(entity->uuid() == uuid){
+            return entity;
+        }
+    }
+
+    return nullptr;
+}
+
+Entity* EntityManager::entity(const QString& name) const
+{
+    if(name.isEmpty()){
+        return nullptr;
+    }
+
+    Q_D(const EntityManager);
+    for(Entity* entity : d->m_entities){
+        if(entity->name() == name){
+            return entity;
+        }
+    }
+
+    return nullptr;
 }
 
 bool EntityManager::removeEntity(Entity* entity)

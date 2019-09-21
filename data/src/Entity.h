@@ -19,6 +19,12 @@ public:
     Entity(const QUuid& uuid, std::shared_ptr<DomainObject> domainObject, const QString& name);
     virtual ~Entity();
 
+    template<class DomainType>
+    std::shared_ptr<DomainType> domainObject() const
+    {
+        return std::dynamic_pointer_cast<DomainType>(this->domainObject());
+    }
+
     std::shared_ptr<DomainObject> domainObject() const;
     void setDomainObject(std::shared_ptr<DomainObject>);
 

@@ -27,7 +27,7 @@ public:
 
     QUuid uuid() const;
 
-private:
+Q_SIGNALS:
     void domainDataAboutToBeModified();
     void domainDataModified();
     void domainDataAboutToRemoved();

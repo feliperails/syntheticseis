@@ -1,17 +1,21 @@
-#ifndef INC_INVERTSEIS_CORE_H
-#define INC_INVERTSEIS_CORE_H
+#ifndef INC_INVERTSEIS_DATA_DATA_H
+#define INC_INVERTSEIS_DATA_DATA_H
 
-#include "CoreDefs.h"
+#include <QObject>
 
 namespace invertseis {
-namespace core {
+namespace data {
 
-class Core
+class Data : public QObject
 {
+    Q_OBJECT
 public:
+    Data();
     void init();
+
+    Data& instance();
 };
 
-} // namespace core
+} // namespace data
 } // namespace invertseis
 #endif

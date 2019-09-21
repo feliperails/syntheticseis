@@ -43,6 +43,8 @@ add_library(InvertSeisLibrary
     core/src/MetaClass.h
     core/src/MetaClass.cpp
 
+    data/src/Data.h
+    data/src/Data.cpp
     data/src/Dictionary.h
     data/src/Dictionary.cpp
     data/src/Entity.h
@@ -59,6 +61,10 @@ add_library(InvertSeisLibrary
     domain/src/Domain.cpp
     domain/src/EclipseGrid.h
     domain/src/EclipseGrid.cpp
+    domain/src/Lithology.h
+    domain/src/Lithology.cpp
+    domain/src/SeismicWaveVelocityDictionary.h
+    domain/src/SeismicWaveVelocityDictionary.cpp
 
     # dataIO
     dataIO/src/DataIO.h
@@ -89,6 +95,21 @@ add_library(InvertSeisLibrary
 add_executable(InvertSeis
     # app
     app/src/main.cpp
+    )
+
+add_library(InvertSeisMock
+    core/mock/CoreMock.cpp
+
+    #data
+    data/mock/DataMock.cpp
+    data/mock/DomainObjectMock.cpp
+
+    dataIO/mock/DataIOMock.cpp
+
+    #domain
+    domain/mock/DomainMock.cpp
+
+    storage/mock/StorageMock.cpp
     )
 
 add_executable(InvertSeisTest
@@ -122,12 +143,24 @@ target_link_libraries(InvertSeis
     PUBLIC Qt5::Widgets
     PUBLIC InvertSeisLibrary)
 
+target_link_libraries(InvertSeisMock
+    PUBLIC Qt5::Core
+    PUBLIC Qt5::Gui
+    PUBLIC Qt5::Widgets
+    PUBLIC Qt5::Test
+    PUBLIC InvertSeisLibrary
+    PUBLIC GTest::GTest
+    #    PUBLIC GMock::GMock
+    )
+
+
 target_link_libraries(InvertSeisTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Gui
     PUBLIC Qt5::Widgets
     PUBLIC Qt5::Test
     PUBLIC InvertSeisLibrary
+    PUBLIC InvertSeisMock
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )

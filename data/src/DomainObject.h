@@ -1,8 +1,6 @@
 #ifndef INC_INVERTSEIS_DOMAINOBJECT_H
 #define INC_INVERTSEIS_DOMAINOBJECT_H
 
-#include <QObject>
-
 namespace invertseis {
 namespace data {
 

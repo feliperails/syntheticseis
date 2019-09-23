@@ -13,6 +13,8 @@ namespace domain {
 class EclipseGrid : public data::DomainObject
 {
 public:
+    EclipseGrid();
+
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,

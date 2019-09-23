@@ -3,6 +3,16 @@
 namespace invertseis {
 namespace domain {
 
+EclipseGrid::EclipseGrid()
+    : m_numberOfCellsInX(0)
+    , m_numberOfCellsInY(0)
+    , m_numberOfCellsInZ(0)
+    , m_coordinates()
+    , m_zValues()
+    , m_lithologyIds()
+{
+}
+
 EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
                          const size_t numberOfCellsInY,
                          const size_t numberOfCellsInZ,

@@ -188,10 +188,12 @@ if(WIN32)
     include(GetPrerequisites)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-    set(SEARCH_PREFIX_PATH ${GTest_ROOT} ${Qt5_DIR})
+    set(SEARCH_PREFIX_PATH ""${GTest_ROOT}/lib"" ${Qt5_DIR})
     MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
     set(_search_paths ${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH})
     string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
+
+    message(STATUS "SEARCH_PATHS: " ${_search_paths})
 
     add_custom_command(TARGET InvertSeisTest
         POST_BUILD
@@ -201,7 +203,7 @@ if(WIN32)
         -DTARGET_EXEC_DIR=${CMAKE_BINARY_DIR}/bin
         -DPREREQUISITES_DEST_DIR=${CMAKE_BINARY_DIR}/bin
         -DSEARCH_PATHS=${_search_paths}
-        #-DTARGET_LOCAL_DEPS=$<TARGET_FILE:${InvertSeisTest}>
+        -DTARGET_LOCAL_DEPS=$<TARGET_FILE:InvertSeisTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
 
 endif()

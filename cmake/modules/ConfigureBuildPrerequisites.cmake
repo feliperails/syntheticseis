@@ -3,8 +3,6 @@ include(GetPrerequisites)
 SET(cmake_policy CMP0007)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR})
 
-#include(DevKitUtils)
-
 set(_exec_name ${TARGET_EXEC_NAME})
 set(_exec_dir ${TARGET_EXEC_DIR})
 set(_dst_dir ${PREREQUISITES_DEST_DIR})
@@ -15,7 +13,8 @@ set(_search_paths ${SEARCH_PATHS})
 string(REPLACE "%3b" ";" _search_paths "${_search_paths}")
 
 list(REMOVE_DUPLICATES _search_paths)
-#list(REMOVE_ search_paths)
+
+#message("search_paths : ${_search_paths}")
 
 set(_lib_paths ${_search_paths})
 #filter_valid_lib_paths("${_search_paths}" _lib_paths)

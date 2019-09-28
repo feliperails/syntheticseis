@@ -25,6 +25,21 @@ EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
     , m_zValues(zValues)
     , m_lithologyIds(lithologyIds)
 {
+    int a = 0;
+    a = 5;
+}
+
+EclipseGrid& EclipseGrid::operator=(const EclipseGrid& o)
+{
+    m_numberOfCellsInX = o.m_numberOfCellsInX;
+    m_numberOfCellsInY = o.m_numberOfCellsInY;
+    m_numberOfCellsInZ = o.m_numberOfCellsInZ;
+
+    m_coordinates = o.m_coordinates;
+    m_lithologyIds = o.m_lithologyIds;
+    m_zValues = o.m_zValues;
+
+    return *this;
 }
 
 size_t EclipseGrid::numberOfCellsInX() const

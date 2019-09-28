@@ -15,6 +15,9 @@ class EclipseGrid : public data::DomainObject
 public:
     EclipseGrid();
 
+    EclipseGrid(const EclipseGrid&) = default;
+    EclipseGrid& operator =(const EclipseGrid& o);
+
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
@@ -33,12 +36,12 @@ public:
     const QVector<int>& lithologyIds() const;
 
 private:
-    const size_t m_numberOfCellsInX;
-    const size_t m_numberOfCellsInY;
-    const size_t m_numberOfCellsInZ;
-    const QVector<invertseis::geometry::Coordinate> m_coordinates;
-    const QVector<double> m_zValues;
-    const QVector<int> m_lithologyIds;
+    size_t m_numberOfCellsInX;
+    size_t m_numberOfCellsInY;
+    size_t m_numberOfCellsInZ;
+    QVector<invertseis::geometry::Coordinate> m_coordinates;
+    QVector<double> m_zValues;
+    QVector<int> m_lithologyIds;
 };
 
 } // namespace domain

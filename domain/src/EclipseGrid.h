@@ -19,7 +19,7 @@ public:
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
                 const QVector<invertseis::geometry::Coordinate>& coordinates,
-                const QVector<float>& zValues,
+                const QVector<double>& zValues,
                 const QVector<int>& lithologyIds);
 
     size_t numberOfCellsInX() const;
@@ -28,7 +28,7 @@ public:
 
     const QVector<geometry::Coordinate> &coordinates() const;
 
-    const QVector<float>& zValues() const;
+    const QVector<double>& zValues() const;
 
     const QVector<int>& lithologyIds() const;
 
@@ -37,7 +37,7 @@ private:
     const size_t m_numberOfCellsInY;
     const size_t m_numberOfCellsInZ;
     const QVector<invertseis::geometry::Coordinate> m_coordinates;
-    const QVector<float> m_zValues;
+    const QVector<double> m_zValues;
     const QVector<int> m_lithologyIds;
 };
 

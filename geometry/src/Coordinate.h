@@ -7,6 +7,7 @@ namespace geometry {
 class Coordinate
 {
 public:
+    Coordinate() = default;
     Coordinate(const double x, const double y, const double z);
 
     double x() const{ return m_x; }

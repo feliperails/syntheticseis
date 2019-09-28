@@ -16,7 +16,7 @@ EclipseGrid::EclipseGrid()
 EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
                          const size_t numberOfCellsInY,
                          const size_t numberOfCellsInZ,
-                         const QVector<geometry::Coordinate> &coordinates, const QVector<float> &zValues,
+                         const QVector<geometry::Coordinate> &coordinates, const QVector<double> &zValues,
                          const QVector<int>& lithologyIds)
     : m_numberOfCellsInX(numberOfCellsInX)
     , m_numberOfCellsInY(numberOfCellsInY)
@@ -47,7 +47,7 @@ const QVector<invertseis::geometry::Coordinate>& EclipseGrid::coordinates() cons
     return m_coordinates;
 }
 
-const QVector<float> &EclipseGrid::zValues() const
+const QVector<double> &EclipseGrid::zValues() const
 {
     return m_zValues;
 }

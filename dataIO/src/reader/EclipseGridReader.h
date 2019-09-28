@@ -11,7 +11,7 @@ class EclipseGridReader
 public:
     EclipseGridReader(const QString& path);
 
-    invertseis::domain::EclipseGrid read() const;
+    invertseis::domain::EclipseGrid read(bool *ok = nullptr) const;
 
     QString path() const;
 

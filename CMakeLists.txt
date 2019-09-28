@@ -188,7 +188,7 @@ if(WIN32)
     include(GetPrerequisites)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-    set(SEARCH_PREFIX_PATH ""${GTest_ROOT}/lib"" ${Qt5_DIR})
+    set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
     MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
     set(_search_paths ${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH})
     string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
@@ -214,7 +214,8 @@ install(FILES README.md
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
     )
 
-
+# Arquivo para teste de leitura do EclipseGrid
+file(COPY "${CMAKE_SOURCE_DIR}/dataIO/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 

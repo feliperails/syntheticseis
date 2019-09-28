@@ -4,6 +4,8 @@
 #include <QStringList>
 #include <QTextStream>
 
+#include <iostream>
+
 namespace invertseis {
 namespace dataIO {
 
@@ -20,11 +22,13 @@ EclipseGridReader::EclipseGridReader(const QString& path)
 invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
 {
     if(m_path.isEmpty()){
+        if(ok){ *ok = false; }
         return invertseis::domain::EclipseGrid();
     }
 
     QFile file(m_path);
     if(!file.open(QFile::ReadOnly)){
+        if(ok){ *ok = false; }
         return invertseis::domain::EclipseGrid();
     }
 
@@ -37,15 +41,19 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
     QVector<int> lithologyIds;
 
     QTextStream stream(&file);
+    int row = 0;
 
     bool convertionOk = true;
     QString line;
     while(!stream.atEnd()){
         line = stream.readLine();
+        ++row;
         if(line.startsWith(QLatin1String("SPECGRID"))){
             line = stream.readLine();
+            ++row;
             while(line.isEmpty()){
                 line = stream.readLine();
+                ++row;
             }
 
             if(line == SECTION_END_TOKEN){
@@ -56,7 +64,8 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
             line.replace(SECTION_END_TOKEN, QString());
             line = line.simplified();
             const QStringList list = line.split(" ");
-            if (list.size() != 3){
+            if (list.size() < 3){
+                if(ok){ *ok = false; }
                 return {};
             }
 
@@ -79,11 +88,13 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
             }
         } else if(line.startsWith(QLatin1String("COORD"))){
             line = stream.readLine();
+            ++row;
             QStringList list;
             double x = 0.0;
             double y = 0.0;
             double z = 0.0;
             bool sectionEnded  = false;
+
             while(line != SECTION_END_TOKEN){
 
                 sectionEnded = line.contains(SECTION_END_TOKEN);
@@ -93,7 +104,13 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
 
                 line = line.simplified();
                 list = line.split(QLatin1Literal(" "));
+
                 if(line.isEmpty()){
+                    line = stream.readLine();
+                    ++row;
+                    if(sectionEnded){
+                        line = SECTION_END_TOKEN;
+                    }
                     continue;
                 }
 
@@ -123,12 +140,14 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 coordinates.push_back(invertseis::geometry::Coordinate(x, y, z));
                 if(!sectionEnded){
                     line = stream.readLine();
+                    ++row;
                 }else{
                     line = SECTION_END_TOKEN;
                 }
             }
         } else if(line.startsWith(QLatin1String("ZCORN"))){
             line = stream.readLine();
+            ++row;
 
             QStringList splittedData;
             double z = 0.0;
@@ -173,11 +192,13 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                     line = SECTION_END_TOKEN;
                 }else{
                     line = stream.readLine();
+                    ++row;
                 }
             }
         }
         else if (line.startsWith(QLatin1String("LITHOLOGYTYPE"))){
             line = stream.readLine();
+            ++row;
             int id = -1;
             bool sectionEnded = false;
             QStringList spplitedData;
@@ -193,7 +214,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 if(!spplitedData.isEmpty()){
                     for(const QString str : spplitedData){
                         id = str.toInt(&convertionOk);
-                        if(!convertionOk){
+                        if(!convertionOk && !str.isEmpty()){
                             if(ok){ *ok = false; }
                             return {};
                         }
@@ -212,11 +233,12 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                     line = SECTION_END_TOKEN;
                 }else{
                     line = stream.readLine();
+                    ++row;
+
                 }
             }
         }
     }
-
 
     if(ok){
         *ok = true;

@@ -216,6 +216,7 @@ install(FILES README.md
 
 # Arquivo para teste de leitura do EclipseGrid
 file(COPY "${CMAKE_SOURCE_DIR}/dataIO/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/dataIO/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 

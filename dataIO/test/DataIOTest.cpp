@@ -4,7 +4,9 @@
 #include <domain/src/EclipseGrid.h>
 #include <dataIO/src/reader/EclipseGridReader.h>
 
-TEST(DataIOTest, NullTest)
+#include <QTime>
+
+TEST(DataIOTest, EclipseGridReaderTest)
 {
     using namespace  invertseis::dataIO;
     using namespace  invertseis::domain;
@@ -70,4 +72,20 @@ TEST(DataIOTest, NullTest)
 
     const QVector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
+}
+
+TEST(DataIOTest, EclipseGridReaderPerformanceTest)
+{
+    using namespace  invertseis::dataIO;
+    using namespace  invertseis::domain;
+
+    invertseis::dataIO::EclipseGridReader reader(QLatin1String("EclipseGridPerformanceTest.grdecl"));
+    bool ok = false;
+    QTime time;
+    time.start();
+    reader.read(&ok);
+
+    std::cout << "Tempo gasto: " << time.elapsed() << std::endl;
+
+    ASSERT_TRUE(ok);
 }

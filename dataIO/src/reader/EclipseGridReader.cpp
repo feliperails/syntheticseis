@@ -53,6 +53,8 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 return {};
             }
 
+            line.replace(SECTION_END_TOKEN, QString());
+            line = line.simplified();
             const QStringList list = line.split(" ");
             if (list.size() != 3){
                 return {};
@@ -81,7 +83,15 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
             double x = 0.0;
             double y = 0.0;
             double z = 0.0;
+            bool sectionEnded  = false;
             while(line != SECTION_END_TOKEN){
+
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if(sectionEnded){
+                    line.replace(SECTION_END_TOKEN, QString());
+                }
+
+                line = line.simplified();
                 list = line.split(QLatin1Literal(" "));
                 if(line.isEmpty()){
                     continue;
@@ -92,26 +102,30 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                     return {};
                 }
 
-                QString str = list.at(0);
-                x = str.toDouble(&convertionOk);
+                x = list.at(0).toDouble(&convertionOk);
                 if(!convertionOk){
                     if(ok){ *ok = false; }
                     return {};
                 }
 
-                y = str.toDouble(&convertionOk);
+                y = list.at(1).toDouble(&convertionOk);
                 if(!convertionOk){
                     if(ok){ *ok = false; }
                     return {};
                 }
 
-                z = str.toDouble(&convertionOk);
+                z = list.at(2).toDouble(&convertionOk);
                 if(!convertionOk){
                     if(ok){ *ok = false; }
                     return {};
                 }
 
                 coordinates.push_back(invertseis::geometry::Coordinate(x, y, z));
+                if(!sectionEnded){
+                    line = stream.readLine();
+                }else{
+                    line = SECTION_END_TOKEN;
+                }
             }
         } else if(line.startsWith(QLatin1String("ZCORN"))){
             line = stream.readLine();
@@ -119,42 +133,86 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
             QStringList splittedData;
             double z = 0.0;
             int quantity = 0;
+            bool sectionEnded = false;
             while(line != SECTION_END_TOKEN){
+
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if(sectionEnded){
+                    line.replace(SECTION_END_TOKEN, QString());
+                }
+
+                line = line.simplified();
+
                 splittedData = line.split(ASTERISK);
                 if(splittedData.size() == 2){
-                   z = splittedData.at(0).toDouble(&convertionOk);
-                   if(!convertionOk){
-                       if(ok){ *ok = false; }
-                       return {};
-                   }
-                   quantity = splittedData.at(1).toInt(&convertionOk);
-                   if(!convertionOk){
-                       if(ok){ *ok = false; }
-                       return {};
-                   }
-
-                   zValues.append(QVector<double>(quantity, z));
-                }else{
-                    z = line.toDouble(&convertionOk);
+                    quantity = splittedData.at(0).toInt(&convertionOk);
                     if(!convertionOk){
                         if(ok){ *ok = false; }
                         return {};
                     }
-                    zValues.push_back(z);
+
+                    z = splittedData.at(1).toDouble(&convertionOk);
+                    if(!convertionOk){
+                        if(ok){ *ok = false; }
+                        return {};
+                    }
+
+                    zValues.append(QVector<double>(quantity, z));
+                }else{
+                    if(!line.isEmpty()){
+
+                        z = line.toDouble(&convertionOk);
+                        if(!convertionOk){
+                            if(ok){ *ok = false; }
+                            return {};
+                        }
+                        zValues.push_back(z);
+                    }
+                }
+                if(sectionEnded){
+                    line = SECTION_END_TOKEN;
+                }else{
+                    line = stream.readLine();
                 }
             }
         }
         else if (line.startsWith(QLatin1String("LITHOLOGYTYPE"))){
             line = stream.readLine();
             int id = -1;
+            bool sectionEnded = false;
+            QStringList spplitedData;
             while(line != SECTION_END_TOKEN){
-                id = line.toInt(&convertionOk);
-                if(!convertionOk){
-                    if(ok){ *ok = false; }
-                    return {};
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if(sectionEnded){
+                    line.replace(SECTION_END_TOKEN, QString());
                 }
 
-                lithologyIds.push_back(id);
+                line = line.simplified();
+                spplitedData = line.split(" ");
+
+                if(!spplitedData.isEmpty()){
+                    for(const QString str : spplitedData){
+                        id = str.toInt(&convertionOk);
+                        if(!convertionOk){
+                            if(ok){ *ok = false; }
+                            return {};
+                        }
+                        lithologyIds.push_back(id);
+                    }
+                }
+                else{
+                    id = line.toInt(&convertionOk);
+                    if(!convertionOk){
+                        if(ok){ *ok = false; }
+                        return {};
+                    }
+                }
+
+                if(sectionEnded){
+                    line = SECTION_END_TOKEN;
+                }else{
+                    line = stream.readLine();
+                }
             }
         }
     }

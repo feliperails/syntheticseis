@@ -79,7 +79,7 @@ TEST(DomainTest, EclipseGridTest)
 
     EXPECT_TRUE(eg.coordinates().isEmpty());
     EXPECT_TRUE(eg.lithologyIds().isEmpty());
-    EXPECT_TRUE(eg.zValues().isEmpty());
+    EXPECT_TRUE(eg.zCoordinates().isEmpty());
     EXPECT_EQ(eg.numberOfCellsInX(), 0);
     EXPECT_EQ(eg.numberOfCellsInY(), 0);
     EXPECT_EQ(eg.numberOfCellsInZ(), 0);
@@ -106,6 +106,6 @@ TEST(DomainTest, EclipseGridTest)
     EXPECT_EQ(eg.numberOfCellsInY(), numberOfCellsInY);
     EXPECT_EQ(eg.numberOfCellsInZ(), numberOfCellsInZ);
     EXPECT_EQ(eg.coordinates(), coordinates);
-    EXPECT_EQ(eg.zValues(), zValues);
+    EXPECT_EQ(eg.zCoordinates(), zValues);
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }

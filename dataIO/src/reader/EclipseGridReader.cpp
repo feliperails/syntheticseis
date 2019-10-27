@@ -12,6 +12,11 @@ namespace dataIO {
 namespace {
 const QLatin1Literal SECTION_END_TOKEN = QLatin1Literal("/");
 const QLatin1Literal ASTERISK = QLatin1Literal("*");
+const QLatin1Literal SPEC_GRID = QLatin1String("SPECGRID");
+const QLatin1Literal LITHOLOGY_TYPE = QLatin1String("LITHOLOGYTYPE");
+const QLatin1Literal COORD = QLatin1String("COORD");
+const QLatin1Literal ZCORN = QLatin1String("ZCORN");
+const QLatin1Literal SINGLE_SPACE_SEPARATOR = QLatin1Literal(" ");
 }
 
 EclipseGridReader::EclipseGridReader(const QString& path)
@@ -48,7 +53,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
     while(!stream.atEnd()){
         line = stream.readLine();
         ++row;
-        if(line.startsWith(QLatin1String("SPECGRID"))){
+        if(line.startsWith(SPEC_GRID)){
             line = stream.readLine();
             ++row;
             while(line.isEmpty()){
@@ -86,7 +91,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 if(ok){ *ok = false; }
                 return {};
             }
-        } else if(line.startsWith(QLatin1String("COORD"))){
+        } else if(line.startsWith(COORD)){
             line = stream.readLine();
             ++row;
             QStringList list;
@@ -103,7 +108,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 }
 
                 line = line.simplified();
-                list = line.split(QLatin1Literal(" "));
+                list = line.split(SINGLE_SPACE_SEPARATOR);
 
                 if(line.isEmpty()){
                     line = stream.readLine();
@@ -145,7 +150,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                     line = SECTION_END_TOKEN;
                 }
             }
-        } else if(line.startsWith(QLatin1String("ZCORN"))){
+        } else if(line.startsWith(ZCORN)){
             line = stream.readLine();
             ++row;
 
@@ -196,12 +201,12 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 }
             }
         }
-        else if (line.startsWith(QLatin1String("LITHOLOGYTYPE"))){
+        else if (line.startsWith(LITHOLOGY_TYPE)){
             line = stream.readLine();
             ++row;
             int id = -1;
             bool sectionEnded = false;
-            QStringList spplitedData;
+            QStringList splitedData;
             while(line != SECTION_END_TOKEN){
                 sectionEnded = line.contains(SECTION_END_TOKEN);
                 if(sectionEnded){
@@ -209,10 +214,10 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                 }
 
                 line = line.simplified();
-                spplitedData = line.split(" ");
+                splitedData = line.split(" ");
 
-                if(!spplitedData.isEmpty()){
-                    for(const QString str : spplitedData){
+                if(!splitedData.isEmpty()){
+                    for(const QString str : splitedData){
                         id = str.toInt(&convertionOk);
                         if(!convertionOk && !str.isEmpty()){
                             if(ok){ *ok = false; }

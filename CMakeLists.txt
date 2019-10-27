@@ -70,10 +70,16 @@ add_library(InvertSeisLibrary
     domain/src/EclipseGrid.cpp
     domain/src/Lithology.h
     domain/src/Lithology.cpp
-    domain/src/SeismicWaveVelocityDictionary.h
-    domain/src/SeismicWaveVelocityDictionary.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
+    domain/src/RegularGrid.h
+    domain/src/RegularGrid.cpp
+    domain/src/SeismicTraces.h
+    domain/src/SeismicTraces.cpp
+    domain/src/SeismicWaveVelocityDictionary.h
+    domain/src/SeismicWaveVelocityDictionary.cpp
+    domain/src/ExtractVolumes.h
+    domain/src/ExtractVolumes.cpp
 
     # dataIO
     dataIO/src/DataIO.h
@@ -82,6 +88,8 @@ add_library(InvertSeisLibrary
     dataIO/src/reader/EclipseGridReader.cpp
     dataIO/src/writer/EclipseGridWriter.h
     dataIO/src/writer/EclipseGridWriter.cpp
+    dataIO/src/writer/SEGYWriter.h
+    dataIO/src/writer/SEGYWriter.cpp
 
     # gui
     gui/src/Gui.h

@@ -33,14 +33,15 @@ void Domain::init()
     auto conglomerate = entityManager.createEntity(QLatin1String("Conglomerate"), std::make_shared<Lithology>(15));
     auto volcanic = entityManager.createEntity(QLatin1String("Volcanic"), std::make_shared<Lithology>(24));
 
-    seismicWaveVelocityDictionary().setVelocity(mudstone, 2800.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(siltite, 3000.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(fineGrainedSandstone, 3200.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(mediumGrainedSandstone, 3500.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(coarseGrainedSandstone, 3700.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(veryCoarseGrained, 4000.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(conglomerate, 4500.0); // m/s
-    seismicWaveVelocityDictionary().setVelocity(volcanic, 6000.0); // m/s
+    SeismicWaveVelocityDictionary& seismicWaveVelocityDictionary= this->seismicWaveVelocityDictionary();
+    seismicWaveVelocityDictionary.setVelocity(mudstone, 2800.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(siltite, 3000.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(fineGrainedSandstone, 3200.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(mediumGrainedSandstone, 3500.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(coarseGrainedSandstone, 3700.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(veryCoarseGrained, 4000.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(conglomerate, 4500.0); // m/s
+    seismicWaveVelocityDictionary.setVelocity(volcanic, 6000.0); // m/s
 }
 
 SeismicWaveVelocityDictionary& Domain::seismicWaveVelocityDictionary()

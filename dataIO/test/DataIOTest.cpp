@@ -3,8 +3,19 @@
 #include <geometry/src/Coordinate.h>
 #include <domain/src/EclipseGrid.h>
 #include <dataIO/src/reader/EclipseGridReader.h>
+#include <dataIO/src/writer/EclipseGridWriter.h>
 
+#include <QCryptographicHash>
+#include <QFile>
 #include <QTime>
+
+namespace{
+const QLatin1String ECLIPSEGRID_SMALL_FILENAME = QLatin1String("EclipseGridTest.grdecl");
+const QLatin1String ECLIPSEGRID_SMALL_OUTPUT_FILENAME = QLatin1String("EclipseGridTestOutput.grdecl");
+const QLatin1String ECLIPSEGRID_BIG_FILENAME = QLatin1String("EclipseGridPerformanceTest.grdecl");
+const QLatin1String ECLIPSEGRID_BIG_OUTPUT_FILENAME = QLatin1String("EclipseGridPerformanceTestOutput.grdecl");
+
+}
 
 TEST(DataIOTest, EclipseGridReaderTest)
 {
@@ -12,7 +23,7 @@ TEST(DataIOTest, EclipseGridReaderTest)
     using namespace  invertseis::domain;
     using namespace  invertseis::geometry;
 
-    invertseis::dataIO::EclipseGridReader reader(QLatin1String("EclipseGridTest.grdecl"));
+    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     bool ok = false;
     const EclipseGrid eg = reader.read(&ok);
 
@@ -68,24 +79,61 @@ TEST(DataIOTest, EclipseGridReaderTest)
     zValues.append(QVector<double>(24, 1300.0));
     zValues.append(QVector<double>(24, 1400.0));
 
-    EXPECT_EQ(eg.zValues(), zValues);
+    EXPECT_EQ(eg.zCoordinates(), zValues);
 
     const QVector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 
-TEST(DataIOTest, EclipseGridReaderPerformanceTest)
+//TEST(DataIOTest, EclipseGridReaderPerformanceTest)
+//{
+//    using namespace  invertseis::dataIO;
+//    using namespace  invertseis::domain;
+
+//    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
+//    bool ok = false;
+//    QTime time;
+//    time.start();
+//    reader.read(&ok);
+
+//    std::cout << "Tempo gasto: " << time.elapsed() << std::endl;
+
+//    ASSERT_TRUE(ok);
+//}
+
+namespace {
+
+QByteArray calculateSH1Hash(const QString& fileName)
+{
+    QFile file(fileName);
+    EXPECT_TRUE(file.open(QIODevice::ReadOnly));
+
+    QByteArray byteArray = file.readAll();
+    EXPECT_FALSE(byteArray.isEmpty());
+
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(byteArray);
+
+    return hash.result();
+}
+
+}
+
+TEST(DataIOTest, EclipseGridWriterTest)
 {
     using namespace  invertseis::dataIO;
     using namespace  invertseis::domain;
 
-    invertseis::dataIO::EclipseGridReader reader(QLatin1String("EclipseGridPerformanceTest.grdecl"));
+    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     bool ok = false;
-    QTime time;
-    time.start();
-    reader.read(&ok);
-
-    std::cout << "Tempo gasto: " << time.elapsed() << std::endl;
-
+    invertseis::domain::EclipseGrid eclipseGrid = reader.read(&ok);
     ASSERT_TRUE(ok);
+
+    invertseis::dataIO::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
+    EXPECT_TRUE(writer.write(eclipseGrid));
+
+    const auto originalFileSH1Hash = calculateSH1Hash(ECLIPSEGRID_SMALL_FILENAME);
+    const auto writtenFileSH1Hash = calculateSH1Hash(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
+    EXPECT_EQ(originalFileSH1Hash, writtenFileSH1Hash);
 }
+

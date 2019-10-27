@@ -9,7 +9,7 @@ namespace dataIO {
 class EclipseGridReader
 {
 public:
-    explicit EclipseGridReader(const QString& path);
+    EclipseGridReader(const QString& path);
 
     invertseis::domain::EclipseGrid read(bool *ok = nullptr) const;
 

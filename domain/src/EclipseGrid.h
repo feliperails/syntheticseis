@@ -1,5 +1,5 @@
-#ifndef INC_INVERTSEIS_DOMAIN_H
-#define INC_INVERTSEIS_DOMAIN_H
+#ifndef INC_INVERTSEIS_DOMAIN_ECLIPSEGRID_H
+#define INC_INVERTSEIS_DOMAIN_ECLIPSEGRID_H
 
 #include <geometry/src/Coordinate.h>
 
@@ -22,7 +22,7 @@ public:
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
                 const QVector<invertseis::geometry::Coordinate>& coordinates,
-                const QVector<double>& zValues,
+                const QVector<double>& zCoordinates,
                 const QVector<int>& lithologyIds);
 
     size_t numberOfCellsInX() const;
@@ -31,7 +31,7 @@ public:
 
     const QVector<geometry::Coordinate> &coordinates() const;
 
-    const QVector<double>& zValues() const;
+    const QVector<double>& zCoordinates() const;
 
     const QVector<int>& lithologyIds() const;
 

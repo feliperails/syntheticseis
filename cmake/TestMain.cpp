@@ -81,11 +81,12 @@ int main(int argc, char *argv[])
 
     QCoreApplication app(argc, argv);
 
-    const QString testFolder = QString("%1/test_folder").arg(app.applicationDirPath());    
-    QDir dir;
+//    const QString testFolder = QString("%1/test_folder").arg(app.applicationDirPath());
+//    QDir dir;
 
-    dir.rmpath(testFolder);
-    dir.mkpath(testFolder);
+//    dir.rmpath(testFolder);
+//    dir.mkpath(testFolder);
+//    dir.cd(testFolder);
 
     app.setAttribute(Qt::AA_Use96Dpi, true);
     TestMain tc;

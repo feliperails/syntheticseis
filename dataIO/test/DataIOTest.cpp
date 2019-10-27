@@ -7,6 +7,7 @@
 
 #include <QCryptographicHash>
 #include <QFile>
+#include <QTextStream>
 #include <QTime>
 
 namespace{
@@ -117,6 +118,31 @@ QByteArray calculateSH1Hash(const QString& fileName)
     return hash.result();
 }
 
+bool compareFiles(const QString& firstFilename, const QString& secondFilename)
+{
+    QFile file01(firstFilename);
+    QFile file02(secondFilename);
+
+    if(!(file01.open(QFile::ReadOnly) && file02.open(QFile::ReadOnly))){
+        return false;
+    }
+
+    QTextStream stream01(&file01);
+    QTextStream stream02(&file02);
+
+    while(!(stream01.atEnd() && stream02.atEnd())){
+
+        const QString line01 = stream01.readLine();
+        const QString line02 = stream02.readLine();
+
+        if (line01 != line02) {
+            return false;
+        }
+    }
+
+    return stream01.atEnd() && stream02.atEnd();
+}
+
 }
 
 TEST(DataIOTest, EclipseGridWriterTest)
@@ -132,8 +158,6 @@ TEST(DataIOTest, EclipseGridWriterTest)
     invertseis::dataIO::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
     EXPECT_TRUE(writer.write(eclipseGrid));
 
-    const auto originalFileSH1Hash = calculateSH1Hash(ECLIPSEGRID_SMALL_FILENAME);
-    const auto writtenFileSH1Hash = calculateSH1Hash(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
-    EXPECT_EQ(originalFileSH1Hash, writtenFileSH1Hash);
+    EXPECT_TRUE(compareFiles(ECLIPSEGRID_SMALL_FILENAME, ECLIPSEGRID_SMALL_OUTPUT_FILENAME));
 }
 

@@ -86,21 +86,21 @@ TEST(DataIOTest, EclipseGridReaderTest)
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 
-//TEST(DataIOTest, EclipseGridReaderPerformanceTest)
-//{
-//    using namespace  invertseis::dataIO;
-//    using namespace  invertseis::domain;
+TEST(DataIOTest, EclipseGridReaderPerformanceTest)
+{
+    using namespace  invertseis::dataIO;
+    using namespace  invertseis::domain;
 
-//    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
-//    bool ok = false;
-//    QTime time;
-//    time.start();
-//    reader.read(&ok);
+    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
+    bool ok = false;
+    QTime time;
+    time.start();
+    reader.read(&ok);
 
-//    std::cout << "Tempo gasto: " << time.elapsed() << std::endl;
+    std::cout << "Tempo gasto: " << time.elapsed() << std::endl;
 
-//    ASSERT_TRUE(ok);
-//}
+    ASSERT_TRUE(ok);
+}
 
 namespace {
 

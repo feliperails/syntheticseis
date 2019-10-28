@@ -27,7 +27,7 @@ set(CMAKE_AUTOUIC ON)
 #add_subdirectory(widgets)
 #add_subdirectory(app)
 
-find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui Test)
+find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui Test DataVisualization)
 find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
 #find_package(GMock REQUIRED)
@@ -94,6 +94,8 @@ add_library(InvertSeisLibrary
     # gui
     gui/src/Gui.h
     gui/src/Gui.cpp
+    gui/src/GuiConstants.h
+    gui/src/GuiConstants.cpp
     gui/src/MainWindow.cpp
     gui/src/MainWindow.cpp
     gui/src/MainWindow.ui
@@ -107,6 +109,7 @@ add_library(InvertSeisLibrary
     # widgets
     widgets/src/Widgets.h
     widgets/src/Widgets.cpp
+    widgets/src/EclipseGridView.cpp
     )
 
 add_executable(InvertSeis
@@ -159,6 +162,7 @@ generate_export_header(InvertSeisLibrary BASE_NAME InvertSeis)
 target_link_libraries(InvertSeisLibrary
     PUBLIC Qt5::Core
     PUBLIC Qt5::Gui
+    PUBLIC Qt5::DataVisualization
     PUBLIC Qt5::Widgets)
 
 target_link_libraries(InvertSeis
@@ -172,6 +176,7 @@ target_link_libraries(InvertSeisMock
     PUBLIC Qt5::Gui
     PUBLIC Qt5::Widgets
     PUBLIC Qt5::Test
+    PUBLIC Qt5::DataVisualization
     PUBLIC InvertSeisLibrary
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock

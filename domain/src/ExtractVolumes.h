@@ -32,7 +32,7 @@ public:
 class ExtractVolumes
 {
 public:
-    static std::vector<Volume> extractFrom(const invertseis::domain::EclipseGrid& eclipseGrid);
+    static std::vector<Volume> extractFirstLayerFrom(const invertseis::domain::EclipseGrid& eclipseGrid);
 };
 
 } // namespace domain

@@ -3,7 +3,7 @@
 namespace invertseis {
 namespace domain {
 
-std::vector<Volume> ExtractVolumes::extractFrom(const invertseis::domain::EclipseGrid& eclipseGrid)
+std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const invertseis::domain::EclipseGrid& eclipseGrid)
 {
     const size_t volumeCount = eclipseGrid.numberOfCellsInX() * eclipseGrid.numberOfCellsInY();
 

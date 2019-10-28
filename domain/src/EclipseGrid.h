@@ -10,7 +10,7 @@
 namespace invertseis {
 namespace domain {
 
-class EclipseGrid : public data::DomainObject
+class EclipseGrid : public invertseis::data::DomainObject
 {
 public:
     EclipseGrid();

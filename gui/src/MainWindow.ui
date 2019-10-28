@@ -20,19 +20,9 @@
      <x>0</x>
      <y>0</y>
      <width>953</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuArquivo">
-    <property name="title">
-     <string>Arquivo</string>
-    </property>
-    <addaction name="actionAbrir"/>
-    <addaction name="actionSalvar"/>
-    <addaction name="separator"/>
-    <addaction name="actionSair"/>
-   </widget>
-   <addaction name="menuArquivo"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">

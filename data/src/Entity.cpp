@@ -23,7 +23,7 @@ EntityPrivate::EntityPrivate(Entity *q,
                              std::shared_ptr<DomainObject> domainObject,
                              const QString& name)
     : q_ptr(q)
-    , m_domainObject(std::move(domainObject))
+    , m_domainObject(domainObject)
     , m_name(name)
     , m_uuid(uuid)
 {

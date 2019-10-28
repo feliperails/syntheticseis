@@ -3,14 +3,12 @@
 
 #include <QMainWindow>
 
-namespace Ui {
-class MainWindow;
-}
-
 namespace invertseis {
 namespace gui {
 
-class MainWindow: public QMainWindow
+class MainWindowPrivate;
+
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
@@ -18,10 +16,15 @@ public:
     explicit MainWindow(QWidget* parent);
     ~MainWindow();
 
+    QVector<QMenu*> menus() const;
+
+    QMenu* menu(const QString& menuTitle) const;
+
     //void setWelcomeWidget(std::function<void(QWidget*)> invoker);
 
 private:
-    Ui::MainWindow* m_ui;
+    Q_DECLARE_PRIVATE(MainWindow)
+    MainWindowPrivate* d_ptr;
 };
 
 } // namespace gui

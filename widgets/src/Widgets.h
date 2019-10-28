@@ -7,6 +7,7 @@ namespace widgets {
 class Widgets
 {
 public:
+    Widgets();
 };
 
 } // namespace widgets

@@ -1,42 +1,52 @@
 #include "LithologyDictionary.h"
 
 #include "Lithology.h"
+#include <QVector>
 
 namespace syntheticSeismic {
 namespace domain {
 
-LithologyDictionary::LithologyDictionary(syntheticSeismic::data::EntityManager& entityManager)
-    : m_entityManager(entityManager)
-{    
+const QVector<Lithology> &LithologyDictionary::lithologies() const
+{
+    return m_lithologies;
 }
 
-QLinkedList<data::Entity*> LithologyDictionary::lithologyEntities() const
+const Lithology& LithologyDictionary::lithology(const int lithologyId) const
 {
-    return m_entityManager.entities<Lithology>();
-}
-
-data::Entity* LithologyDictionary::lithologyEntity(const int lithologyId) const
-{
-    auto list = m_entityManager.entities<Lithology>();
-    for(data::Entity* entity : list){
-        if(entity->domainObject<Lithology>()->id() == lithologyId){
-            return entity;
+    for(const Lithology& litho : m_lithologies){
+        if(litho.id() == lithologyId){
+            return litho;
         }
     }
 
-    return nullptr;
+    return m_invalidLithology;
 }
 
-data::Entity* LithologyDictionary::lithologyEntity(const QString& lithologyName) const
+const Lithology& LithologyDictionary::lithology(const QString& lithologyName) const
 {
-    auto list = m_entityManager.entities<Lithology>();
-    for(data::Entity* entity : list){
-        if(entity->name() == lithologyName){
-            return entity;
+    for(const Lithology& litho : m_lithologies){
+        if(litho.name() == lithologyName){
+            return litho;
         }
     }
 
-    return nullptr;
+    return m_invalidLithology;
+}
+
+int LithologyDictionary::addLithology(const int id, const QString& name)
+{
+    if (id < 0 || name.isEmpty()) {
+        return -1;
+    }
+
+    for(const Lithology& litho : m_lithologies){
+        if(litho.id() == id || litho.name() == name){
+            return -1;
+        }
+    }
+
+    m_lithologies.push_back(Lithology(id, name));
+    return m_lithologies.size() - 1;
 }
 
 }

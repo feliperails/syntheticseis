@@ -1,7 +1,5 @@
 #pragma once
 
-#include "data/src/DomainObject.h"
-
 #include <vector>
 
 namespace syntheticSeismic {
@@ -24,7 +22,7 @@ private:
     int m_lithologyId;
 };
 
-class RegularGrid : public syntheticSeismic::data::DomainObject
+class RegularGrid
 {
 public:
     RegularGrid(const size_t layerCount, const size_t rowCount, const size_t columnCount);

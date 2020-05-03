@@ -1,6 +1,6 @@
 #include "DomainObject.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 DomainObject::~DomainObject()

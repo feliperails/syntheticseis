@@ -3,7 +3,7 @@
 #include <limits>
 #include <QtGlobal>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace geometry {
 
 namespace{

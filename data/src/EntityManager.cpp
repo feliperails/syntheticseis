@@ -2,7 +2,7 @@
 
 #include <QSharedPointer>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityManagerPrivate

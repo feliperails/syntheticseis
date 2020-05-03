@@ -10,7 +10,7 @@
 
 #include <array>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Point3D
@@ -30,8 +30,8 @@ public:
 class ExtractVolumes
 {
 public:
-    static std::vector<Volume> extractFirstLayerFrom(const invertseis::domain::EclipseGrid& eclipseGrid);
+    static std::vector<Volume> extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid);
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

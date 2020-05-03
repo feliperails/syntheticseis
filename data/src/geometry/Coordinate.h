@@ -1,6 +1,6 @@
 #pragma once
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace geometry {
 
 class Coordinate
@@ -26,4 +26,4 @@ private:
 };
 
 } // namespace geometry
-} // namespace invertseis
+} // namespace syntheticSeismic

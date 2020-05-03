@@ -5,7 +5,7 @@
 
 TEST(DataTest, EntityTest)
 {
-    using namespace invertseis::data;
+    using namespace syntheticSeismic::data;
     Entity e1(QUuid::createUuid(), std::shared_ptr<FirstObjectMock>(), QString("e1"));
     ASSERT_FALSE(e1.domainObject());
     ASSERT_TRUE(!e1.name().isEmpty());
@@ -27,7 +27,7 @@ TEST(DataTest, EntityTest)
 
 TEST(DataTest, EntityManagerTest)
 {
-    using namespace invertseis::data;
+    using namespace syntheticSeismic::data;
     EntityManager em;
     EXPECT_TRUE(em.entities().isEmpty());
     EXPECT_FALSE(em.createEntity(QUuid(), QString()));

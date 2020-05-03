@@ -5,7 +5,7 @@
 #include <QSet>
 #include <QLinkedList>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityManagerPrivate;
@@ -48,4 +48,4 @@ private:
 };
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic

@@ -1,9 +1,9 @@
-#ifndef INC_INVERTSEIS_DATA_DOMAINOBJECTMOCK_H
-#define INC_INVERTSEIS_DATA_DOMAINOBJECTMOCK_H
+#ifndef INC_syntheticSeismic_DATA_DOMAINOBJECTMOCK_H
+#define INC_syntheticSeismic_DATA_DOMAINOBJECTMOCK_H
 
 #include <data/src/DomainObject.h>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class FirstObjectMock : public data::DomainObject
@@ -19,5 +19,5 @@ public:
 };
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic
 #endif

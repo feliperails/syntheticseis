@@ -6,10 +6,10 @@
 
 #include <QVector>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
-class EclipseGrid : public invertseis::data::DomainObject
+class EclipseGrid : public syntheticSeismic::data::DomainObject
 {
 public:
     EclipseGrid();
@@ -20,7 +20,7 @@ public:
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
-                const QVector<invertseis::geometry::Coordinate>& coordinates,
+                const QVector<syntheticSeismic::geometry::Coordinate>& coordinates,
                 const QVector<double>& zCoordinates,
                 const QVector<int>& lithologyIds);
 
@@ -38,10 +38,10 @@ private:
     size_t m_numberOfCellsInX;
     size_t m_numberOfCellsInY;
     size_t m_numberOfCellsInZ;
-    QVector<invertseis::geometry::Coordinate> m_coordinates;
+    QVector<syntheticSeismic::geometry::Coordinate> m_coordinates;
     QVector<double> m_zValues;
     QVector<int> m_lithologyIds;
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

@@ -20,11 +20,11 @@ const QLatin1String ECLIPSEGRID_BIG_OUTPUT_FILENAME = QLatin1String("EclipseGrid
 
 TEST(DataIOTest, EclipseGridReaderTest)
 {
-    using namespace  invertseis::dataIO;
-    using namespace  invertseis::domain;
-    using namespace  invertseis::geometry;
+    using namespace  syntheticSeismic::dataIO;
+    using namespace  syntheticSeismic::domain;
+    using namespace  syntheticSeismic::geometry;
 
-    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
+    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     bool ok = false;
     const EclipseGrid eg = reader.read(&ok);
 
@@ -88,10 +88,10 @@ TEST(DataIOTest, EclipseGridReaderTest)
 
 TEST(DataIOTest, EclipseGridReaderPerformanceTest)
 {
-    using namespace  invertseis::dataIO;
-    using namespace  invertseis::domain;
+    using namespace  syntheticSeismic::dataIO;
+    using namespace  syntheticSeismic::domain;
 
-    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
+    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
     bool ok = false;
     QTime time;
     time.start();
@@ -147,15 +147,15 @@ bool compareFiles(const QString& firstFilename, const QString& secondFilename)
 
 TEST(DataIOTest, EclipseGridWriterTest)
 {
-    using namespace  invertseis::dataIO;
-    using namespace  invertseis::domain;
+    using namespace  syntheticSeismic::dataIO;
+    using namespace  syntheticSeismic::domain;
 
-    invertseis::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
+    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     bool ok = false;
-    invertseis::domain::EclipseGrid eclipseGrid = reader.read(&ok);
+    syntheticSeismic::domain::EclipseGrid eclipseGrid = reader.read(&ok);
     ASSERT_TRUE(ok);
 
-    invertseis::dataIO::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
+    syntheticSeismic::dataIO::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
     EXPECT_TRUE(writer.write(eclipseGrid));
 
     EXPECT_TRUE(compareFiles(ECLIPSEGRID_SMALL_FILENAME, ECLIPSEGRID_SMALL_OUTPUT_FILENAME));

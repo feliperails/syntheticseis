@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 file(STRINGS "version.txt" VERSION_STRING)
 
-project (InvertSeis LANGUAGES CXX VERSION ${VERSION_STRING})
+project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
 #include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/FindGMock.cmake)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
@@ -11,7 +11,7 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
 endif()
 
-set(INVERTSEIS_ROOT ${CMAKE_INSTALL_PREFIX})
+set(SyntheticSeismic_ROOT ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOMOC ON)
@@ -27,7 +27,7 @@ include_directories(${GTEST_INCLUDE_DIR})
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-add_library(InvertSeis SHARED
+add_library(SyntheticSeismic SHARED
 
     # data
     data/src/Facade.h
@@ -72,7 +72,7 @@ add_library(InvertSeis SHARED
     storage/src/writer/SEGYWriter.cpp
     )
 
-add_library(InvertSeisMock
+add_library(SyntheticSeismicMock
     # data
     data/mock/DataMock.cpp
     data/mock/DomainObjectMock.cpp
@@ -84,7 +84,7 @@ add_library(InvertSeisMock
     storage/mock/StorageMock.cpp
     )
 
-add_executable(InvertSeisTest
+add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
     data/test/DataTest.cpp
     domain/test/DomainTest.cpp
@@ -96,29 +96,29 @@ add_executable(InvertSeisTest
 #    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .
 #    )
 
-#add_library(InvertSeisCoreTest SHARED test/CoreTest.cpp)
+#add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
-generate_export_header(InvertSeis BASE_NAME InvertSeis)
+generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
-target_link_libraries(InvertSeis
+target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core)
 
-#target_link_libraries(InvertSeis
+#target_link_libraries(SyntheticSeismic
 #    PUBLIC Qt5::Core
-#    PUBLIC InvertSeis)
+#    PUBLIC SyntheticSeismic)
 
-target_link_libraries(InvertSeisMock
+target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
-    PUBLIC InvertSeis
+    PUBLIC SyntheticSeismic
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )
 
-target_link_libraries(InvertSeisTest
+target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
-    PUBLIC InvertSeis
-    PUBLIC InvertSeisMock
+    PUBLIC SyntheticSeismic
+    PUBLIC SyntheticSeismicMock
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )
@@ -126,7 +126,7 @@ target_link_libraries(InvertSeisTest
 
 
 if(WIN32)
-    target_compile_definitions(InvertSeisTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
+    target_compile_definitions(SyntheticSeismicTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
 
     include(GetPrerequisites)
 
@@ -138,15 +138,15 @@ if(WIN32)
 
     message(STATUS "SEARCH_PATHS: " ${_search_paths})
 
-    add_custom_command(TARGET InvertSeisTest
+    add_custom_command(TARGET SyntheticSeismicTest
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
         #COMMAND copy_if_different
-        -DTARGET_EXEC_NAME=InvertSeisTest.exe
+        -DTARGET_EXEC_NAME=SyntheticSeismicTest.exe
         -DTARGET_EXEC_DIR=${CMAKE_BINARY_DIR}/bin
         -DPREREQUISITES_DEST_DIR=${CMAKE_BINARY_DIR}/bin
         -DSEARCH_PATHS=${_search_paths}
-        -DTARGET_LOCAL_DEPS=$<TARGET_FILE:InvertSeisTest>
+        -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
 
 endif()
@@ -164,8 +164,8 @@ file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" D
 enable_testing()
 
 add_test(
-    NAME InvertSeisTest
-    COMMAND InvertSeisTest
+    NAME SyntheticSeismicTest
+    COMMAND SyntheticSeismicTest
     )
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/CPackConfig.cmake)

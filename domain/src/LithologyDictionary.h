@@ -5,7 +5,7 @@
 
 #include <QLinkedList>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Lithology;
@@ -21,8 +21,8 @@ public:
     data::Entity* lithologyEntity(const QString& lithologyName) const;
 
 private:
-    invertseis::data::EntityManager& m_entityManager;
+    syntheticSeismic::data::EntityManager& m_entityManager;
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

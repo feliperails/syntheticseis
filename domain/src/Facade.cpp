@@ -6,7 +6,7 @@
 
 #include <QPointer>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 namespace {

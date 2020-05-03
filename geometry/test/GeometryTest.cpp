@@ -8,7 +8,7 @@ const double LIMIT = -std::numeric_limits<double>::max();
 
 TEST(GeometryTest, CoordinateTest)
 {
-    using namespace  invertseis::geometry;
+    using namespace  syntheticSeismic::geometry;
 
     Coordinate coordinate;
 

@@ -1,6 +1,6 @@
 #include "RegularGrid.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 Cell::Cell()

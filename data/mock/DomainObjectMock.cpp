@@ -1,6 +1,6 @@
 #include "DomainObjectMock.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 FirstObjectMock::FirstObjectMock()
@@ -13,4 +13,4 @@ SecondObjectMock::SecondObjectMock()
 
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic

@@ -2,7 +2,7 @@
 
 #include <QObject>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace  storage {
 
 class Facade : public QObject
@@ -15,5 +15,5 @@ public:
 };
 
 } // namespace storage
-} // namespace invertseis
+} // namespace syntheticSeismic
 

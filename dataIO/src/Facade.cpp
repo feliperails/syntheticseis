@@ -1,7 +1,7 @@
 #include "Facade.h"
 #include <QPointer>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 namespace {

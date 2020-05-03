@@ -1,7 +1,7 @@
 #pragma once
 #include <domain/src/EclipseGrid.h>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 class EclipseGridWriter
@@ -9,7 +9,7 @@ class EclipseGridWriter
 public:
     explicit EclipseGridWriter(const QString& path);
 
-    bool write(const invertseis::domain::EclipseGrid& eclipseGrid) const;
+    bool write(const syntheticSeismic::domain::EclipseGrid& eclipseGrid) const;
 
     QString path() const;
 
@@ -18,4 +18,4 @@ private:
 };
 
 } // namespace dataio
-} // namespace invertseis
+} // namespace syntheticSeismic

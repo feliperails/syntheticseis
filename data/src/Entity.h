@@ -6,7 +6,7 @@
 #include <QObject>
 #include <QUuid>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityPrivate;
@@ -48,4 +48,4 @@ private:
 };
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic

@@ -2,7 +2,7 @@
 
 #include <QPointer>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 namespace {

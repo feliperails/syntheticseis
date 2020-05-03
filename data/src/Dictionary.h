@@ -4,7 +4,7 @@
 
 #include "DomainObject.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class Dictionary : public DomainObject
@@ -14,5 +14,5 @@ public:
 };
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic
 

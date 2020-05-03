@@ -4,7 +4,7 @@
 
 #include "EntityManager.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class Facade : public QObject
@@ -21,4 +21,4 @@ private:
 };
 
 } // namespace data
-} // namespace invertseis
+} // namespace syntheticSeismic

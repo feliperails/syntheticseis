@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 namespace {
@@ -24,7 +24,7 @@ EclipseGridWriter::EclipseGridWriter(const QString& path)
 {
 }
 
-bool EclipseGridWriter::write(const invertseis::domain::EclipseGrid& eclipseGrid) const
+bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclipseGrid) const
 {
     if(m_path.isEmpty()){
         return false;
@@ -39,7 +39,7 @@ bool EclipseGridWriter::write(const invertseis::domain::EclipseGrid& eclipseGrid
     const size_t numberOfCellsInY = eclipseGrid.numberOfCellsInY();
     const size_t numberOfCellsInZ = eclipseGrid.numberOfCellsInZ();
 
-    const QVector<invertseis::geometry::Coordinate>& coordinates = eclipseGrid.coordinates();
+    const QVector<syntheticSeismic::geometry::Coordinate>& coordinates = eclipseGrid.coordinates();
     const QVector<double>& zCoordinates = eclipseGrid.zCoordinates();
     const QVector<int>& lithologyIds = eclipseGrid.lithologyIds();
 
@@ -65,7 +65,7 @@ bool EclipseGridWriter::write(const invertseis::domain::EclipseGrid& eclipseGrid
     stream << NEW_LINE;
     QString currentSeparator = SINGLE_SPACE_SEPARATOR;
     for(int i = 0, size = coordinates.size(); i < size; ++i){
-        const invertseis::geometry::Coordinate& coord =  coordinates[i];
+        const syntheticSeismic::geometry::Coordinate& coord =  coordinates[i];
         stream << coord.x() << currentSeparator;
         stream << coord.y() << currentSeparator;
         stream << coord.z();

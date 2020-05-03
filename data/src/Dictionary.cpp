@@ -1,6 +1,6 @@
 #include "Dictionary.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 Dictionary::~Dictionary()

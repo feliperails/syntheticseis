@@ -1,11 +1,11 @@
-#ifndef INC_INVERTSEIS_COREDEFS_H
-#define INC_INVERTSEIS_COREDEFS_H
+#ifndef INC_syntheticSeismic_COREDEFS_H
+#define INC_syntheticSeismic_COREDEFS_H
 
 
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace core {
 
 } // namespace core
-} // namespace invertseis
+} // namespace syntheticSeismic
 #endif

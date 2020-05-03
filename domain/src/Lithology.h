@@ -2,7 +2,7 @@
 
 #include "data/src/DomainObject.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Lithology : public data::DomainObject
@@ -19,4 +19,4 @@ private:
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

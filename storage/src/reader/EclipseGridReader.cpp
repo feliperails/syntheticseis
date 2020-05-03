@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 namespace {
@@ -24,7 +24,7 @@ EclipseGridReader::EclipseGridReader(const QString& path)
 {
 }
 
-invertseis::domain::EclipseGrid EclipseGridReader::read(QString& error) const
+syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) const
 {
     error.clear();
 
@@ -43,7 +43,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(QString& error) const
     size_t numberOfCellsInY = 0;
     size_t numberOfCellsInZ = 0;
 
-    QVector<invertseis::geometry::Coordinate> coordinates;
+    QVector<syntheticSeismic::geometry::Coordinate> coordinates;
     QVector<double> zValues;
     QVector<int> lithologyIds;
 
@@ -144,7 +144,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(QString& error) const
                     return {};
                 }
 
-                coordinates.push_back(invertseis::geometry::Coordinate(x, y, z));
+                coordinates.push_back(syntheticSeismic::geometry::Coordinate(x, y, z));
                 if(!sectionEnded){
                     line = stream.readLine();
                     ++row;
@@ -247,7 +247,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(QString& error) const
         }
     }
 
-    return invertseis::domain::EclipseGrid(numberOfCellsInX,
+    return syntheticSeismic::domain::EclipseGrid(numberOfCellsInX,
                                            numberOfCellsInY,
                                            numberOfCellsInZ,
                                            coordinates,

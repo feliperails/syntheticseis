@@ -2,7 +2,7 @@
 
 #include "Lithology.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 double SeismicWaveVelocityDictionary::velocity(const data::Entity *lithology) const

@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Facade: public QObject
@@ -28,4 +28,4 @@ private:
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

@@ -5,7 +5,7 @@
 
 #include <QHash>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Lithology;
@@ -24,4 +24,4 @@ private:
 };
 
 } // namespace domain
-} // namespace invertseis
+} // namespace syntheticSeismic

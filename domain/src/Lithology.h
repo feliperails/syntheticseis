@@ -1,7 +1,6 @@
-#ifndef INC_INVERTSEIS_DOMAIN_LITHOLOGY_H
-#define INC_INVERTSEIS_DOMAIN_LITHOLOGY_H
+#pragma once
 
-#include <data/src/DomainObject.h>
+#include "data/src/DomainObject.h"
 
 namespace invertseis {
 namespace domain {
@@ -21,4 +20,3 @@ private:
 
 } // namespace domain
 } // namespace invertseis
-#endif

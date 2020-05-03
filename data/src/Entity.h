@@ -1,5 +1,4 @@
-#ifndef INC_INVERTSEIS_DATA_ENTITY_H
-#define INC_INVERTSEIS_DATA_ENTITY_H
+#pragma once
 
 #include "DomainObject.h"
 
@@ -50,4 +49,3 @@ private:
 
 } // namespace data
 } // namespace invertseis
-#endif

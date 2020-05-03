@@ -1,5 +1,4 @@
-#ifndef INC_INVERTSEIS_DATA_ENTITYMANAGER_H
-#define INC_INVERTSEIS_DATA_ENTITYMANAGER_H
+#pragma once
 
 #include "Entity.h"
 
@@ -50,4 +49,3 @@ private:
 
 } // namespace data
 } // namespace invertseis
-#endif

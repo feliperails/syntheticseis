@@ -1,9 +1,8 @@
-#ifndef INC_INVERTSEIS_DOMAIN_ECLIPSEGRID_H
-#define INC_INVERTSEIS_DOMAIN_ECLIPSEGRID_H
+#pragma once
 
-#include <geometry/src/Coordinate.h>
+#include "data/src/geometry/Coordinate.h"
 
-#include <data/src/DomainObject.h>
+#include "data/src/DomainObject.h"
 
 #include <QVector>
 
@@ -46,4 +45,3 @@ private:
 
 } // namespace domain
 } // namespace invertseis
-#endif

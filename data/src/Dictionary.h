@@ -1,5 +1,4 @@
-#ifndef INC_INVERTSEIS_DICTIONARY_H
-#define INC_INVERTSEIS_DICTIONARY_H
+#pragma once
 
 #include <QObject>
 
@@ -16,4 +15,4 @@ public:
 
 } // namespace data
 } // namespace invertseis
-#endif
+

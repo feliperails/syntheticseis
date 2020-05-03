@@ -1,5 +1,4 @@
-#ifndef INC_INVERTSEIS_DATAIO_ECLIPSEGRIDREADER_H
-#define INC_INVERTSEIS_DATAIO_ECLIPSEGRIDREADER_H
+#pragma once
 
 #include <domain/src/EclipseGrid.h>
 
@@ -21,6 +20,4 @@ private:
 
 } // namespace dataio
 } // namespace invertseis
-#endif
-
 

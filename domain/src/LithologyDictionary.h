@@ -1,8 +1,7 @@
-#ifndef INC_INVERTSEIS_DOMAIN_LITHOLOGYDICTIONARY_H
-#define INC_INVERTSEIS_DOMAIN_LITHOLOGYDICTIONARY_H
+#pragma once
 
-#include <data/src/Dictionary.h>
-#include <data/src/EntityManager.h>
+#include "data/src/Dictionary.h"
+#include "data/src/EntityManager.h"
 
 #include <QLinkedList>
 
@@ -27,4 +26,3 @@ private:
 
 } // namespace domain
 } // namespace invertseis
-#endif

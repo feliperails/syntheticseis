@@ -1,9 +1,8 @@
-#ifndef INC_INVERTSEIS_DOMAIN_REGULARGRID_H
-#define INC_INVERTSEIS_DOMAIN_REGULARGRID_H
+#pragma once
 
-#include <data/src/DomainObject.h>
+#include "data/src/DomainObject.h"
 
-#include <QVector>
+#include <vector>
 
 namespace invertseis {
 namespace domain {
@@ -42,4 +41,3 @@ private:
 
 } // namespace domain
 } // namespace invertseis
-#endif

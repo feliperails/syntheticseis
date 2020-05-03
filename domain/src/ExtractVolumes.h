@@ -1,9 +1,7 @@
-#ifndef INC_INVERTSEIS_DOMAIN_EXTRACTVOLUMES_H
-#define INC_INVERTSEIS_DOMAIN_EXTRACTVOLUMES_H
+#pragma once
 
-#include <geometry/src/Coordinate.h>
-
-#include <data/src/DomainObject.h>
+#include "data/src/geometry/Coordinate.h"
+#include "data/src/DomainObject.h"
 
 #include <QVector>
 
@@ -37,4 +35,3 @@ public:
 
 } // namespace domain
 } // namespace invertseis
-#endif

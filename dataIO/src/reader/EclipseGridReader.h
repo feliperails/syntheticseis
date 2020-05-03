@@ -1,9 +1,8 @@
-#ifndef INC_INVERTSEIS_DATAIO_ECLIPSEGRIDREADER_H
-#define INC_INVERTSEIS_DATAIO_ECLIPSEGRIDREADER_H
+#pragma once
 
 #include <domain/src/EclipseGrid.h>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 class EclipseGridReader
@@ -11,7 +10,7 @@ class EclipseGridReader
 public:
     explicit EclipseGridReader(const QString& path);
 
-    invertseis::domain::EclipseGrid read(bool *ok = nullptr) const;
+    syntheticSeismic::domain::EclipseGrid read(bool *ok = nullptr) const;
 
     QString path() const;
 
@@ -20,7 +19,5 @@ private:
 };
 
 } // namespace dataio
-} // namespace invertseis
-#endif
-
+} // namespace syntheticSeismic
 

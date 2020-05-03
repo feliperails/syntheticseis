@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace dataIO {
 
 namespace {
@@ -24,24 +24,24 @@ EclipseGridReader::EclipseGridReader(const QString& path)
 {
 }
 
-invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
+syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
 {
     if(m_path.isEmpty()){
         if(ok){ *ok = false; }
-        return invertseis::domain::EclipseGrid();
+        return syntheticSeismic::domain::EclipseGrid();
     }
 
     QFile file(m_path);
     if(!file.open(QFile::ReadOnly)){
         if(ok){ *ok = false; }
-        return invertseis::domain::EclipseGrid();
+        return syntheticSeismic::domain::EclipseGrid();
     }
 
     size_t numberOfCellsInX = 0;
     size_t numberOfCellsInY = 0;
     size_t numberOfCellsInZ = 0;
 
-    QVector<invertseis::geometry::Coordinate> coordinates;
+    QVector<syntheticSeismic::geometry::Coordinate> coordinates;
     QVector<double> zValues;
     QVector<int> lithologyIds;
 
@@ -142,7 +142,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
                     return {};
                 }
 
-                coordinates.push_back(invertseis::geometry::Coordinate(x, y, z));
+                coordinates.push_back(syntheticSeismic::geometry::Coordinate(x, y, z));
                 if(!sectionEnded){
                     line = stream.readLine();
                     ++row;
@@ -249,7 +249,7 @@ invertseis::domain::EclipseGrid EclipseGridReader::read(bool *ok) const
         *ok = true;
     }
 
-    return invertseis::domain::EclipseGrid(numberOfCellsInX,
+    return syntheticSeismic::domain::EclipseGrid(numberOfCellsInX,
                                            numberOfCellsInY,
                                            numberOfCellsInZ,
                                            coordinates,

@@ -1,6 +1,6 @@
 #include "EclipseGrid.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 EclipseGrid::EclipseGrid()
@@ -57,7 +57,7 @@ size_t EclipseGrid::numberOfCellsInZ() const
     return m_numberOfCellsInZ;
 }
 
-const QVector<invertseis::geometry::Coordinate>& EclipseGrid::coordinates() const
+const QVector<syntheticSeismic::geometry::Coordinate>& EclipseGrid::coordinates() const
 {
     return m_coordinates;
 }

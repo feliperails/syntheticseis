@@ -1,9 +1,8 @@
-#ifndef INC_INVERTSEIS_DOMAINOBJECT_H
-#define INC_INVERTSEIS_DOMAINOBJECT_H
+#pragma once
 
 #include <QObject>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class DomainObject
@@ -13,5 +12,4 @@ public:
 };
 
 } // namespace data
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

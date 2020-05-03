@@ -1,6 +1,6 @@
 #include "SeismicTraces.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 }

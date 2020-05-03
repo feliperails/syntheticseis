@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 file(STRINGS "version.txt" VERSION_STRING)
 
-project (InvertSeis LANGUAGES CXX VERSION ${VERSION_STRING})
+project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
 #include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/FindGMock.cmake)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
@@ -11,45 +11,27 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
 endif()
 
-set(INVERTSEIS_ROOT ${CMAKE_INSTALL_PREFIX})
+set(SyntheticSeismic_ROOT ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-#add_subdirectory(core)
-#add_subdirectory(storage)
-#add_subdirectory(domain)
-#add_subdirectory(dataIO)
-#add_subdirectory(gui)
-#add_subdirectory(projectManager)
-#add_subdirectory(widgets)
-#add_subdirectory(app)
-
-find_package(Qt5 COMPONENTS REQUIRED Core Widgets Gui Test DataVisualization)
+find_package(Qt5 COMPONENTS REQUIRED Core Test)
 find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
-#find_package(GMock REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIR})
 
-add_library(InvertSeisLibrary
+# FIXME Retirar essa aberração.
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-    # core
-    core/src/Core.h
-    core/src/Core.cpp
-    core/src/CoreDefs.h
-    core/src/MetaClass.h
-    core/src/MetaClass.cpp
+add_library(SyntheticSeismic SHARED
 
-    geometry/src/Geometry.h
-    geometry/src/Geometry.cpp
-    geometry/src/Coordinate.h
-    geometry/src/Coordinate.cpp
-
-    data/src/Data.h
-    data/src/Data.cpp
+    # data
+    data/src/Facade.h
+    data/src/Facade.cpp
     data/src/Dictionary.h
     data/src/Dictionary.cpp
     data/src/Entity.h
@@ -58,14 +40,12 @@ add_library(InvertSeisLibrary
     data/src/EntityManager.cpp
     data/src/DomainObject.h
     data/src/DomainObject.cpp
-
-    # storage
-    storage/src/Storage.h
-    storage/src/Storage.cpp
+    data/src/geometry/Coordinate.h
+    data/src/geometry/Coordinate.cpp
 
     # domain
-    domain/src/Domain.h
-    domain/src/Domain.cpp
+    domain/src/Facade.h
+    domain/src/Facade.cpp
     domain/src/EclipseGrid.h
     domain/src/EclipseGrid.cpp
     domain/src/Lithology.h
@@ -81,114 +61,64 @@ add_library(InvertSeisLibrary
     domain/src/ExtractVolumes.h
     domain/src/ExtractVolumes.cpp
 
-    # dataIO
-    dataIO/src/DataIO.h
-    dataIO/src/DataIO.cpp
-    dataIO/src/reader/EclipseGridReader.h
-    dataIO/src/reader/EclipseGridReader.cpp
-    dataIO/src/writer/EclipseGridWriter.h
-    dataIO/src/writer/EclipseGridWriter.cpp
-    dataIO/src/writer/SEGYWriter.h
-    dataIO/src/writer/SEGYWriter.cpp
-
-    # gui
-    gui/src/Gui.h
-    gui/src/Gui.cpp
-    gui/src/GuiConstants.h
-    gui/src/GuiConstants.cpp
-    gui/src/MainWindow.cpp
-    gui/src/MainWindow.cpp
-    gui/src/MainWindow.ui
-    gui/src/SplashScreen.ui
-    gui/src/images/Images.qrc
-
-    # projectManager
-    projectManager/src/ProjectManager.h
-    projectManager/src/ProjectManager.cpp
-
-    # widgets
-    widgets/src/Widgets.h
-    widgets/src/Widgets.cpp
-    widgets/src/EclipseGridView.cpp
+    # storage
+    storage/src/Facade.h
+    storage/src/Facade.cpp
+    storage/src/reader/EclipseGridReader.h
+    storage/src/reader/EclipseGridReader.cpp
+    storage/src/writer/EclipseGridWriter.h
+    storage/src/writer/EclipseGridWriter.cpp
+    storage/src/writer/SEGYWriter.h
+    storage/src/writer/SEGYWriter.cpp
     )
 
-add_executable(InvertSeis
-    # app
-    app/src/main.cpp
-    )
-
-add_library(InvertSeisMock
-
-    #c ore
-    core/mock/CoreMock.cpp
-
-    # geometry
-    geometry/mock/GeometryMock.cpp
-
-    #data
+add_library(SyntheticSeismicMock
+    # data
     data/mock/DataMock.cpp
     data/mock/DomainObjectMock.cpp
 
-    # dataIO
-    dataIO/mock/DataIOMock.cpp
-
-    #domain
+    # domain
     domain/mock/DomainMock.cpp
 
+    # storage
     storage/mock/StorageMock.cpp
     )
 
-add_executable(InvertSeisTest
+add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
-    core/test/CoreTest.cpp
-    geometry/test/GeometryTest.cpp
     data/test/DataTest.cpp
-    dataIO/test/DataIOTest.cpp
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
     )
-
-#add_library(InvertSeisMock SHARED mock/CoreMock.h mock/CoreMock.cpp)
 
 #install(FILES
 #    CoreExport.h
 #    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .
 #    )
 
-#add_library(InvertSeisCoreTest SHARED test/CoreTest.cpp)
+#add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
-generate_export_header(InvertSeisLibrary BASE_NAME InvertSeis)
+generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
-target_link_libraries(InvertSeisLibrary
-    PUBLIC Qt5::Core
-    PUBLIC Qt5::Gui
-    PUBLIC Qt5::DataVisualization
-    PUBLIC Qt5::Widgets)
+target_link_libraries(SyntheticSeismic
+    PUBLIC Qt5::Core)
 
-target_link_libraries(InvertSeis
-    PUBLIC Qt5::Core
-    PUBLIC Qt5::Gui
-    PUBLIC Qt5::Widgets
-    PUBLIC InvertSeisLibrary)
+#target_link_libraries(SyntheticSeismic
+#    PUBLIC Qt5::Core
+#    PUBLIC SyntheticSeismic)
 
-target_link_libraries(InvertSeisMock
+target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
-    PUBLIC Qt5::Gui
-    PUBLIC Qt5::Widgets
-    PUBLIC Qt5::Test
-    PUBLIC Qt5::DataVisualization
-    PUBLIC InvertSeisLibrary
+    PUBLIC SyntheticSeismic
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )
 
-target_link_libraries(InvertSeisTest
+target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
-    PUBLIC Qt5::Gui
-    PUBLIC Qt5::Widgets
     PUBLIC Qt5::Test
-    PUBLIC InvertSeisLibrary
-    PUBLIC InvertSeisMock
+    PUBLIC SyntheticSeismic
+    PUBLIC SyntheticSeismicMock
     PUBLIC GTest::GTest
     #    PUBLIC GMock::GMock
     )
@@ -196,7 +126,7 @@ target_link_libraries(InvertSeisTest
 
 
 if(WIN32)
-    target_compile_definitions(InvertSeisTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
+    target_compile_definitions(SyntheticSeismicTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
 
     include(GetPrerequisites)
 
@@ -208,15 +138,15 @@ if(WIN32)
 
     message(STATUS "SEARCH_PATHS: " ${_search_paths})
 
-    add_custom_command(TARGET InvertSeisTest
+    add_custom_command(TARGET SyntheticSeismicTest
         POST_BUILD
         COMMAND ${CMAKE_COMMAND}
         #COMMAND copy_if_different
-        -DTARGET_EXEC_NAME=InvertSeisTest.exe
+        -DTARGET_EXEC_NAME=SyntheticSeismicTest.exe
         -DTARGET_EXEC_DIR=${CMAKE_BINARY_DIR}/bin
         -DPREREQUISITES_DEST_DIR=${CMAKE_BINARY_DIR}/bin
         -DSEARCH_PATHS=${_search_paths}
-        -DTARGET_LOCAL_DEPS=$<TARGET_FILE:InvertSeisTest>
+        -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
 
 endif()
@@ -228,14 +158,14 @@ install(FILES README.md
     )
 
 # Arquivo para teste de leitura do EclipseGrid
-file(COPY "${CMAKE_SOURCE_DIR}/dataIO/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
-file(COPY "${CMAKE_SOURCE_DIR}/dataIO/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 
 add_test(
-    NAME InvertSeisTest
-    COMMAND InvertSeisTest
+    NAME SyntheticSeismicTest
+    COMMAND SyntheticSeismicTest
     )
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/CPackConfig.cmake)

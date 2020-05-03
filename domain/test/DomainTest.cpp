@@ -12,8 +12,8 @@
 
 TEST(DomainTest, SeismicWaveVelocityDictionaryTest)
 {
-    using namespace invertseis::domain;
-    using namespace invertseis::data;
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::data;
 
     Entity e1(QUuid::createUuid(), std::make_shared<Lithology>(), QString("e1"));
     Entity e2(QUuid::createUuid(), std::make_shared<Lithology>(), QString("e2"));
@@ -43,8 +43,8 @@ TEST(DomainTest, SeismicWaveVelocityDictionaryTest)
 
 TEST(DomainTest, LithologyDictionaryTest)
 {
-    using namespace invertseis::domain;
-    using namespace invertseis::data;
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::data;
 
     EntityManager entityManager;
     LithologyDictionary dictionary(entityManager);
@@ -71,9 +71,9 @@ TEST(DomainTest, LithologyDictionaryTest)
 
 TEST(DomainTest, EclipseGridTest)
 {
-    using namespace invertseis::domain;
-    using namespace invertseis::data;
-    using namespace invertseis::geometry;
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::data;
+    using namespace syntheticSeismic::geometry;
 
     EclipseGrid eg;
 

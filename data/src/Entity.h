@@ -1,5 +1,4 @@
-#ifndef INC_INVERTSEIS_DATA_ENTITY_H
-#define INC_INVERTSEIS_DATA_ENTITY_H
+#pragma once
 
 #include "DomainObject.h"
 
@@ -7,7 +6,7 @@
 #include <QObject>
 #include <QUuid>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityPrivate;
@@ -49,5 +48,4 @@ private:
 };
 
 } // namespace data
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

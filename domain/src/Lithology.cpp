@@ -1,6 +1,6 @@
 #include "Lithology.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 Lithology::Lithology(const int code)

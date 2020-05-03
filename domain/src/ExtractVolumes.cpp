@@ -1,9 +1,9 @@
 #include "ExtractVolumes.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
-std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const invertseis::domain::EclipseGrid& eclipseGrid)
+std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
 {
     const size_t volumeCount = eclipseGrid.numberOfCellsInX() * eclipseGrid.numberOfCellsInY();
 

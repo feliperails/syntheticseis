@@ -1,9 +1,7 @@
-#ifndef INC_INVERTSEIS_DOMAIN_EXTRACTVOLUMES_H
-#define INC_INVERTSEIS_DOMAIN_EXTRACTVOLUMES_H
+#pragma once
 
-#include <geometry/src/Coordinate.h>
-
-#include <data/src/DomainObject.h>
+#include "data/src/geometry/Coordinate.h"
+#include "data/src/DomainObject.h"
 
 #include <QVector>
 
@@ -12,7 +10,7 @@
 
 #include <array>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Point3D
@@ -32,9 +30,8 @@ public:
 class ExtractVolumes
 {
 public:
-    static std::vector<Volume> extractFirstLayerFrom(const invertseis::domain::EclipseGrid& eclipseGrid);
+    static std::vector<Volume> extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid);
 };
 
 } // namespace domain
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

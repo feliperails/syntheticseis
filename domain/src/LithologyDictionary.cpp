@@ -2,10 +2,10 @@
 
 #include "Lithology.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
-LithologyDictionary::LithologyDictionary(invertseis::data::EntityManager& entityManager)
+LithologyDictionary::LithologyDictionary(syntheticSeismic::data::EntityManager& entityManager)
     : m_entityManager(entityManager)
 {    
 }

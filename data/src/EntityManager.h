@@ -1,12 +1,11 @@
-#ifndef INC_INVERTSEIS_DATA_ENTITYMANAGER_H
-#define INC_INVERTSEIS_DATA_ENTITYMANAGER_H
+#pragma once
 
 #include "Entity.h"
 
 #include <QSet>
 #include <QLinkedList>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityManagerPrivate;
@@ -49,5 +48,4 @@ private:
 };
 
 } // namespace data
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

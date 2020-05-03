@@ -1,12 +1,11 @@
-#ifndef INC_INVERTSEIS_DOMAIN_LITHOLOGYDICTIONARY_H
-#define INC_INVERTSEIS_DOMAIN_LITHOLOGYDICTIONARY_H
+#pragma once
 
-#include <data/src/Dictionary.h>
-#include <data/src/EntityManager.h>
+#include "data/src/Dictionary.h"
+#include "data/src/EntityManager.h"
 
 #include <QLinkedList>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Lithology;
@@ -22,9 +21,8 @@ public:
     data::Entity* lithologyEntity(const QString& lithologyName) const;
 
 private:
-    invertseis::data::EntityManager& m_entityManager;
+    syntheticSeismic::data::EntityManager& m_entityManager;
 };
 
 } // namespace domain
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

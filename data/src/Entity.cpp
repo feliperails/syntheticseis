@@ -1,6 +1,6 @@
 #include "Entity.h"
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace data {
 
 class EntityPrivate

@@ -1,12 +1,11 @@
-#ifndef INC_INVERTSEIS_DOMAIN_SEISMICWAGEVELOCITYTDICTIONARY_H
-#define INC_INVERTSEIS_DOMAIN_SEISMICWAGEVELOCITYTDICTIONARY_H
+#pragma once
 
-#include <data/src/Dictionary.h>
-#include <data/src/Entity.h>
+#include "data/src/Dictionary.h"
+#include "data/src/Entity.h"
 
 #include <QHash>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
 class Lithology;
@@ -25,5 +24,4 @@ private:
 };
 
 } // namespace domain
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

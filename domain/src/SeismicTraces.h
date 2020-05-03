@@ -1,14 +1,13 @@
-#ifndef INC_INVERTSEIS_DOMAIN_SEISMICTRACES_H
-#define INC_INVERTSEIS_DOMAIN_SEISMICTRACES_H
+#pragma once
 
-#include <data/src/DomainObject.h>
+#include "data/src/DomainObject.h"
 
-#include <QVector>
+#include <vector>
 
-namespace invertseis {
+namespace syntheticSeismic {
 namespace domain {
 
-class SeismicTraces : public invertseis::data::DomainObject
+class SeismicTraces : public syntheticSeismic::data::DomainObject
 {
 public:
     typedef std::vector<double> Trace;
@@ -19,5 +18,4 @@ private:
 };
 
 } // namespace domain
-} // namespace invertseis
-#endif
+} // namespace syntheticSeismic

@@ -20,9 +20,10 @@ const QLatin1String ECLIPSEGRID_BIG_OUTPUT_FILENAME = QLatin1String("EclipseGrid
 
 TEST(DataIOTest, EclipseGridReaderTest)
 {
-    using namespace  syntheticSeismic::dataIO;
-    using namespace  syntheticSeismic::domain;
-    using namespace  syntheticSeismic::geometry;
+    using namespace std;
+    using namespace syntheticSeismic::dataIO;
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
 
     syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     QString error;
@@ -34,7 +35,7 @@ TEST(DataIOTest, EclipseGridReaderTest)
     EXPECT_EQ(eg.numberOfCellsInY(), 3);
     EXPECT_EQ(eg.numberOfCellsInZ(), 4);
 
-    const QVector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
+    const vector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
                                               Coordinate(1100.0, 2000.0, 1100.0),
                                               Coordinate(1040.0, 2000.0, 1000.0),
                                               Coordinate(1150.0, 2000.0, 1100.0),
@@ -61,28 +62,28 @@ TEST(DataIOTest, EclipseGridReaderTest)
 
     EXPECT_EQ(eg.coordinates(), coordinates);
 
-    QVector<double> zValues;
+    vector<double> zValues;
     zValues.reserve((24 * 2) * 4); // 4 camadas
 
     // Primeira camada
-    zValues.append(QVector<double>(24, 1000.0));
-    zValues.append(QVector<double>(24, 1100.0));
+    zValues.insert(zValues.end(), 24, 1000.0);
+    zValues.insert(zValues.end(), 24, 1100.0);
 
     // Segunda camada
-    zValues.append(QVector<double>(24, 1100.0));
-    zValues.append(QVector<double>(24, 1200.0));
+    zValues.insert(zValues.end(), 24, 1100.0);
+    zValues.insert(zValues.end(), 24, 1200.0);
 
     // Tereceira camada
-    zValues.append(QVector<double>(24, 1200.0));
-    zValues.append(QVector<double>(24, 1300.0));
+    zValues.insert(zValues.end(), 24, 1200.0);
+    zValues.insert(zValues.end(), 24, 1300.0);
 
     // Quarta camada
-    zValues.append(QVector<double>(24, 1300.0));
-    zValues.append(QVector<double>(24, 1400.0));
+    zValues.insert(zValues.end(), 24, 1300.0);
+    zValues.insert(zValues.end(), 24, 1400.0);
 
     EXPECT_EQ(eg.zCoordinates(), zValues);
 
-    const QVector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
+    const vector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 

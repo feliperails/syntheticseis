@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+using namespace std;
+
 namespace syntheticSeismic {
 namespace dataIO {
 
@@ -43,9 +45,9 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
     size_t numberOfCellsInY = 0;
     size_t numberOfCellsInZ = 0;
 
-    QVector<syntheticSeismic::geometry::Coordinate> coordinates;
-    QVector<double> zValues;
-    QVector<int> lithologyIds;
+    vector<syntheticSeismic::geometry::Coordinate> coordinates;
+    vector<double> zValues;
+    vector<int> lithologyIds;
 
     QTextStream stream(&file);
     int row = 0;
@@ -183,7 +185,10 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                         return {};
                     }
 
-                    zValues.append(QVector<double>(quantity, z));
+                    for (int addIndex = 0; addIndex < quantity; ++addIndex)
+                    {
+                        zValues.push_back(z);
+                    }
                 }else{
                     if(!line.isEmpty()){
 

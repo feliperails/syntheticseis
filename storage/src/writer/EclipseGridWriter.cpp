@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+using namespace std;
+
 namespace syntheticSeismic {
 namespace dataIO {
 
@@ -39,9 +41,9 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
     const size_t numberOfCellsInY = eclipseGrid.numberOfCellsInY();
     const size_t numberOfCellsInZ = eclipseGrid.numberOfCellsInZ();
 
-    const QVector<syntheticSeismic::geometry::Coordinate>& coordinates = eclipseGrid.coordinates();
-    const QVector<double>& zCoordinates = eclipseGrid.zCoordinates();
-    const QVector<int>& lithologyIds = eclipseGrid.lithologyIds();
+    const vector<syntheticSeismic::geometry::Coordinate>& coordinates = eclipseGrid.coordinates();
+    const vector<double>& zCoordinates = eclipseGrid.zCoordinates();
+    const vector<int>& lithologyIds = eclipseGrid.lithologyIds();
 
     QTextStream stream(&file);
 

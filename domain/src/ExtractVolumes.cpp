@@ -1,35 +1,48 @@
 #include "ExtractVolumes.h"
 
+using namespace std;
+
 namespace syntheticSeismic {
 namespace domain {
 
-std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
+vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
 {
     const size_t volumeCount = eclipseGrid.numberOfCellsInX() * eclipseGrid.numberOfCellsInY();
 
-    std::vector<Volume> volumes(volumeCount);
+    vector<Volume> volumes(volumeCount);
 
-    const int verticalSurfaceCount = 2;
+    size_t amountOfVerticalLines = eclipseGrid.numberOfCellsInY();
+    size_t amountOfHorizontalLines = eclipseGrid.numberOfCellsInX();
 
-    // A camada principal é delimitada por duas superficies sobrepostos.
-    //
-    for(int verticalSurface = 0; verticalSurface < verticalSurfaceCount; ++verticalSurface)
+    for (size_t verticalLineIndex = 0; verticalLineIndex < amountOfVerticalLines; ++verticalLineIndex)
     {
-        // Foi multiplicado por quatro pois a primeira face do volume nao estrutura possui quatro pontos.
-        const int initialPointInTheVolume = verticalSurface * 4;
+        for (size_t horizontalLineIndex = 0; horizontalLineIndex < amountOfHorizontalLines; ++horizontalLineIndex)
+        {
+            size_t volumeLinearIndex = horizontalLineIndex + verticalLineIndex * amountOfHorizontalLines;
+            // Pontos da primeira superficie horizontal do volume
+            for (size_t pointIndexSurface = 0; pointIndexSurface <= 3; ++pointIndexSurface)
+            {
+                size_t pointIndex = pointIndexSurface;
+                size_t eclipseGridCoordPointIndex = verticalLineIndex * (amountOfHorizontalLines * 2) + horizontalLineIndex * 2;
 
-        // Índice do volume atual
-        int volumeIndex = 0;
+                auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
+                auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
+                volumes[volumeLinearIndex].m_points[pointIndex].x = coordinate.x();
+                volumes[volumeLinearIndex].m_points[pointIndex].y = coordinate.y();
+                volumes[volumeLinearIndex].m_points[pointIndex].z = coordinate.z();
+            }
+            // Pontos da segunda superficie horizontal do volume
+            for (size_t pointIndexSurface = 0; pointIndexSurface <= 3; ++pointIndexSurface)
+            {
+                size_t pointIndex = 4 + pointIndexSurface;
+                size_t eclipseGridCoordPointIndex = verticalLineIndex * ((amountOfHorizontalLines + 1) * 2) + horizontalLineIndex * 2;
 
-        // Ponto no volume
-        int indexPointInTheVolume = initialPointInTheVolume;
-
-        // ????
-        bool completeVolumePrevious = false;
-
-        //
-        for(int i = verticalSurface, size = eclipseGrid.coordinates().size(); i < size; ++i){
-
+                auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
+                auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
+                volumes[volumeLinearIndex].m_points[pointIndex].x = coordinate.x();
+                volumes[volumeLinearIndex].m_points[pointIndex].y = coordinate.y();
+                volumes[volumeLinearIndex].m_points[pointIndex].z = coordinate.z();
+            }
         }
     }
 

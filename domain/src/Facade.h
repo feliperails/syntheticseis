@@ -3,6 +3,8 @@
 #include "LithologyDictionary.h"
 #include "SeismicWaveVelocityDictionary.h"
 
+#include <QObject>
+
 #include <memory>
 
 namespace syntheticSeismic {

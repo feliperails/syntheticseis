@@ -29,19 +29,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library(SyntheticSeismic SHARED
 
-    # data
-    data/src/Facade.h
-    data/src/Facade.cpp
-    data/src/Dictionary.h
-    data/src/Dictionary.cpp
-    data/src/Entity.h
-    data/src/Entity.cpp
-    data/src/EntityManager.h
-    data/src/EntityManager.cpp
-    data/src/DomainObject.h
-    data/src/DomainObject.cpp
-    data/src/geometry/Coordinate.h
-    data/src/geometry/Coordinate.cpp
+    # geometry
+    geometry/src/Coordinate.h
+    geometry/src/Coordinate.cpp
 
     # domain
     domain/src/Facade.h
@@ -73,9 +63,8 @@ add_library(SyntheticSeismic SHARED
     )
 
 add_library(SyntheticSeismicMock
-    # data
-    data/mock/DataMock.cpp
-    data/mock/DomainObjectMock.cpp
+    # geometry
+    geometry/mock/GeometryMock.cpp
 
     # domain
     domain/mock/DomainMock.cpp
@@ -86,7 +75,7 @@ add_library(SyntheticSeismicMock
 
 add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
-    data/test/DataTest.cpp
+    geometry/test/GeometryTest.cpp
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
     )

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "data/src/geometry/Coordinate.h"
+#include "geometry/src/Coordinate.h"
 #include "domain/src/EclipseGrid.h"
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/EclipseGridWriter.h"

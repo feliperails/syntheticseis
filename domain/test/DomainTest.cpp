@@ -4,77 +4,43 @@
 #include <domain/src/Lithology.h>
 #include <domain/src/ExtractVolumes.h>
 
-#include <data/src/Entity.h>
-#include <data/mock/DomainObjectMock.h>
 
-#include <data/src/EntityManager.h>
+#include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
 #include <data/src/geometry/Coordinate.h>
 
-TEST(DomainTest, SeismicWaveVelocityDictionaryTest)
-{
-    using namespace syntheticSeismic::domain;
-    using namespace syntheticSeismic::data;
-
-    Entity e1(QUuid::createUuid(), std::make_shared<Lithology>(), QString("e1"));
-    Entity e2(QUuid::createUuid(), std::make_shared<Lithology>(), QString("e2"));
-    Entity e3(QUuid::createUuid(), std::make_shared<Lithology>(), QString("e3"));
-    Entity e4(QUuid::createUuid(), std::make_shared<FirstObjectMock>(), QString("e4"));
-
-    SeismicWaveVelocityDictionary dictionary;
-    ASSERT_EQ(dictionary.lithologyEntities().size(), 0);
-    ASSERT_EQ(dictionary.lithologyEntities(), QList<const Entity*>());
-
-    ASSERT_TRUE(dictionary.setVelocity(&e1, 100.5));
-    ASSERT_TRUE(dictionary.setVelocity(&e2, 200.0));
-    ASSERT_TRUE(dictionary.setVelocity(&e3, 300.0));
-    ASSERT_FALSE(dictionary.setVelocity(&e4, 400.0));
-
-    ASSERT_TRUE(qFuzzyCompare(dictionary.velocity(&e1), 100.5));
-    ASSERT_TRUE(qFuzzyCompare(dictionary.velocity(&e2), 200.0));
-    ASSERT_TRUE(qFuzzyCompare(dictionary.velocity(&e3), 300.0));
-    ASSERT_FALSE(qFuzzyCompare(dictionary.velocity(&e4), 400.0));
-
-    ASSERT_FALSE(qFuzzyCompare(dictionary.velocity(&e1), 100.0));
-
-    ASSERT_TRUE(qFuzzyIsNull(dictionary.velocity(&e4)));
-    ASSERT_TRUE(qFuzzyIsNull(dictionary.velocity(nullptr)));
-    ASSERT_FALSE(qFuzzyCompare(dictionary.velocity(nullptr), 100.0));
-}
-
 TEST(DomainTest, LithologyDictionaryTest)
 {
     using namespace syntheticSeismic::domain;
-    using namespace syntheticSeismic::data;
 
-    EntityManager entityManager;
-    LithologyDictionary dictionary(entityManager);
+    LithologyDictionary dictionary;
 
-    entityManager.createEntity(QString("e1"), std::make_shared<Lithology>(10));
-    entityManager.createEntity(QString("e2"), std::make_shared<Lithology>(300));
-    entityManager.createEntity(QString("e3"), std::make_shared<Lithology>(8));
-    entityManager.createEntity(QString("e4"), std::make_shared<Lithology>(6));
+    dictionary.addLithology(10, QString("e1"));
+    dictionary.addLithology(300, QString("e2"));
+    dictionary.addLithology(8, QString("e3"));
+    dictionary.addLithology(6, QString("e4"));
 
-    EXPECT_TRUE(dictionary.lithologyEntity(10));
-    EXPECT_TRUE(dictionary.lithologyEntity(300));
-    EXPECT_TRUE(dictionary.lithologyEntity(8));
-    EXPECT_TRUE(dictionary.lithologyEntity(6));
-    EXPECT_FALSE(dictionary.lithologyEntity(100));
-    EXPECT_FALSE(dictionary.lithologyEntity(-1));
+    EXPECT_EQ(dictionary.lithology(10).id(), 10);
+    EXPECT_EQ(dictionary.lithology(300).id(), 300);
+    EXPECT_EQ(dictionary.lithology(8).id(), 8);
+    EXPECT_EQ(dictionary.lithology(6).id(), 6);
+    EXPECT_EQ(dictionary.lithology(100).id(), -1);
+    EXPECT_EQ(dictionary.lithology(-1).id(), -1);
 
-    EXPECT_TRUE(dictionary.lithologyEntity(QString("e1")));
-    EXPECT_TRUE(dictionary.lithologyEntity(QString("e2")));
-    EXPECT_TRUE(dictionary.lithologyEntity(QString("e3")));
-    EXPECT_TRUE(dictionary.lithologyEntity(QString("e4")));
-    EXPECT_FALSE(dictionary.lithologyEntity(QString("e5")));
-    EXPECT_FALSE(dictionary.lithologyEntity(QString()));
+    EXPECT_EQ(dictionary.lithology(QString("e1")).name(), QString("e1"));
+    EXPECT_EQ(dictionary.lithology(QString("e2")).name(), QString("e2"));
+    EXPECT_EQ(dictionary.lithology(QString("e3")).name(), QString("e3"));
+    EXPECT_EQ(dictionary.lithology(QString("e4")).name(), QString("e4"));
+    EXPECT_EQ(dictionary.lithology(QString("e5")).name(), QString());
+    EXPECT_EQ(dictionary.lithology(QString()).name(), QString());
+
+    EXPECT_EQ(dictionary.lithologies().size(), 4);
 }
 
 TEST(DomainTest, EclipseGridTest)
 {
     using namespace syntheticSeismic::domain;
-    using namespace syntheticSeismic::data;
     using namespace syntheticSeismic::geometry;
 
     EclipseGrid eg;

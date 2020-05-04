@@ -1,9 +1,6 @@
 #include "Facade.h"
 #include "Lithology.h"
 
-#include <data/src/Facade.h>
-#include <data/src/EntityManager.h>
-
 #include <QPointer>
 
 namespace syntheticSeismic {
@@ -23,17 +20,17 @@ Facade::Facade()
 
 void Facade::init()
 {
-    data::EntityManager& entityManager = data::Facade::entityManager();
-    auto mudstone = entityManager.createEntity(QLatin1String("Mudstone"), std::make_shared<Lithology>(1));
-    auto siltite = entityManager.createEntity(QLatin1String("Siltite"), std::make_shared<Lithology>(3));
-    auto fineGrainedSandstone = entityManager.createEntity(QLatin1String("Fine-grained sandstone"), std::make_shared<Lithology>(7));
-    auto mediumGrainedSandstone = entityManager.createEntity(QLatin1String("Medium-grained sandstone"), std::make_shared<Lithology>(9));
-    auto coarseGrainedSandstone = entityManager.createEntity(QLatin1String("Coarse-grained sandstone"), std::make_shared<Lithology>(11));
-    auto veryCoarseGrained = entityManager.createEntity(QLatin1String("Very coarse-grained"), std::make_shared<Lithology>(13));
-    auto conglomerate = entityManager.createEntity(QLatin1String("Conglomerate"), std::make_shared<Lithology>(15));
-    auto volcanic = entityManager.createEntity(QLatin1String("Volcanic"), std::make_shared<Lithology>(24));
+    LithologyDictionary& lithologyDictionary = this->lithologyDictionary();
+    const int mudstone = lithologyDictionary.addLithology(1, QLatin1String("Mudstone"));
+    const int siltite = lithologyDictionary.addLithology(3, QLatin1String("Siltite"));
+    const int fineGrainedSandstone = lithologyDictionary.addLithology(7, QLatin1String("Fine-grained sandstone"));
+    const int mediumGrainedSandstone = lithologyDictionary.addLithology(9, QLatin1String("Medium-grained sandstone"));
+    const int coarseGrainedSandstone = lithologyDictionary.addLithology(11, QLatin1String("Coarse-grained sandstone"));
+    const int veryCoarseGrained = lithologyDictionary.addLithology(13, QLatin1String("Very coarse-grained"));
+    const int conglomerate = lithologyDictionary.addLithology(15, QLatin1String("Conglomerate"));
+    const int volcanic = lithologyDictionary.addLithology(24, QLatin1String("Volcanic"));
 
-    SeismicWaveVelocityDictionary& seismicWaveVelocityDictionary= this->seismicWaveVelocityDictionary();
+    SeismicWaveVelocityDictionary& seismicWaveVelocityDictionary = this->seismicWaveVelocityDictionary();
     seismicWaveVelocityDictionary.setVelocity(mudstone, 2800.0); // m/s
     seismicWaveVelocityDictionary.setVelocity(siltite, 3000.0); // m/s
     seismicWaveVelocityDictionary.setVelocity(fineGrainedSandstone, 3200.0); // m/s
@@ -56,7 +53,7 @@ SeismicWaveVelocityDictionary& Facade::seismicWaveVelocityDictionary()
 LithologyDictionary& Facade::lithologyDictionary()
 {
     if(!instance().m_lithologyDictionary){
-        instance().m_lithologyDictionary = std::make_unique<LithologyDictionary>(data::Facade::entityManager());
+        instance().m_lithologyDictionary = std::make_unique<LithologyDictionary>();
     }
 
     return *(instance().m_lithologyDictionary);

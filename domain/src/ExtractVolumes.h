@@ -33,6 +33,9 @@ class ExtractVolumes
 {
 public:
     static std::vector<Volume> extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid);
+
+    static std::vector<Volume> extractFromVolumesOfFirstLayer(const std::vector<Volume>& volumesOfFirstLayer,
+                                                                  const syntheticSeismic::domain::EclipseGrid& eclipseGrid);
 };
 
 } // namespace domain

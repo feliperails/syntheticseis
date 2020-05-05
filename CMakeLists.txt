@@ -18,6 +18,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
 find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
@@ -42,6 +43,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/Lithology.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
+    domain/src/Point2D.h
+    domain/src/Point2D.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
     domain/src/SeismicTraces.h
@@ -90,7 +93,9 @@ include(GenerateExportHeader)
 generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
 target_link_libraries(SyntheticSeismic
-    PUBLIC Qt5::Core)
+    PUBLIC Qt5::Core
+    PUBLIC OpenMP::OpenMP_CXX
+)
 
 #target_link_libraries(SyntheticSeismic
 #    PUBLIC Qt5::Core

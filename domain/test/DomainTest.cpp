@@ -8,7 +8,6 @@
 #include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
-#include <data/src/geometry/Coordinate.h>
 
 TEST(DomainTest, LithologyDictionaryTest)
 {
@@ -45,9 +44,9 @@ TEST(DomainTest, EclipseGridTest)
 
     EclipseGrid eg;
 
-    EXPECT_TRUE(eg.coordinates().size() == 0);
-    EXPECT_TRUE(eg.lithologyIds().size() == 0);
-    EXPECT_TRUE(eg.zCoordinates().size() == 0);
+    EXPECT_EQ(eg.coordinates().size(), 0);
+    EXPECT_EQ(eg.lithologyIds().size(), 0);
+    EXPECT_EQ(eg.zCoordinates().size(), 0);
     EXPECT_EQ(eg.numberOfCellsInX(), 0);
     EXPECT_EQ(eg.numberOfCellsInY(), 0);
     EXPECT_EQ(eg.numberOfCellsInZ(), 0);
@@ -82,7 +81,6 @@ TEST(DomainTest, ExtractVolumesTest)
 {
     using namespace std;
     using namespace syntheticSeismic::domain;
-    using namespace syntheticSeismic::data;
     using namespace syntheticSeismic::geometry;
 
     const size_t numberOfCellsInX = 2;
@@ -134,7 +132,82 @@ TEST(DomainTest, ExtractVolumesTest)
         19, 20, 21, 22, 23, 24
     };
 
+    vector<Volume> volumesCompare(6);
+    volumesCompare[0].m_points = {
+        Point3D(1000, 2000, 1000),
+        Point3D(1100, 2000, 1100),
+        Point3D(1050, 2000, 1000),
+        Point3D(1150, 2000, 1100),
+        Point3D(1000, 2200, 1000),
+        Point3D(1100, 2200, 1100),
+        Point3D(1100, 2200, 1000),
+        Point3D(1200, 2200, 1100)
+    };
+
+    volumesCompare[1].m_points = {
+        Point3D(1050, 2000, 1000),
+        Point3D(1150, 2000, 1100),
+        Point3D(1100, 2000, 1000),
+        Point3D(1200, 2000, 1100),
+        Point3D(1100, 2200, 1000),
+        Point3D(1200, 2200, 1100),
+        Point3D(1200, 2200, 1000),
+        Point3D(1300, 2200, 1100)
+    };
+
+    volumesCompare[2].m_points = {
+        Point3D(1000, 2200, 1000),
+        Point3D(1100, 2200, 1100),
+        Point3D(1100, 2200, 1000),
+        Point3D(1200, 2200, 1100),
+        Point3D(1000, 2600, 1000),
+        Point3D(1100, 2600, 1100),
+        Point3D(1150, 2600, 1000),
+        Point3D(1250, 2600, 1100)
+    };
+
+    volumesCompare[3].m_points = {
+        Point3D(1100, 2200, 1000),
+        Point3D(1200, 2200, 1100),
+        Point3D(1200, 2200, 1000),
+        Point3D(1300, 2200, 1100),
+        Point3D(1150, 2600, 1000),
+        Point3D(1250, 2600, 1100),
+        Point3D(1300, 2600, 1000),
+        Point3D(1400, 2600, 1100)
+    };
+
+    volumesCompare[4].m_points = {
+        Point3D(1000, 2600, 1000),
+        Point3D(1100, 2600, 1100),
+        Point3D(1150, 2600, 1000),
+        Point3D(1250, 2600, 1100),
+        Point3D(1000, 3200, 1000),
+        Point3D(1100, 3200, 1100),
+        Point3D(1200, 3200, 1000),
+        Point3D(1300, 3200, 1100)
+    };
+
+    volumesCompare[5].m_points = {
+        Point3D(1150, 2600, 1000),
+        Point3D(1250, 2600, 1100),
+        Point3D(1300, 2600, 1000),
+        Point3D(1400, 2600, 1100),
+        Point3D(1200, 3200, 1000),
+        Point3D(1300, 3200, 1100),
+        Point3D(1400, 3200, 1000),
+        Point3D(1500, 3200, 1100)
+    };
+
     EclipseGrid eclipseGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ, coordinates, zCoordinates, lithologyIds);
 
-
+    ExtractVolumes extractVolumes;
+    auto volumes = extractVolumes.extractFirstLayerFrom(eclipseGrid);
+    for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
+    {
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        {
+            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x) << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
+        }
+    }
 }

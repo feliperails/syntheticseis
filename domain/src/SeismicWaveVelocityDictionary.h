@@ -1,8 +1,5 @@
 #pragma once
 
-#include "data/src/Dictionary.h"
-#include "data/src/Entity.h"
-
 #include <QHash>
 
 namespace syntheticSeismic {
@@ -10,17 +7,17 @@ namespace domain {
 
 class Lithology;
 
-class SeismicWaveVelocityDictionary : public data::Dictionary
+class SeismicWaveVelocityDictionary
 {
 public:
-    double velocity(const data::Entity* litohologyEntity) const;
+    double velocity(const int lithologyID) const;
 
-    bool setVelocity(const data::Entity* litohologyEntity, const double velocity);
+    bool setVelocity(const int lithologyID, const double velocity);
 
-    QList<const data::Entity*> lithologyEntities() const;
+    QList<int> lithologies() const;
 
 private:
-    QHash<const data::Entity*, double> m_data;
+    QHash<int, double> m_data; // QHash<Lithology ID, Seismic velocity>
 };
 
 } // namespace domain

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "data/src/geometry/Coordinate.h"
-#include "data/src/DomainObject.h"
+#include "geometry/src/Coordinate.h"
 
 #include <QVector>
 

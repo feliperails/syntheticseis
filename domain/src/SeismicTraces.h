@@ -1,13 +1,11 @@
 #pragma once
 
-#include "data/src/DomainObject.h"
-
 #include <vector>
 
 namespace syntheticSeismic {
 namespace domain {
 
-class SeismicTraces : public syntheticSeismic::data::DomainObject
+class SeismicTraces
 {
 public:
     typedef std::vector<double> Trace;

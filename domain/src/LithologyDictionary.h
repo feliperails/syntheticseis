@@ -1,27 +1,31 @@
 #pragma once
 
-#include "data/src/Dictionary.h"
-#include "data/src/EntityManager.h"
+#include "Lithology.h"
 
-#include <QLinkedList>
+#include <QVector>
 
 namespace syntheticSeismic {
 namespace domain {
 
 class Lithology;
+class LithologyDictionaryPrivate;
 
-class LithologyDictionary : public data::Dictionary
+class LithologyDictionary
 {
 public:
-    LithologyDictionary(data::EntityManager &entityManager);
+    const QVector<Lithology> &lithologies() const;
 
-    QLinkedList<data::Entity *> lithologyEntities() const;
+    // Se a litologia não foi encotraa, retorna uma rerência para uma litologia inválida.
+    const Lithology& lithology(const int lithologyId) const;
 
-    data::Entity* lithologyEntity(const int lithologyId) const;
-    data::Entity* lithologyEntity(const QString& lithologyName) const;
+    // Se a litologia não foi encotraa, retorna uma rerência para uma litologia inválida.
+    const Lithology& lithology(const QString& lithologyName) const;
+
+    int addLithology(const int id, const QString& name);
 
 private:
-    syntheticSeismic::data::EntityManager& m_entityManager;
+    QVector<Lithology> m_lithologies;
+    Lithology m_invalidLithology;
 };
 
 } // namespace domain

@@ -35,6 +35,8 @@ add_library(SyntheticSeismic SHARED
     geometry/src/Coordinate.cpp
 
     # domain
+    domain/src/DomainConstant.cpp
+    domain/src/DomainConstant.h
     domain/src/Facade.h
     domain/src/Facade.cpp
     domain/src/EclipseGrid.h
@@ -79,6 +81,8 @@ add_library(SyntheticSeismicMock
 add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
     geometry/test/GeometryTest.cpp
+    domain/test/DomainTestValues.cpp
+    domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
     )

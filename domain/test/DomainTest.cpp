@@ -1,13 +1,12 @@
 #include <gtest/gtest.h>
-
 #include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/Lithology.h>
 #include <domain/src/ExtractVolumes.h>
-
-
 #include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
+#include <domain/mock/DomainMock.h>
+#include "DomainTestValues.h"
 
 TEST(DomainTest, LithologyDictionaryTest)
 {
@@ -77,137 +76,57 @@ TEST(DomainTest, EclipseGridTest)
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 
-TEST(DomainTest, ExtractVolumesTest)
+TEST(DomainTest, ExtractVolumesCalculateReorderedIndex)
 {
-    using namespace std;
+    using namespace syntheticSeismic::domain;
+
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(0), (0));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(2), (1));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(4), (2));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(6), (3));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(1), (4));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(3), (5));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(5), (6));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(7), (7));
+}
+
+TEST(DomainTest, ExtractVolumesOfFirstLayerTest)
+{
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const size_t numberOfCellsInX = 2;
-    const size_t numberOfCellsInY = 3;
-    const size_t numberOfCellsInZ = 4;
+    EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
 
-    vector<Coordinate> coordinates = {
-        Coordinate(1000, 2000, 1000),
-        Coordinate(1100, 2000, 1100),
-        Coordinate(1050, 2000, 1000),
-        Coordinate(1150, 2000, 1100),
-        Coordinate(1100, 2000, 1000),
-        Coordinate(1200, 2000, 1100),
-        Coordinate(1000, 2200, 1000),
-        Coordinate(1100, 2200, 1100),
-        Coordinate(1100, 2200, 1000),
-        Coordinate(1200, 2200, 1100),
-        Coordinate(1200, 2200, 1000),
-        Coordinate(1300, 2200, 1100),
-        Coordinate(1000, 2600, 1000),
-        Coordinate(1100, 2600, 1100),
-        Coordinate(1150, 2600, 1000),
-        Coordinate(1250, 2600, 1100),
-        Coordinate(1300, 2600, 1000),
-        Coordinate(1400, 2600, 1100),
-        Coordinate(1000, 3200, 1000),
-        Coordinate(1100, 3200, 1100),
-        Coordinate(1200, 3200, 1000),
-        Coordinate(1300, 3200, 1100),
-        Coordinate(1400, 3200, 1000),
-        Coordinate(1500, 3200, 1100)
-    };
+    auto volumesOfFirstLayerCompare = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
 
-    vector<double> zCoordinates = {
-        1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000,
-        1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100,
-        1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100,
-        1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200,
-        1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200,
-        1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300,
-        1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300, 1300,
-        1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400
-    };
-
-    vector<int> lithologyIds = {
-         1,  2,  3,  4,  5,  6,
-         7,  8,  9, 10, 11, 12,
-        13, 14, 15, 16, 17, 18,
-        19, 20, 21, 22, 23, 24
-    };
-
-    vector<Volume> volumesCompare(6);
-    volumesCompare[0].m_points = {
-        Point3D(1000, 2000, 1000),
-        Point3D(1100, 2000, 1100),
-        Point3D(1050, 2000, 1000),
-        Point3D(1150, 2000, 1100),
-        Point3D(1000, 2200, 1000),
-        Point3D(1100, 2200, 1100),
-        Point3D(1100, 2200, 1000),
-        Point3D(1200, 2200, 1100)
-    };
-
-    volumesCompare[1].m_points = {
-        Point3D(1050, 2000, 1000),
-        Point3D(1150, 2000, 1100),
-        Point3D(1100, 2000, 1000),
-        Point3D(1200, 2000, 1100),
-        Point3D(1100, 2200, 1000),
-        Point3D(1200, 2200, 1100),
-        Point3D(1200, 2200, 1000),
-        Point3D(1300, 2200, 1100)
-    };
-
-    volumesCompare[2].m_points = {
-        Point3D(1000, 2200, 1000),
-        Point3D(1100, 2200, 1100),
-        Point3D(1100, 2200, 1000),
-        Point3D(1200, 2200, 1100),
-        Point3D(1000, 2600, 1000),
-        Point3D(1100, 2600, 1100),
-        Point3D(1150, 2600, 1000),
-        Point3D(1250, 2600, 1100)
-    };
-
-    volumesCompare[3].m_points = {
-        Point3D(1100, 2200, 1000),
-        Point3D(1200, 2200, 1100),
-        Point3D(1200, 2200, 1000),
-        Point3D(1300, 2200, 1100),
-        Point3D(1150, 2600, 1000),
-        Point3D(1250, 2600, 1100),
-        Point3D(1300, 2600, 1000),
-        Point3D(1400, 2600, 1100)
-    };
-
-    volumesCompare[4].m_points = {
-        Point3D(1000, 2600, 1000),
-        Point3D(1100, 2600, 1100),
-        Point3D(1150, 2600, 1000),
-        Point3D(1250, 2600, 1100),
-        Point3D(1000, 3200, 1000),
-        Point3D(1100, 3200, 1100),
-        Point3D(1200, 3200, 1000),
-        Point3D(1300, 3200, 1100)
-    };
-
-    volumesCompare[5].m_points = {
-        Point3D(1150, 2600, 1000),
-        Point3D(1250, 2600, 1100),
-        Point3D(1300, 2600, 1000),
-        Point3D(1400, 2600, 1100),
-        Point3D(1200, 3200, 1000),
-        Point3D(1300, 3200, 1100),
-        Point3D(1400, 3200, 1000),
-        Point3D(1500, 3200, 1100)
-    };
-
-    EclipseGrid eclipseGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ, coordinates, zCoordinates, lithologyIds);
-
-    ExtractVolumes extractVolumes;
-    auto volumes = extractVolumes.extractFirstLayerFrom(eclipseGrid);
+    auto volumes = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
         {
-            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x) << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
+            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].x)
+                    << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
+        }
+    }
+}
+
+TEST(DomainTest, ExtractVolumesTest)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
+
+    auto volumesCompare = DomainTestValues::volumesFromSimpleGrid();
+
+    auto volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
+    auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid);
+    for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
+    {
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        {
+            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x)
+                    << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
         }
     }
 }

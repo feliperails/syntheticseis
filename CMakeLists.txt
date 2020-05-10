@@ -67,7 +67,7 @@ add_library(SyntheticSeismicMock
     geometry/mock/GeometryMock.cpp
 
     # domain
-    domain/mock/DomainMock.cpp
+    domain/mock/DomainMock.h
 
     # storage
     storage/mock/StorageMock.cpp

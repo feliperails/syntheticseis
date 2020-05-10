@@ -3,7 +3,7 @@
 #include "domain/src/EclipseGrid.h"
 
 namespace syntheticSeismic {
-namespace dataIO {
+namespace storage {
 
 class EclipseGridWriter
 {
@@ -18,5 +18,5 @@ private:
     const QString m_path;
 };
 
-} // namespace dataio
+} // namespace storage
 } // namespace syntheticSeismic

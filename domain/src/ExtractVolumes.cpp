@@ -16,6 +16,7 @@ std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic
     const auto amountOfVerticalLines = static_cast<int>(eclipseGrid.numberOfCellsInY());
     const auto amountOfHorizontalLines = eclipseGrid.numberOfCellsInX();
 
+    #pragma omp parallel for
     for (int verticalLineIndexAux = 0; verticalLineIndexAux < amountOfVerticalLines; ++verticalLineIndexAux)
     {
         size_t verticalLineIndex = static_cast<size_t>(verticalLineIndexAux);

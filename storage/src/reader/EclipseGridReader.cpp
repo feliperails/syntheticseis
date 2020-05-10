@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace syntheticSeismic {
-namespace dataIO {
+namespace storage {
 
 namespace {
 const QLatin1Literal SECTION_END_TOKEN = QLatin1Literal("/");

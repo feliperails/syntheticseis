@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace syntheticSeismic {
-namespace dataIO {
+namespace storage {
 
 namespace {
 const QLatin1Literal SECTION_END_TOKEN = QLatin1Literal("/");
@@ -83,7 +83,7 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
 
     const int PRECISION = 4;
     for(int i = 0, size = zCoordinates.size(); i < size; ++i){
-        stream << QString::number(zCoordinates[i], 'f', PRECISION);        
+        stream << QString::number(zCoordinates[i], 'f', PRECISION);
         stream << NEW_LINE;
         if( i + 1 == size){
             stream << SECTION_END_TOKEN;

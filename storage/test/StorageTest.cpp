@@ -18,14 +18,13 @@ const QLatin1String ECLIPSEGRID_BIG_OUTPUT_FILENAME = QLatin1String("EclipseGrid
 
 }
 
-TEST(DataIOTest, EclipseGridReaderTest)
+TEST(storageTest, EclipseGridReaderTest)
 {
-    using namespace std;
-    using namespace syntheticSeismic::dataIO;
-    using namespace syntheticSeismic::domain;
-    using namespace syntheticSeismic::geometry;
+    using namespace  syntheticSeismic::storage;
+    using namespace  syntheticSeismic::domain;
+    using namespace  syntheticSeismic::geometry;
 
-    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
+    syntheticSeismic::storage::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     QString error;
     const EclipseGrid eg = reader.read(error);
 
@@ -35,7 +34,7 @@ TEST(DataIOTest, EclipseGridReaderTest)
     EXPECT_EQ(eg.numberOfCellsInY(), 3);
     EXPECT_EQ(eg.numberOfCellsInZ(), 4);
 
-    const vector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
+    const std::vector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
                                               Coordinate(1100.0, 2000.0, 1100.0),
                                               Coordinate(1040.0, 2000.0, 1000.0),
                                               Coordinate(1150.0, 2000.0, 1100.0),
@@ -62,7 +61,7 @@ TEST(DataIOTest, EclipseGridReaderTest)
 
     EXPECT_EQ(eg.coordinates(), coordinates);
 
-    vector<double> zValues;
+    std::vector<double> zValues;
     zValues.reserve((24 * 2) * 4); // 4 camadas
 
     // Primeira camada
@@ -83,16 +82,16 @@ TEST(DataIOTest, EclipseGridReaderTest)
 
     EXPECT_EQ(eg.zCoordinates(), zValues);
 
-    const vector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
+    const std::vector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 
-TEST(DataIOTest, EclipseGridReaderPerformanceTest)
+TEST(storageTest, EclipseGridReaderPerformanceTest)
 {
-    using namespace  syntheticSeismic::dataIO;
+    using namespace  syntheticSeismic::storage;
     using namespace  syntheticSeismic::domain;
 
-    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
+    syntheticSeismic::storage::EclipseGridReader reader(ECLIPSEGRID_BIG_FILENAME);
     QString error;
     QTime time;
     time.start();
@@ -146,17 +145,17 @@ bool compareFiles(const QString& firstFilename, const QString& secondFilename)
 
 }
 
-TEST(DataIOTest, EclipseGridWriterTest)
+TEST(storageTest, EclipseGridWriterTest)
 {
-    using namespace  syntheticSeismic::dataIO;
+    using namespace  syntheticSeismic::storage;
     using namespace  syntheticSeismic::domain;
 
-    syntheticSeismic::dataIO::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
+    syntheticSeismic::storage::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     QString error;
     syntheticSeismic::domain::EclipseGrid eclipseGrid = reader.read(error);
     ASSERT_TRUE(error.isEmpty());
 
-    syntheticSeismic::dataIO::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
+    syntheticSeismic::storage::EclipseGridWriter writer(ECLIPSEGRID_SMALL_OUTPUT_FILENAME);
     EXPECT_TRUE(writer.write(eclipseGrid));
 
     EXPECT_TRUE(compareFiles(ECLIPSEGRID_SMALL_FILENAME, ECLIPSEGRID_SMALL_OUTPUT_FILENAME));

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/Lithology.h>
+
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>

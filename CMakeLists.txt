@@ -3,7 +3,6 @@ file(STRINGS "version.txt" VERSION_STRING)
 
 project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
-#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/FindGMock.cmake)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
@@ -18,9 +17,11 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
 find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
+find_package(CGAL REQUIRED COMPONENTS Core)
 
 include_directories(${GTEST_INCLUDE_DIR})
 
@@ -34,6 +35,8 @@ add_library(SyntheticSeismic SHARED
     geometry/src/Coordinate.cpp
 
     # domain
+    domain/src/DomainConstant.cpp
+    domain/src/DomainConstant.h
     domain/src/Facade.h
     domain/src/Facade.cpp
     domain/src/EclipseGrid.h
@@ -42,12 +45,16 @@ add_library(SyntheticSeismic SHARED
     domain/src/Lithology.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
+    domain/src/Point2D.h
+    domain/src/Point2D.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
     domain/src/SeismicTraces.h
     domain/src/SeismicTraces.cpp
     domain/src/SeismicWaveVelocityDictionary.h
     domain/src/SeismicWaveVelocityDictionary.cpp
+    domain/src/ExtractMinimumRectangle2D.cpp
+    domain/src/ExtractMinimumRectangle2D.h
     domain/src/ExtractVolumes.h
     domain/src/ExtractVolumes.cpp
 
@@ -76,6 +83,8 @@ add_library(SyntheticSeismicMock
 add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
     geometry/test/GeometryTest.cpp
+    domain/test/DomainTestValues.cpp
+    domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
     )
@@ -90,7 +99,11 @@ include(GenerateExportHeader)
 generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
 target_link_libraries(SyntheticSeismic
-    PUBLIC Qt5::Core)
+    PUBLIC Qt5::Core
+    PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC CGAL::CGAL
+    PUBLIC CGAL::CGAL_Core
+)
 
 #target_link_libraries(SyntheticSeismic
 #    PUBLIC Qt5::Core

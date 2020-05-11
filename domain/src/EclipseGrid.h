@@ -18,27 +18,27 @@ public:
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
-                const QVector<syntheticSeismic::geometry::Coordinate>& coordinates,
-                const QVector<double>& zCoordinates,
-                const QVector<int>& lithologyIds);
+                const std::vector<syntheticSeismic::geometry::Coordinate>& coordinates,
+                const std::vector<double>& zCoordinates,
+                const std::vector<int>& lithologyIds);
 
     size_t numberOfCellsInX() const;
     size_t numberOfCellsInY() const;
     size_t numberOfCellsInZ() const;
 
-    const QVector<geometry::Coordinate> &coordinates() const;
+    const std::vector<geometry::Coordinate> &coordinates() const;
 
-    const QVector<double>& zCoordinates() const;
+    const std::vector<double>& zCoordinates() const;
 
-    const QVector<int>& lithologyIds() const;
+    const std::vector<int>& lithologyIds() const;
 
 private:
     size_t m_numberOfCellsInX;
     size_t m_numberOfCellsInY;
     size_t m_numberOfCellsInZ;
-    QVector<syntheticSeismic::geometry::Coordinate> m_coordinates;
-    QVector<double> m_zValues;
-    QVector<int> m_lithologyIds;
+    std::vector<syntheticSeismic::geometry::Coordinate> m_coordinates;
+    std::vector<double> m_zValues;
+    std::vector<int> m_lithologyIds;
 };
 
 } // namespace domain

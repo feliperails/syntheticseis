@@ -34,3 +34,5 @@
 CMakeLists.txt.user
 build
 install
+
+CMakeLists.config

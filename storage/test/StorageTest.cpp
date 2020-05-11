@@ -34,7 +34,7 @@ TEST(storageTest, EclipseGridReaderTest)
     EXPECT_EQ(eg.numberOfCellsInY(), 3);
     EXPECT_EQ(eg.numberOfCellsInZ(), 4);
 
-    const QVector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
+    const std::vector<Coordinate> coordinates = {Coordinate(1000.0, 2000.0, 1000.0),
                                               Coordinate(1100.0, 2000.0, 1100.0),
                                               Coordinate(1040.0, 2000.0, 1000.0),
                                               Coordinate(1150.0, 2000.0, 1100.0),
@@ -61,28 +61,28 @@ TEST(storageTest, EclipseGridReaderTest)
 
     EXPECT_EQ(eg.coordinates(), coordinates);
 
-    QVector<double> zValues;
+    std::vector<double> zValues;
     zValues.reserve((24 * 2) * 4); // 4 camadas
 
     // Primeira camada
-    zValues.append(QVector<double>(24, 1000.0));
-    zValues.append(QVector<double>(24, 1100.0));
+    zValues.insert(zValues.end(), 24, 1000.0);
+    zValues.insert(zValues.end(), 24, 1100.0);
 
     // Segunda camada
-    zValues.append(QVector<double>(24, 1100.0));
-    zValues.append(QVector<double>(24, 1200.0));
+    zValues.insert(zValues.end(), 24, 1100.0);
+    zValues.insert(zValues.end(), 24, 1200.0);
 
     // Tereceira camada
-    zValues.append(QVector<double>(24, 1200.0));
-    zValues.append(QVector<double>(24, 1300.0));
+    zValues.insert(zValues.end(), 24, 1200.0);
+    zValues.insert(zValues.end(), 24, 1300.0);
 
     // Quarta camada
-    zValues.append(QVector<double>(24, 1300.0));
-    zValues.append(QVector<double>(24, 1400.0));
+    zValues.insert(zValues.end(), 24, 1300.0);
+    zValues.insert(zValues.end(), 24, 1400.0);
 
     EXPECT_EQ(eg.zCoordinates(), zValues);
 
-    const QVector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
+    const std::vector<int> lithologyIds = {1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6,1,2,3,4,5,6};
     EXPECT_EQ(eg.lithologyIds(), lithologyIds);
 }
 

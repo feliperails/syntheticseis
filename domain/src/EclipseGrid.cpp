@@ -1,5 +1,7 @@
 #include "EclipseGrid.h"
 
+using namespace std;
+
 namespace syntheticSeismic {
 namespace domain {
 
@@ -16,8 +18,9 @@ EclipseGrid::EclipseGrid()
 EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
                          const size_t numberOfCellsInY,
                          const size_t numberOfCellsInZ,
-                         const QVector<geometry::Coordinate> &coordinates, const QVector<double> &zCoordinates,
-                         const QVector<int>& lithologyIds)
+                         const vector<geometry::Coordinate> &coordinates,
+                         const vector<double> &zCoordinates,
+                         const vector<int>& lithologyIds)
     : m_numberOfCellsInX(numberOfCellsInX)
     , m_numberOfCellsInY(numberOfCellsInY)
     , m_numberOfCellsInZ(numberOfCellsInZ)
@@ -25,8 +28,6 @@ EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
     , m_zValues(zCoordinates)
     , m_lithologyIds(lithologyIds)
 {
-    int a = 0;
-    a = 5;
 }
 
 EclipseGrid& EclipseGrid::operator=(const EclipseGrid& o)
@@ -57,17 +58,17 @@ size_t EclipseGrid::numberOfCellsInZ() const
     return m_numberOfCellsInZ;
 }
 
-const QVector<syntheticSeismic::geometry::Coordinate>& EclipseGrid::coordinates() const
+const vector<syntheticSeismic::geometry::Coordinate>& EclipseGrid::coordinates() const
 {
     return m_coordinates;
 }
 
-const QVector<double> &EclipseGrid::zCoordinates() const
+const vector<double> &EclipseGrid::zCoordinates() const
 {
     return m_zValues;
 }
 
-const QVector<int> &EclipseGrid::lithologyIds() const
+const vector<int> &EclipseGrid::lithologyIds() const
 {
     return m_lithologyIds;
 }

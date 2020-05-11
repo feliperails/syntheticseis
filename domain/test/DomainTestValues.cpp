@@ -371,3 +371,13 @@ std::vector<Volume> DomainTestValues::volumesFromSimpleGrid()
 
     return volumesCompare;
 }
+
+std::vector<Point2D> DomainTestValues::minimumRectangleFromSimpleGrid()
+{
+    return {
+        {2200, 2000},
+        {2200, 3200},
+        {1000, 3200},
+        {1000, 2000}
+    };
+}

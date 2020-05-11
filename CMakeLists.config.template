@@ -1,4 +1,3 @@
-
 # Defines boost path
 #set(BOOST_ROOT )
 
@@ -21,6 +20,11 @@
 #set(QWT_DIR )
 
 set(EXTERNALS_ROOT_DIR E:/externals/win64-msvc2015)
+
+# Include CGAL
+# Download in https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CGAL-5.0.2-Setup.exe
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "[DIR_INSTALL_CGAL]/CGAL-5.0.2/cmake/modules")
+set(CGAL_DIR [DIR_INSTALL_CGAL]/CGAL-5.0.2)
 
 # Defines GTest path
 set(GTest_ROOT ${EXTERNALS_ROOT_DIR}/googletest-1.8.0)

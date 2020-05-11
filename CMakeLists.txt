@@ -3,7 +3,6 @@ file(STRINGS "version.txt" VERSION_STRING)
 
 project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
-#include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/FindGMock.cmake)
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
@@ -22,6 +21,7 @@ find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
 find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
+find_package(CGAL REQUIRED COMPONENTS Core)
 
 include_directories(${GTEST_INCLUDE_DIR})
 
@@ -53,6 +53,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/SeismicTraces.cpp
     domain/src/SeismicWaveVelocityDictionary.h
     domain/src/SeismicWaveVelocityDictionary.cpp
+    domain/src/ExtractMinimumRectangle2D.cpp
+    domain/src/ExtractMinimumRectangle2D.h
     domain/src/ExtractVolumes.h
     domain/src/ExtractVolumes.cpp
 
@@ -99,6 +101,8 @@ generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC CGAL::CGAL
+    PUBLIC CGAL::CGAL_Core
 )
 
 #target_link_libraries(SyntheticSeismic

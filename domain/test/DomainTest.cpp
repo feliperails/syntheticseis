@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/Lithology.h>
-
+#include <domain/src/ExtractMinimumRectangle2D.h>
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>
@@ -120,7 +120,7 @@ TEST(DomainTest, ExtractVolumesTest)
 
     auto volumesCompare = DomainTestValues::volumesFromSimpleGrid();
 
-    auto volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
+    auto volumesOfFirstLayer = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
     auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
@@ -129,5 +129,21 @@ TEST(DomainTest, ExtractVolumesTest)
             EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
         }
+    }
+}
+
+TEST(DomainTest, ExtractMinimumRectangle2DTest)
+{
+    using namespace syntheticSeismic::domain;
+
+    const auto volumes = DomainTestValues::volumesFromSimpleGrid();
+
+    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+
+    const auto minimumRectangleCompare = DomainTestValues::minimumRectangleFromSimpleGrid();
+    for (size_t i = 0; i < minimumRectangle.size(); ++i)
+    {
+        EXPECT_EQ(minimumRectangle[i].x, minimumRectangleCompare[i].x);
+        EXPECT_EQ(minimumRectangle[i].y, minimumRectangleCompare[i].y);
     }
 }

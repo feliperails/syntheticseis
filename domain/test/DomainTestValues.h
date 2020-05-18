@@ -15,4 +15,10 @@ public:
     static std::vector<syntheticSeismic::domain::Volume> volumesFromSimpleGrid();
 
     static std::vector<syntheticSeismic::domain::Point2D> minimumRectangleFromSimpleGrid();
+
+    static std::vector<syntheticSeismic::domain::Volume> volumesFromSimpleGridRotated30Degrees();
+
+    static std::pair<syntheticSeismic::domain::Point2D, double> referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
+
+    static std::vector<syntheticSeismic::domain::Volume> unrotatedVolumesFromSimpleGridRotated30Degrees();
 };

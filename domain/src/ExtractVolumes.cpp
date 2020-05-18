@@ -1,7 +1,6 @@
 #include "ExtractVolumes.h"
 #include "DomainConstant.h"
 #include "Point2D.h"
-#include <omp.h>
 
 namespace syntheticSeismic {
 namespace domain {
@@ -16,7 +15,6 @@ std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic
     const auto amountOfVerticalLines = static_cast<int>(eclipseGrid.numberOfCellsInY());
     const auto amountOfHorizontalLines = eclipseGrid.numberOfCellsInX();
 
-    #pragma omp parallel for
     for (int verticalLineIndexAux = 0; verticalLineIndexAux < amountOfVerticalLines; ++verticalLineIndexAux)
     {
         size_t verticalLineIndex = static_cast<size_t>(verticalLineIndexAux);
@@ -58,12 +56,9 @@ std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::ve
     const size_t numberOfPointsBetweenTwoPlanes = DomainConstant::NumberOfPointsBetweenTwoPlanesOfEclipseGridVolume;
 
     std::vector<std::vector<Point2D>> coordinateDifferenceXY(volumesOfFirstLayer.size());
-    std::vector<std::vector<Point2D>> coordinateDifferenceXYCurrent(volumesOfFirstLayer.size());
-    auto coordinateDifferenceXYSize = coordinateDifferenceXYCurrent.size();
+    auto coordinateDifferenceXYSize = coordinateDifferenceXY.size();
     for (size_t i = 0; i < coordinateDifferenceXYSize; ++i)
     {
-        coordinateDifferenceXYCurrent[i].resize(numberOfPointsBetweenTwoPlanes);
-
         auto &points = coordinateDifferenceXY[i];
         points.resize(numberOfPointsBetweenTwoPlanes);
         for (size_t indexPoint = 0; indexPoint < numberOfPointsBetweenTwoPlanes; ++indexPoint)
@@ -81,15 +76,19 @@ std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::ve
     std::vector<Volume> volumes(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
     size_t indexVolume = 0;
     size_t indexZCorn = 0;
-    for (int indexSliceZ = 0; indexSliceZ < static_cast<int>(numberOfCellsInZ); ++indexSliceZ)
+
+    for (int indexLayerZ = 0; indexLayerZ < static_cast<int>(numberOfCellsInZ); ++indexLayerZ)
     {
         size_t indexVolumeStartFrontBack = indexVolume;
+        // Indicates whether the points in the front layer or the back layer of the volumes are being calculated.
+        // frontBack = 0 -> Front layer
+        // frontBack = 1 -> Back layer
         for (size_t frontBack = 0; frontBack <= 1; ++frontBack)
         {
             indexVolume = indexVolumeStartFrontBack;
             size_t kStartFrontBack = frontBack * 4;
             size_t indexVolumeLine = 0;
-            for (size_t indexSliceY = 0; indexSliceY < numberOfCellsInY; ++indexSliceY)
+            for (size_t indexLayerY = 0; indexLayerY < numberOfCellsInY; ++indexLayerY)
             {
                 for (size_t kStart = 0; kStart <= 2; kStart += 2)
                 {
@@ -102,29 +101,21 @@ std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::ve
                             size_t indexPointLoop = kStartFrontBack + kStart + k;
                             size_t indexPointDifferenceLoop = kStart + k;
                             volumes[indexVolumeLoop].m_points[indexPointLoop].x =
-                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointLoop].x +
-                                    coordinateDifferenceXYCurrent[indexVolumeMainPlanLoop][indexPointDifferenceLoop].x;
+                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointDifferenceLoop].x +
+                                    coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].x *
+                                    (static_cast<size_t>(indexLayerZ) + frontBack);
                             volumes[indexVolumeLoop].m_points[indexPointLoop].y =
-                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointLoop].y +
-                                    coordinateDifferenceXYCurrent[indexVolumeMainPlanLoop][indexPointDifferenceLoop].y;
+                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointDifferenceLoop].y +
+                                    coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].y *
+                                    (static_cast<size_t>(indexLayerZ) + frontBack);
                             volumes[indexVolumeLoop].m_points[indexPointLoop].z = eclipseGrid.zCoordinates()[indexZCorn];
+
                             ++indexZCorn;
                         }
                     }
                 }
-                indexVolumeLine = indexVolumeLine + numberOfCellsInX;
-                indexVolume = indexVolume + numberOfCellsInX;
-            }
-
-            for (size_t i = 0; i < coordinateDifferenceXYSize; ++i)
-            {
-                auto &pointsCurrent = coordinateDifferenceXYCurrent[i];
-                auto &points = coordinateDifferenceXY[i];
-                for (size_t indexPoint = 0; indexPoint < numberOfPointsBetweenTwoPlanes; ++indexPoint)
-                {
-                    pointsCurrent[indexPoint].x = pointsCurrent[indexPoint].x + points[indexPoint].x;
-                    pointsCurrent[indexPoint].y = pointsCurrent[indexPoint].y + points[indexPoint].y;
-                }
+                indexVolumeLine += numberOfCellsInX;
+                indexVolume += numberOfCellsInX;
             }
         }
     }

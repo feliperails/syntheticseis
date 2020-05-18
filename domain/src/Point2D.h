@@ -1,6 +1,4 @@
-#ifndef POINT2D_H
-#define POINT2D_H
-
+#pragma once
 
 namespace syntheticSeismic {
 namespace domain {
@@ -20,5 +18,3 @@ public:
 
 } // namespace domain
 } // namespace syntheticSeismic
-
-#endif // POINT2D_H

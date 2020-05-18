@@ -6,7 +6,9 @@
 #include <domain/src/Facade.h>
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
+#include <domain/src/RotateVolumeCoordinate.h>
 #include <domain/mock/DomainMock.h>
+#include <storage/src/reader/EclipseGridReader.h>
 #include "DomainTestValues.h"
 
 TEST(DomainTest, LithologyDictionaryTest)
@@ -81,14 +83,14 @@ TEST(DomainTest, ExtractVolumesCalculateReorderedIndex)
 {
     using namespace syntheticSeismic::domain;
 
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(0), (0));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(2), (1));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(4), (2));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(6), (3));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(1), (4));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(3), (5));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(5), (6));
-    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(7), (7));
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(0), 0);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(2), 1);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(4), 2);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(6), 3);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(1), 4);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(3), 5);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(5), 6);
+    EXPECT_EQ(ExtractVolumes::calculateReorderedIndex(7), 7);
 }
 
 TEST(DomainTest, ExtractVolumesOfFirstLayerTest)
@@ -105,8 +107,12 @@ TEST(DomainTest, ExtractVolumesOfFirstLayerTest)
     {
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
         {
-            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].x)
-                    << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].x)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].y, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].y)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].z, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].z)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
 }
@@ -126,8 +132,12 @@ TEST(DomainTest, ExtractVolumesTest)
     {
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
         {
-            EXPECT_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x)
-                    << "Volume error: " << volumeIndex << " - point error: " << pointIndex;
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].y, volumesCompare[volumeIndex].m_points[pointIndex].y)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].z, volumesCompare[volumeIndex].m_points[pointIndex].z)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
 }
@@ -137,13 +147,43 @@ TEST(DomainTest, ExtractMinimumRectangle2DTest)
     using namespace syntheticSeismic::domain;
 
     const auto volumes = DomainTestValues::volumesFromSimpleGrid();
-
     const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
 
     const auto minimumRectangleCompare = DomainTestValues::minimumRectangleFromSimpleGrid();
     for (size_t i = 0; i < minimumRectangle.size(); ++i)
     {
-        EXPECT_EQ(minimumRectangle[i].x, minimumRectangleCompare[i].x);
-        EXPECT_EQ(minimumRectangle[i].y, minimumRectangleCompare[i].y);
+        EXPECT_DOUBLE_EQ(minimumRectangle[i].x, minimumRectangleCompare[i].x);
+        EXPECT_DOUBLE_EQ(minimumRectangle[i].y, minimumRectangleCompare[i].y);
+    }
+}
+
+TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
+    auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+
+    const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
+    const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
+    EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.x, referencePointAndAngleInRadiansCompare.first.x);
+    EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.y, referencePointAndAngleInRadiansCompare.first.y);
+    EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.second, referencePointAndAngleInRadiansCompare.second);
+
+    RotateVolumeCoordinate::rotateByMinimumRectangle(volumes, minimumRectangle);
+
+    for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
+    {
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        {
+            // Uses 5 decimal places for comparison, as the values in DomainTestValues have been stored rounded up to 5 decimal places.
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].x * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].x)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].y * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].y)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].z)
+                    << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
+        }
     }
 }

@@ -9,9 +9,9 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/property_map.h>
 #include <CGAL/random_convex_set_2.h>
-#include <iostream>
 #include <numeric>
 #include <vector>
+#include <omp.h>
 
 #define CONVERT_VOLUME_TO_POINTS_OPENMP_CHUNK 100
 

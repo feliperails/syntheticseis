@@ -3,6 +3,8 @@ file(STRINGS "version.txt" VERSION_STRING)
 
 project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
+add_definitions(-D_USE_MATH_DEFINES)
+
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
@@ -49,6 +51,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/Point2D.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
+    domain/src/RotateVolumeCoordinate.h
+    domain/src/RotateVolumeCoordinate.cpp
     domain/src/SeismicTraces.h
     domain/src/SeismicTraces.cpp
     domain/src/SeismicWaveVelocityDictionary.h

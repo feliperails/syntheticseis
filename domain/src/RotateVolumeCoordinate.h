@@ -20,7 +20,10 @@ private:
     // Class with static methods only. It must not be instantiated.
     RotateVolumeCoordinate() = default;
 
-    static double calculateMinimumZ(const std::vector<Volume> &volumes);
+    /// Calculates the minimum and maximum value in z
+    /// @param Volumes
+    /// @return Minimum z in the first position of the std::pair and maximum z in the second position of the std::pair.
+    static std::pair<double, double> calculateMinimumAndMaximumZ(const std::vector<Volume> &volumes);
 };
 
 } // namespace domain

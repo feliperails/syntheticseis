@@ -7,8 +7,11 @@
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
 #include <domain/src/RotateVolumeCoordinate.h>
+#include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>
+#include <QFile>
+#include <QTextStream>
 #include "DomainTestValues.h"
 
 TEST(DomainTest, LithologyDictionaryTest)
@@ -164,9 +167,9 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
     auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
-
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
+
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.x, referencePointAndAngleInRadiansCompare.first.x);
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.y, referencePointAndAngleInRadiansCompare.first.y);
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.second, referencePointAndAngleInRadiansCompare.second);
@@ -184,6 +187,40 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
             EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
+        }
+    }
+}
+
+TEST(DomainTest, VolumeToRegularGrid)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
+
+    size_t numberOfCellsInX = 5;
+    size_t numberOfCellsInY = 5;
+    size_t numberOfCellsInZ = 5;
+
+    VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
+    volumeToRegularGrid.setBreakInFirstColision(false);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+
+    EXPECT_EQ(regularGrid.getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
+    EXPECT_EQ(regularGrid.getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
+    EXPECT_EQ(regularGrid.getNumberOfCellsInZ(), regularGridCompare.getNumberOfCellsInZ());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInX()), regularGridCompare.getCellSizeInX());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInY()), regularGridCompare.getCellSizeInY());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInZ()), regularGridCompare.getCellSizeInZ());
+    for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < regularGrid.getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_EQ(regularGrid.getData()[x][y][z], regularGridCompare.getData()[x][y][z])
+                        << "Cell error: " << x << ", " << y << ", " << z;
+            }
         }
     }
 }

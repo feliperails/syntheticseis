@@ -885,3 +885,60 @@ std::vector<Volume> DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Deg
 
     return volumesCompare;
 }
+
+RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees()
+{
+    size_t numberOfCellsInX = 5;
+    size_t numberOfCellsInY = 5;
+    size_t numberOfCellsInZ = 5;
+    double cellSizeInX = 240;
+    double cellSizeInY = 160;
+    double cellSizeInZ = 80;
+    size_t dummy = std::numeric_limits<size_t>::max();
+
+    RegularGrid<size_t> regularGrid(
+                numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
+                cellSizeInX, cellSizeInY, cellSizeInZ,
+                dummy
+            );
+
+    regularGrid.setData({
+                            {
+                                {4,dummy,dummy,dummy,dummy},
+                                {5,10,10,dummy,dummy},
+                                {5,11,11,16,22},
+                                {dummy,11,11,17,23},
+                                {dummy,dummy,dummy,17,23}
+                            },
+                            {
+                                {4,dummy,dummy,dummy,dummy},
+                                {5,10,10,dummy,dummy},
+                                {5,11,11,16,22},
+                                {dummy,11,11,17,23},
+                                {dummy,dummy,dummy,17,23}
+                            },
+                            {
+                                {4,dummy,dummy,dummy,dummy},
+                                {5,10,10,dummy,dummy},
+                                {5,11,11,16,22},
+                                {dummy,dummy,11,17,23},
+                                {dummy,dummy,dummy,dummy,23}
+                            },
+                            {
+                                {2,dummy,dummy,dummy,dummy},
+                                {3,8,8,dummy,dummy},
+                                {dummy,9,9,15,20},
+                                {dummy,dummy,dummy,15,21},
+                                {dummy,dummy,dummy,dummy,dummy}
+                            },
+                            {
+                                {2,dummy,dummy,dummy,dummy},
+                                {3,9,8,dummy,dummy},
+                                {dummy,9,9,15,20},
+                                {dummy,dummy,dummy,15,21},
+                                {dummy,dummy,dummy,dummy,dummy}
+                            }
+                        });
+
+    return regularGrid;
+}

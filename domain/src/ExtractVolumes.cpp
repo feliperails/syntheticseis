@@ -51,7 +51,8 @@ std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic
 }
 
 std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::vector<Volume> &volumesOfFirstLayer,
-                                                                   const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
+                                                                   const syntheticSeismic::domain::EclipseGrid& eclipseGrid,
+                                                                   bool divideXandYIntoZ)
 {
     const size_t numberOfPointsBetweenTwoPlanes = DomainConstant::NumberOfPointsBetweenTwoPlanesOfEclipseGridVolume;
 
@@ -61,12 +62,14 @@ std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::ve
     {
         auto &points = coordinateDifferenceXY[i];
         points.resize(numberOfPointsBetweenTwoPlanes);
+
+        double divideZ = divideXandYIntoZ ? static_cast<double>(eclipseGrid.numberOfCellsInZ()) : 1;
         for (size_t indexPoint = 0; indexPoint < numberOfPointsBetweenTwoPlanes; ++indexPoint)
         {
-            points[indexPoint].x = volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].x
-                    - volumesOfFirstLayer[i].m_points[indexPoint].x;
-            points[indexPoint].y = volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].y
-                    - volumesOfFirstLayer[i].m_points[indexPoint].y;
+            points[indexPoint].x = (volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].x
+                    - volumesOfFirstLayer[i].m_points[indexPoint].x) / divideZ;
+            points[indexPoint].y = (volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].y
+                    - volumesOfFirstLayer[i].m_points[indexPoint].y) / divideZ;
         }
     }
 

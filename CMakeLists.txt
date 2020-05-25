@@ -39,6 +39,10 @@ add_library(SyntheticSeismic SHARED
     # domain
     domain/src/DomainConstant.cpp
     domain/src/DomainConstant.h
+    domain/src/ExtractMinimumRectangle2D.cpp
+    domain/src/ExtractMinimumRectangle2D.h
+    domain/src/ExtractVolumes.h
+    domain/src/ExtractVolumes.cpp
     domain/src/Facade.h
     domain/src/Facade.cpp
     domain/src/EclipseGrid.h
@@ -57,10 +61,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/SeismicTraces.cpp
     domain/src/SeismicWaveVelocityDictionary.h
     domain/src/SeismicWaveVelocityDictionary.cpp
-    domain/src/ExtractMinimumRectangle2D.cpp
-    domain/src/ExtractMinimumRectangle2D.h
-    domain/src/ExtractVolumes.h
-    domain/src/ExtractVolumes.cpp
+    domain/src/VolumeToRegularGrid.h
+    domain/src/VolumeToRegularGrid.cpp
 
     # storage
     storage/src/Facade.h

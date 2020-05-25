@@ -59,9 +59,10 @@ std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const
     return {minimumRectanglePoints[indexReferencePoint], angle};
 }
 
-double RotateVolumeCoordinate::calculateMinimumZ(const std::vector<Volume> &volumes)
+std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(const std::vector<Volume> &volumes)
 {
     double minimumZ = volumes[0].m_points[0].z;
+    double maximumZ = volumes[0].m_points[0].z;
     for (auto volume : volumes)
     {
         for (auto point : volume.m_points)
@@ -70,18 +71,26 @@ double RotateVolumeCoordinate::calculateMinimumZ(const std::vector<Volume> &volu
             {
                 minimumZ = point.z;
             }
+            if (point.z > maximumZ)
+            {
+                maximumZ = point.z;
+            }
         }
     }
 
-    return minimumZ;
+    return {minimumZ, maximumZ};
 }
 
 void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<Volume> &volumes, const std::vector<Point2D> &minimumRectanglePoints)
 {
-    const double minimumZ = calculateMinimumZ(volumes);
+    const auto minimumAndMaximumZ = calculateMinimumAndMaximumZ(volumes);
 
     const auto referencePointAndAngleInRadians = calculateReferencePoint(minimumRectanglePoints);
-    const Point3D referencePoint(referencePointAndAngleInRadians.first.x, referencePointAndAngleInRadians.first.y, minimumZ);
+    const Point3D referencePoint(
+                referencePointAndAngleInRadians.first.x,
+                referencePointAndAngleInRadians.first.y,
+                minimumAndMaximumZ.first
+            );
 
     if (qFuzzyCompare(referencePointAndAngleInRadians.second, 0.0))
     {

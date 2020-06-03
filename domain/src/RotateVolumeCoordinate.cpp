@@ -1,9 +1,11 @@
 #include "RotateVolumeCoordinate.h"
-#include <iostream>
+#include "geometry/src/Volume.h"
 #include <CGAL/Cartesian.h>
 #include <CGAL/Aff_transformation_3.h>
 #include <math.h>
 #include <omp.h>
+
+using namespace syntheticSeismic::geometry;
 
 typedef CGAL::Cartesian<double> CgalKernel;
 typedef CGAL::Aff_transformation_3<CgalKernel> CgalTransformation;
@@ -15,7 +17,7 @@ typedef CGAL::Vector_3<CgalKernel> CgalVector3D;
 namespace syntheticSeismic {
 namespace domain {
 
-std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const std::vector<Point2D> &minimumRectanglePoints)
+std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const std::array<Point2D, 4> &minimumRectanglePoints)
 {
     double smallestX = minimumRectanglePoints[0].x;
     double smallestYAmongSmallestX = minimumRectanglePoints[0].y;
@@ -35,7 +37,7 @@ std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const
 
     // Finds the adjacent point with the y less than or equal to the reference point.
     size_t indexAdjacentPoint = 0;
-    std::vector<size_t> adjacentIndexes = {(indexReferencePoint + 1) % 4, (indexReferencePoint + 3) % 4};
+    const std::vector<size_t> adjacentIndexes = {(indexReferencePoint + 1) % 4, (indexReferencePoint + 3) % 4};
     for (const size_t i : adjacentIndexes)
     {
         if (minimumRectanglePoints[i].y < smallestYAmongSmallestX ||
@@ -49,9 +51,9 @@ std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const
     double angle = 0.0;
     if (!qFuzzyCompare(minimumRectanglePoints[indexAdjacentPoint].y, minimumRectanglePoints[indexReferencePoint].y))
     {
-        double oppositeSide = minimumRectanglePoints[indexReferencePoint].y - minimumRectanglePoints[indexAdjacentPoint].y;
-        double adjacentSide = minimumRectanglePoints[indexReferencePoint].x - minimumRectanglePoints[indexAdjacentPoint].x;
-        double hypotenuse = std::sqrt(adjacentSide * adjacentSide + oppositeSide * oppositeSide);
+        const double oppositeSide = minimumRectanglePoints[indexReferencePoint].y - minimumRectanglePoints[indexAdjacentPoint].y;
+        const double adjacentSide = minimumRectanglePoints[indexReferencePoint].x - minimumRectanglePoints[indexAdjacentPoint].x;
+        const double hypotenuse = std::sqrt(adjacentSide * adjacentSide + oppositeSide * oppositeSide);
 
         angle = std::asin(oppositeSide / hypotenuse);
     }
@@ -59,13 +61,13 @@ std::pair<Point2D, double> RotateVolumeCoordinate::calculateReferencePoint(const
     return {minimumRectanglePoints[indexReferencePoint], angle};
 }
 
-std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(const std::vector<Volume> &volumes)
+std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(const std::vector<std::shared_ptr<Volume>> &volumes)
 {
-    double minimumZ = volumes[0].m_points[0].z;
-    double maximumZ = volumes[0].m_points[0].z;
+    double minimumZ = volumes[0]->points[0].z;
+    double maximumZ = volumes[0]->points[0].z;
     for (auto volume : volumes)
     {
-        for (auto point : volume.m_points)
+        for (auto point : volume->points)
         {
             if (point.z < minimumZ)
             {
@@ -81,12 +83,12 @@ std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(co
     return {minimumZ, maximumZ};
 }
 
-void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<Volume> &volumes, const std::vector<Point2D> &minimumRectanglePoints)
+void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<std::shared_ptr<Volume>> &volumes, const std::array<Point2D, 4> &minimumRectanglePoints)
 {
     const auto minimumAndMaximumZ = calculateMinimumAndMaximumZ(volumes);
 
     const auto referencePointAndAngleInRadians = calculateReferencePoint(minimumRectanglePoints);
-    const Point3D referencePoint(
+    const geometry::Point3D referencePoint(
                 referencePointAndAngleInRadians.first.x,
                 referencePointAndAngleInRadians.first.y,
                 minimumAndMaximumZ.first
@@ -96,7 +98,7 @@ void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<Volume> &volum
     {
         for (auto &volume : volumes)
         {
-            for (auto &point : volume.m_points)
+            for (auto &point : volume->points)
             {
                 point.x -= referencePoint.x;
                 point.y -= referencePoint.y;
@@ -117,10 +119,10 @@ void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<Volume> &volum
         #pragma omp parallel for schedule(dynamic, ROTATE_POINTS_OPENMP_CHUNK)
         for (int i = 0; i < volumesSize; ++i)
         {
-            for (auto &point : volumes[static_cast<size_t>(i)].m_points)
+            for (auto &point : volumes[static_cast<size_t>(i)]->points)
             {
-                CgalPoint3D pointCgal(point.x - referencePoint.x, point.y - referencePoint.y, point.z - referencePoint.z);
-                auto pointCgalRotated = transformation(pointCgal);
+                const CgalPoint3D pointCgal(point.x - referencePoint.x, point.y - referencePoint.y, point.z - referencePoint.z);
+                const auto pointCgalRotated = transformation(pointCgal);
                 point.x = pointCgalRotated.x();
                 point.y = pointCgalRotated.y();
                 point.z = pointCgalRotated.z();

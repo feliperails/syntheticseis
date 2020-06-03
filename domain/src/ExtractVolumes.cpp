@@ -1,48 +1,56 @@
 #include "ExtractVolumes.h"
 #include "DomainConstant.h"
-#include "Point2D.h"
+#include "geometry/src/Point2D.h"
+#include "geometry/src/Volume.h"
+#include <assert.h>
+
+using namespace syntheticSeismic::geometry;
 
 namespace syntheticSeismic {
 namespace domain {
 
-std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
+std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic::domain::EclipseGrid& eclipseGrid)
 {
     const auto numberOfPointsInFirstLayerOfVolume = DomainConstant::NumberOfPointsInFirstLayerOfAnEclipseGridVolume;
     const size_t volumeCount = eclipseGrid.numberOfCellsInX() * eclipseGrid.numberOfCellsInY();
 
-    std::vector<Volume> volumes(volumeCount);
+    std::vector<std::shared_ptr<Volume>> volumes(volumeCount);
+    for (size_t i = 0; i < volumeCount; ++i)
+    {
+        volumes[i] = std::make_shared<Volume>(i);
+    }
 
     const auto amountOfVerticalLines = static_cast<int>(eclipseGrid.numberOfCellsInY());
     const auto amountOfHorizontalLines = eclipseGrid.numberOfCellsInX();
 
     for (int verticalLineIndexAux = 0; verticalLineIndexAux < amountOfVerticalLines; ++verticalLineIndexAux)
     {
-        size_t verticalLineIndex = static_cast<size_t>(verticalLineIndexAux);
+        const size_t verticalLineIndex = static_cast<size_t>(verticalLineIndexAux);
         for (size_t horizontalLineIndex = 0; horizontalLineIndex < amountOfHorizontalLines; ++horizontalLineIndex)
         {
-            size_t volumeLinearIndex = horizontalLineIndex + verticalLineIndex * amountOfHorizontalLines;
+            const size_t volumeLinearIndex = horizontalLineIndex + verticalLineIndex * amountOfHorizontalLines;
 
             // Points of the first horizontal surface of the volume
             for (size_t pointIndexSurface = 0; pointIndexSurface < numberOfPointsInFirstLayerOfVolume; ++pointIndexSurface)
             {
-                auto pointIndexReordered = calculateReorderedIndex(pointIndexSurface);
-                auto eclipseGridCoordPointIndex = verticalLineIndex * ((amountOfHorizontalLines + 1) * 2) + horizontalLineIndex * 2;
-                auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
-                auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].x = coordinate.x();
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].y = coordinate.y();
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].z = coordinate.z();
+                const auto pointIndexReordered = calculateReorderedIndex(pointIndexSurface);
+                const auto eclipseGridCoordPointIndex = verticalLineIndex * ((amountOfHorizontalLines + 1) * 2) + horizontalLineIndex * 2;
+                const auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
+                const auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
+                volumes[volumeLinearIndex]->points[pointIndexReordered].x = coordinate.x();
+                volumes[volumeLinearIndex]->points[pointIndexReordered].y = coordinate.y();
+                volumes[volumeLinearIndex]->points[pointIndexReordered].z = coordinate.z();
             }
             // Points of the second horizontal surface of the volume
             for (size_t pointIndexSurface = 0; pointIndexSurface < numberOfPointsInFirstLayerOfVolume; ++pointIndexSurface)
             {
-                auto pointIndexReordered = calculateReorderedIndex(numberOfPointsInFirstLayerOfVolume + pointIndexSurface);
-                auto eclipseGridCoordPointIndex = (verticalLineIndex + 1) * ((amountOfHorizontalLines + 1) * 2) + horizontalLineIndex * 2;
-                auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
-                auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].x = coordinate.x();
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].y = coordinate.y();
-                volumes[volumeLinearIndex].m_points[pointIndexReordered].z = coordinate.z();
+                const auto pointIndexReordered = calculateReorderedIndex(numberOfPointsInFirstLayerOfVolume + pointIndexSurface);
+                const auto eclipseGridCoordPointIndex = (verticalLineIndex + 1) * ((amountOfHorizontalLines + 1) * 2) + horizontalLineIndex * 2;
+                const auto indexCoord = eclipseGridCoordPointIndex + pointIndexSurface;
+                const auto &coordinate = eclipseGrid.coordinates().at(indexCoord);
+                volumes[volumeLinearIndex]->points[pointIndexReordered].x = coordinate.x();
+                volumes[volumeLinearIndex]->points[pointIndexReordered].y = coordinate.y();
+                volumes[volumeLinearIndex]->points[pointIndexReordered].z = coordinate.z();
             }
         }
     }
@@ -50,46 +58,52 @@ std::vector<Volume> ExtractVolumes::extractFirstLayerFrom(const syntheticSeismic
     return volumes;
 }
 
-std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::vector<Volume> &volumesOfFirstLayer,
+std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::vector<std::shared_ptr<Volume>> &volumesOfFirstLayer,
                                                                    const syntheticSeismic::domain::EclipseGrid& eclipseGrid,
-                                                                   bool divideXandYIntoZ)
+                                                                   const bool divideXandYIntoZ)
 {
     const size_t numberOfPointsBetweenTwoPlanes = DomainConstant::NumberOfPointsBetweenTwoPlanesOfEclipseGridVolume;
 
     std::vector<std::vector<Point2D>> coordinateDifferenceXY(volumesOfFirstLayer.size());
-    auto coordinateDifferenceXYSize = coordinateDifferenceXY.size();
+    const auto coordinateDifferenceXYSize = coordinateDifferenceXY.size();
+
+    assert(eclipseGrid.numberOfCellsInZ() > 0);
+    const double divideZ = divideXandYIntoZ ? static_cast<double>(eclipseGrid.numberOfCellsInZ()) : 1;
     for (size_t i = 0; i < coordinateDifferenceXYSize; ++i)
     {
         auto &points = coordinateDifferenceXY[i];
         points.resize(numberOfPointsBetweenTwoPlanes);
 
-        double divideZ = divideXandYIntoZ ? static_cast<double>(eclipseGrid.numberOfCellsInZ()) : 1;
         for (size_t indexPoint = 0; indexPoint < numberOfPointsBetweenTwoPlanes; ++indexPoint)
         {
-            points[indexPoint].x = (volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].x
-                    - volumesOfFirstLayer[i].m_points[indexPoint].x) / divideZ;
-            points[indexPoint].y = (volumesOfFirstLayer[i].m_points[indexPoint + numberOfPointsBetweenTwoPlanes].y
-                    - volumesOfFirstLayer[i].m_points[indexPoint].y) / divideZ;
+            points[indexPoint].x = (volumesOfFirstLayer[i]->points[indexPoint + numberOfPointsBetweenTwoPlanes].x
+                    - volumesOfFirstLayer[i]->points[indexPoint].x) / divideZ;
+            points[indexPoint].y = (volumesOfFirstLayer[i]->points[indexPoint + numberOfPointsBetweenTwoPlanes].y
+                    - volumesOfFirstLayer[i]->points[indexPoint].y) / divideZ;
         }
     }
 
-    auto numberOfCellsInX = eclipseGrid.numberOfCellsInX();
-    auto numberOfCellsInY = eclipseGrid.numberOfCellsInY();
-    auto numberOfCellsInZ = eclipseGrid.numberOfCellsInZ();
-    std::vector<Volume> volumes(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+    const auto numberOfCellsInX = eclipseGrid.numberOfCellsInX();
+    const auto numberOfCellsInY = eclipseGrid.numberOfCellsInY();
+    const auto numberOfCellsInZ = eclipseGrid.numberOfCellsInZ();
+    std::vector<std::shared_ptr<Volume>> volumes(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+    for (size_t i = 0; i < volumes.size(); ++i)
+    {
+        volumes[i] = std::make_shared<Volume>(i);
+    }
     size_t indexVolume = 0;
     size_t indexZCorn = 0;
 
     for (int indexLayerZ = 0; indexLayerZ < static_cast<int>(numberOfCellsInZ); ++indexLayerZ)
     {
-        size_t indexVolumeStartFrontBack = indexVolume;
+        const size_t indexVolumeStartFrontBack = indexVolume;
         // Indicates whether the points in the front layer or the back layer of the volumes are being calculated.
         // frontBack = 0 -> Front layer
         // frontBack = 1 -> Back layer
         for (size_t frontBack = 0; frontBack <= 1; ++frontBack)
         {
             indexVolume = indexVolumeStartFrontBack;
-            size_t kStartFrontBack = frontBack * 4;
+            const size_t kStartFrontBack = frontBack * 4;
             size_t indexVolumeLine = 0;
             for (size_t indexLayerY = 0; indexLayerY < numberOfCellsInY; ++indexLayerY)
             {
@@ -97,21 +111,22 @@ std::vector<Volume> ExtractVolumes::extractFromVolumesOfFirstLayer(const std::ve
                 {
                     for (size_t indexVolumeCurrent = 0; indexVolumeCurrent < numberOfCellsInX; ++indexVolumeCurrent)
                     {
-                        size_t indexVolumeLoop = indexVolume + indexVolumeCurrent;
-                        size_t indexVolumeMainPlanLoop = indexVolumeLine + indexVolumeCurrent;
+                        const size_t indexVolumeLoop = indexVolume + indexVolumeCurrent;
+                        volumes[indexVolumeLoop]->idLithology = eclipseGrid.lithologyIds()[indexVolumeLoop];
+                        const size_t indexVolumeMainPlanLoop = indexVolumeLine + indexVolumeCurrent;
                         for (size_t k = 0; k < 2; ++k)
                         {
-                            size_t indexPointLoop = kStartFrontBack + kStart + k;
-                            size_t indexPointDifferenceLoop = kStart + k;
-                            volumes[indexVolumeLoop].m_points[indexPointLoop].x =
-                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointDifferenceLoop].x +
+                            const size_t indexPointLoop = kStartFrontBack + kStart + k;
+                            const size_t indexPointDifferenceLoop = kStart + k;
+                            volumes[indexVolumeLoop]->points[indexPointLoop].x =
+                                    volumesOfFirstLayer[indexVolumeMainPlanLoop]->points[indexPointDifferenceLoop].x +
                                     coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].x *
                                     (static_cast<size_t>(indexLayerZ) + frontBack);
-                            volumes[indexVolumeLoop].m_points[indexPointLoop].y =
-                                    volumesOfFirstLayer[indexVolumeMainPlanLoop].m_points[indexPointDifferenceLoop].y +
+                            volumes[indexVolumeLoop]->points[indexPointLoop].y =
+                                    volumesOfFirstLayer[indexVolumeMainPlanLoop]->points[indexPointDifferenceLoop].y +
                                     coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].y *
                                     (static_cast<size_t>(indexLayerZ) + frontBack);
-                            volumes[indexVolumeLoop].m_points[indexPointLoop].z = eclipseGrid.zCoordinates()[indexZCorn];
+                            volumes[indexVolumeLoop]->points[indexPointLoop].z = eclipseGrid.zCoordinates()[indexZCorn];
 
                             ++indexZCorn;
                         }

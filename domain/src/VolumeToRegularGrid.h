@@ -2,6 +2,7 @@
 
 #include "ExtractVolumes.h"
 #include "RegularGrid.h"
+#include "geometry/src/Point3D.h"
 #include <vector>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/AABB_tree.h>
@@ -18,8 +19,6 @@ namespace domain {
 class VolumeToRegularGrid
 {
 public:
-    static const size_t UNDEFINED_LITHOLOGY = std::numeric_limits<size_t>::max();
-
     typedef std::tuple<std::pair<size_t, size_t>, std::pair<size_t, size_t>, std::pair<size_t, size_t>> BoundaryBoxIndex;
     typedef CGAL::Simple_cartesian<double> CgalKernel;
     typedef CgalKernel::Point_3 CgalPoint3D;
@@ -29,23 +28,23 @@ public:
     typedef CGAL::AABB_tree<CgalPolyhedronTraits3D> CgalPolyhedronTree3D;
     typedef CGAL::Side_of_triangle_mesh<CgalPolyhedron3D, CgalKernel> CgalPolyhedronPointInside3D;
 
-    VolumeToRegularGrid(size_t numberOfCellsInX, size_t numberOfCellsInY, size_t numberOfCellsInZ);
+    VolumeToRegularGrid(const size_t numberOfCellsInX, const size_t numberOfCellsInY, const size_t numberOfCellsInZ);
 
-    RegularGrid<size_t> convertVolumesToRegularGrid(std::vector<Volume> volumes);
+    RegularGrid<std::shared_ptr<geometry::Volume>> convertVolumesToRegularGrid(const std::vector<std::shared_ptr<geometry::Volume>> volumes);
 
     bool getBreakInFirstColision() const;
-    void setBreakInFirstColision(bool breakInFirstColision);
+    void setBreakInFirstColision(const bool breakInFirstColision);
 
 private:
-    size_t m_numberOfCellsInX = 0;
-    size_t m_numberOfCellsInY = 0;
-    size_t m_numberOfCellsInZ = 0;
-    double m_cellSizeInX = 0.0;
-    double m_cellSizeInY = 0.0;
-    double m_cellSizeInZ = 0.0;
-    bool m_breakInFirstColision = true;
+    size_t m_numberOfCellsInX;
+    size_t m_numberOfCellsInY;
+    size_t m_numberOfCellsInZ;
+    double m_cellSizeInX;
+    double m_cellSizeInY;
+    double m_cellSizeInZ;
+    bool m_breakInFirstColision;
 
-    BoundaryBoxIndex calculateBoundaryBoxIndex(std::vector<Point3D> points);
+    BoundaryBoxIndex calculateBoundaryBoxIndex(const std::vector<geometry::Point3D> &points);
 };
 
 } // namespace domain

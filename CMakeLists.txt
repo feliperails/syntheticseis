@@ -26,6 +26,7 @@ find_package(GTest REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS Core)
 
 include_directories(${GTEST_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -35,6 +36,12 @@ add_library(SyntheticSeismic SHARED
     # geometry
     geometry/src/Coordinate.h
     geometry/src/Coordinate.cpp
+    geometry/src/Point3D.h
+    geometry/src/Point3D.cpp
+    geometry/src/Volume.h
+    geometry/src/Volume.cpp
+    geometry/src/Point2D.h
+    geometry/src/Point2D.cpp
 
     # domain
     domain/src/DomainConstant.cpp
@@ -51,8 +58,6 @@ add_library(SyntheticSeismic SHARED
     domain/src/Lithology.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
-    domain/src/Point2D.h
-    domain/src/Point2D.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
     domain/src/RotateVolumeCoordinate.h
@@ -73,6 +78,8 @@ add_library(SyntheticSeismic SHARED
     storage/src/writer/EclipseGridWriter.cpp
     storage/src/writer/SEGYWriter.h
     storage/src/writer/SEGYWriter.cpp
+    storage/src/writer/RegularGridHdf5Writer.h
+    storage/src/writer/RegularGridHdf5Writer.cpp
     )
 
 add_library(SyntheticSeismicMock
@@ -109,6 +116,7 @@ target_link_libraries(SyntheticSeismic
     PUBLIC OpenMP::OpenMP_CXX
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
+    PUBLIC ${HDF5_LIBRARIES}
 )
 
 #target_link_libraries(SyntheticSeismic
@@ -128,6 +136,7 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC GTest::GTest
+    PUBLIC ${HDF5_LIBRARIES}
     #    PUBLIC GMock::GMock
     )
 

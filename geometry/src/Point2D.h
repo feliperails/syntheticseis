@@ -1,15 +1,18 @@
 #pragma once
 
 namespace syntheticSeismic {
-namespace domain {
+namespace geometry {
 
 class Point2D
 {
 public:
-    double x = 0.0;
-    double y = 0.0;
+    double x;
+    double y;
 
-    Point2D() = default;
+    Point2D() : x(0.0), y (0.0)
+    {
+
+    }
     Point2D(double x, double y): x(x), y(y)
     {
 

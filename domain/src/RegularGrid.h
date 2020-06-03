@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <array>
+#include "geometry/src/Point2D.h"
 
 namespace syntheticSeismic {
 namespace domain {
@@ -12,12 +14,13 @@ public:
     RegularGrid(
             size_t numberOfCellsInX, size_t numberOfCellsInY, size_t numberOfCellsInZ,
             double cellSizeInX, double cellSizeInY, double cellSizeInZ,
-            T dummy
+            T defaultValue,
+            int noDataValue = 0
         ) : m_data(std::vector<std::vector<std::vector<T>>>(
                        numberOfCellsInX,
                        std::vector<std::vector<T>>(
                            numberOfCellsInY,
-                           std::vector<T>(numberOfCellsInZ, dummy)
+                           std::vector<T>(numberOfCellsInZ, defaultValue)
                        )
                    )),
             m_cellSizeInX(cellSizeInX),
@@ -25,7 +28,8 @@ public:
             m_cellSizeInZ(cellSizeInZ),
             m_numberOfCellsInX(numberOfCellsInX),
             m_numberOfCellsInY(numberOfCellsInY),
-            m_numberOfCellsInZ(numberOfCellsInZ)
+            m_numberOfCellsInZ(numberOfCellsInZ),
+            m_noDataValue(noDataValue)
     {
 
     }
@@ -69,14 +73,36 @@ public:
         m_data = data;
     }
 
+    int getNoDataValue() const
+    {
+        return m_noDataValue;
+    }
+
+    void setNoDataValue(int value)
+    {
+        m_noDataValue = value;
+    }
+
+    std::array<geometry::Point2D, 4> getRectanglePoints() const
+    {
+        return m_rectanglePoints;
+    }
+
+    void setRectanglePoints(const std::array<geometry::Point2D, 4> &value)
+    {
+        m_rectanglePoints = value;
+    }
+
 private:
     std::vector<std::vector<std::vector<T>>> m_data;
-    double m_cellSizeInX = 0.0;
-    double m_cellSizeInY = 0.0;
-    double m_cellSizeInZ = 0.0;
-    size_t m_numberOfCellsInX = 0;
-    size_t m_numberOfCellsInY = 0;
-    size_t m_numberOfCellsInZ = 0;
+    double m_cellSizeInX;
+    double m_cellSizeInY;
+    double m_cellSizeInZ;
+    size_t m_numberOfCellsInX;
+    size_t m_numberOfCellsInY;
+    size_t m_numberOfCellsInZ;
+    std::array<geometry::Point2D, 4> m_rectanglePoints;
+    int m_noDataValue;
 };
 
 } // namespace domain

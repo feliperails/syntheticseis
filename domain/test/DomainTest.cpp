@@ -7,8 +7,11 @@
 #include <domain/src/LithologyDictionary.h>
 #include <domain/src/EclipseGrid.h>
 #include <domain/src/RotateVolumeCoordinate.h>
+#include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>
+#include <QFile>
+#include <QTextStream>
 #include "DomainTestValues.h"
 
 TEST(DomainTest, LithologyDictionaryTest)
@@ -57,10 +60,10 @@ TEST(DomainTest, EclipseGridTest)
     const size_t numberOfCellsInY = 2;
     const size_t numberOfCellsInZ = 3;
     const std::vector<Coordinate> coordinates = {Coordinate(1.0, 1.0, 1.0),
-                                             Coordinate(1.0, 1.0, 2.0),
-                                             Coordinate(1.0, 3.0, 3.0),
-                                             Coordinate(1.0, 3.0, 4.0),
-                                             Coordinate(1.0, 1.0, 5.0)};
+                                                 Coordinate(1.0, 1.0, 2.0),
+                                                 Coordinate(1.0, 3.0, 3.0),
+                                                 Coordinate(1.0, 3.0, 4.0),
+                                                 Coordinate(1.0, 1.0, 5.0)};
     const std::vector<double> zValues = {5.0, 6.0, 7.0, 8.0, 9.0};
     const std::vector<int> lithologyIds = {1, 3, 5, 8, 7};
 
@@ -98,20 +101,20 @@ TEST(DomainTest, ExtractVolumesOfFirstLayerTest)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
+    const EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
 
-    auto volumesOfFirstLayerCompare = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
+    const auto volumesOfFirstLayerCompare = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
 
-    auto volumes = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
+    const auto volumes = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
-        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
         {
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].x)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].x, volumesOfFirstLayerCompare[volumeIndex]->points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].y, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].y)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].y, volumesOfFirstLayerCompare[volumeIndex]->points[pointIndex].y)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].z, volumesOfFirstLayerCompare[volumeIndex].m_points[pointIndex].z)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].z, volumesOfFirstLayerCompare[volumeIndex]->points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
@@ -124,19 +127,19 @@ TEST(DomainTest, ExtractVolumesTest)
 
     EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
 
-    auto volumesCompare = DomainTestValues::volumesFromSimpleGrid();
+    const auto volumesCompare = DomainTestValues::volumesFromSimpleGrid();
 
-    auto volumesOfFirstLayer = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
-    auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid);
+    const auto volumesOfFirstLayer = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
+    const auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
-        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
         {
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].x, volumesCompare[volumeIndex].m_points[pointIndex].x)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].x, volumesCompare[volumeIndex]->points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].y, volumesCompare[volumeIndex].m_points[pointIndex].y)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].y, volumesCompare[volumeIndex]->points[pointIndex].y)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
-            EXPECT_DOUBLE_EQ(volumes[volumeIndex].m_points[pointIndex].z, volumesCompare[volumeIndex].m_points[pointIndex].z)
+            EXPECT_DOUBLE_EQ(volumes[volumeIndex]->points[pointIndex].z, volumesCompare[volumeIndex]->points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
@@ -162,11 +165,11 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
     using namespace syntheticSeismic::domain;
 
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
-    auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
-
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
+
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.x, referencePointAndAngleInRadiansCompare.first.x);
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.first.y, referencePointAndAngleInRadiansCompare.first.y);
     EXPECT_DOUBLE_EQ(referencePointAndAngleInRadians.second, referencePointAndAngleInRadiansCompare.second);
@@ -175,15 +178,58 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
 
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
-        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex].m_points.size(); ++pointIndex)
+        for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
         {
             // Uses 5 decimal places for comparison, as the values in DomainTestValues have been stored rounded up to 5 decimal places.
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].x * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].x)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].x * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].y * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].y)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].y * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].y)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex].m_points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex].m_points[pointIndex].z)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
+        }
+    }
+}
+
+TEST(DomainTest, VolumeToRegularGrid)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
+
+    const size_t numberOfCellsInX = 5;
+    const size_t numberOfCellsInY = 5;
+    const size_t numberOfCellsInZ = 5;
+
+    VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+
+    EXPECT_EQ(regularGrid.getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
+    EXPECT_EQ(regularGrid.getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
+    EXPECT_EQ(regularGrid.getNumberOfCellsInZ(), regularGridCompare.getNumberOfCellsInZ());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInX()), regularGridCompare.getCellSizeInX());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInY()), regularGridCompare.getCellSizeInY());
+    EXPECT_DOUBLE_EQ(std::round(regularGrid.getCellSizeInZ()), regularGridCompare.getCellSizeInZ());
+
+    for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < regularGrid.getNumberOfCellsInZ(); ++z)
+            {
+                if (regularGrid.getData()[x][y][z] != nullptr)
+                {
+                    EXPECT_EQ(regularGrid.getData()[x][y][z]->indexVolume, regularGridCompare.getData()[x][y][z])
+                            << "Cell error: " << x << ", " << y << ", " << z;
+                }
+                else
+                {
+                    EXPECT_EQ(Volume::UNDEFINED_LITHOLOGY, regularGridCompare.getData()[x][y][z])
+                            << "Cell error: " << x << ", " << y << ", " << z;
+                }
+            }
         }
     }
 }

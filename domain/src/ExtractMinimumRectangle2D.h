@@ -1,7 +1,9 @@
 #pragma once
+
 #include <vector>
+#include <array>
 #include "ExtractVolumes.h"
-#include "Point2D.h"
+#include "geometry/src/Point2D.h"
 
 namespace syntheticSeismic {
 namespace domain {
@@ -9,7 +11,7 @@ namespace domain {
 class extractMinimumRectangle2D
 {
 public:
-    static std::vector<Point2D> extractFrom(const std::vector<Volume>& volumes);
+    static std::array<geometry::Point2D, 4> extractFrom(const std::vector<std::shared_ptr<geometry::Volume>>& volumes);
 private:
     // Class with static methods only. It must not be instantiated.
     extractMinimumRectangle2D() = default;

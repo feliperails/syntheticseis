@@ -66,7 +66,7 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
     stream << COORD;
     stream << NEW_LINE;
     QString currentSeparator = SINGLE_SPACE_SEPARATOR;
-    for(int i = 0, size = coordinates.size(); i < size; ++i){
+    for(size_t i = 0, size = coordinates.size(); i < size; ++i){
         const syntheticSeismic::geometry::Coordinate& coord =  coordinates[i];
         stream << coord.x() << currentSeparator;
         stream << coord.y() << currentSeparator;
@@ -82,7 +82,7 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
     stream << NEW_LINE;
 
     const int PRECISION = 4;
-    for(int i = 0, size = zCoordinates.size(); i < size; ++i){
+    for(size_t i = 0, size = zCoordinates.size(); i < size; ++i){
         stream << QString::number(zCoordinates[i], 'f', PRECISION);
         stream << NEW_LINE;
         if( i + 1 == size){
@@ -93,7 +93,7 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
     stream << NEW_LINE;
     stream << LITHOLOGY_TYPE;
     stream << NEW_LINE;
-    for(int i = 0, size = lithologyIds.size(); i < size; ++i){
+    for(size_t i = 0, size = lithologyIds.size(); i < size; ++i){
         stream << lithologyIds[i] << SINGLE_SPACE_SEPARATOR;
     }
     stream << NEW_LINE;

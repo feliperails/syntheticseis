@@ -183,6 +183,8 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
         }
         else if (line.startsWith(ZCORN))
         {
+            zValues.reserve(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ * 8);
+
             line = stream.readLine();
             ++row;
 
@@ -199,42 +201,43 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
 
                 line = line.simplified();
-
-                const auto zValuesString = line.split(" ");
-
-                for (const auto &zValueString : zValuesString)
+                if (!line.isEmpty())
                 {
-                    splittedData = zValueString.split(ASTERISK);
-                    if (splittedData.size() == 2)
-                    {
-                        quantity = splittedData.at(0).toULong(&convertionOk);
-                        if (!convertionOk)
-                        {
-                            error = QObject::tr("Error when retrieving value quantity: %1").arg(splittedData.at(0));
-                            return {};
-                        }
+                    const auto zValuesString = line.split(" ");
 
-                        z = splittedData.at(1).toDouble(&convertionOk);
-                        if (!convertionOk)
-                        {
-                            error = QObject::tr("Error when conveting z value to int: %1").arg(splittedData.at(1));
-                            return {};
-                        }
-
-                        zValues.insert(zValues.end(), quantity, z);
-                    }
-                    else
+                    for (const auto &zValueString : zValuesString)
                     {
-                        z = zValueString.toDouble(&convertionOk);
-                        if (!convertionOk)
+                        splittedData = zValueString.split(ASTERISK);
+                        if (splittedData.size() == 2)
                         {
-                            error = QObject::tr("Error when conveting z value to double: %1").arg(zValueString);
-                            return {};
+                            quantity = splittedData.at(0).toULong(&convertionOk);
+                            if (!convertionOk)
+                            {
+                                error = QObject::tr("Error when retrieving value quantity: %1").arg(splittedData.at(0));
+                                return {};
+                            }
+
+                            z = splittedData.at(1).toDouble(&convertionOk);
+                            if (!convertionOk)
+                            {
+                                error = QObject::tr("Error when conveting z value to double: %1").arg(splittedData.at(1));
+                                return {};
+                            }
+
+                            zValues.insert(zValues.end(), quantity, z);
                         }
-                        zValues.push_back(z);
+                        else
+                        {
+                            z = zValueString.toDouble(&convertionOk);
+                            if (!convertionOk)
+                            {
+                                error = QObject::tr("Error when conveting z value to double: %1").arg(zValueString);
+                                return {};
+                            }
+                            zValues.push_back(z);
+                        }
                     }
                 }
-
                 if (sectionEnded)
                 {
                     line = SECTION_END_TOKEN;
@@ -248,6 +251,8 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
         }
         else if (line.startsWith(LITHOLOGY_TYPE))
         {
+            lithologyIds.reserve(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+
             line = stream.readLine();
             ++row;
             int id = -1;

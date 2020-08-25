@@ -33,9 +33,15 @@ public:
     {
 
     }
+
     std::vector<std::vector<std::vector<T>>>& getData()
     {
         return m_data;
+    }
+
+    const T& getData(size_t x, size_t y, size_t z) const
+    {
+        return m_data[x][y][z];
     }
 
     double getCellSizeInX() const

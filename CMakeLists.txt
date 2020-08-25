@@ -58,8 +58,14 @@ add_library(SyntheticSeismic SHARED
     domain/src/Lithology.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
+    domain/src/ImpedanceRegularGridCalculator.h
+    domain/src/ImpedanceRegularGridCalculator.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
+    domain/src/ReflectivityRegularGridCalculator.h
+    domain/src/ReflectivityRegularGridCalculator.cpp
+    domain/src/RickerWaveletCalculator.h
+    domain/src/RickerWaveletCalculator.cpp
     domain/src/RotateVolumeCoordinate.h
     domain/src/RotateVolumeCoordinate.cpp
     domain/src/SeismicTraces.h
@@ -68,7 +74,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/SeismicWaveVelocityDictionary.cpp
     domain/src/VolumeToRegularGrid.h
     domain/src/VolumeToRegularGrid.cpp
-
+    domain/src/Wavelet.h
+    domain/src/Wavelet.cpp
     # storage
     storage/src/Facade.h
     storage/src/Facade.cpp
@@ -100,6 +107,10 @@ add_executable(SyntheticSeismicTest
     domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
     storage/test/StorageTest.cpp
+    )
+
+add_executable(SyntheticSeismicConsole
+    cmake/main.cpp
     )
 
 #install(FILES

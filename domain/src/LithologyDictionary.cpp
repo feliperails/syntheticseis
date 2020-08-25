@@ -14,7 +14,7 @@ const QVector<Lithology> &LithologyDictionary::lithologies() const
 const Lithology& LithologyDictionary::lithology(const int lithologyId) const
 {
     for(const Lithology& litho : m_lithologies){
-        if(litho.id() == lithologyId){
+        if(litho.getId() == lithologyId){
             return litho;
         }
     }
@@ -25,7 +25,7 @@ const Lithology& LithologyDictionary::lithology(const int lithologyId) const
 const Lithology& LithologyDictionary::lithology(const QString& lithologyName) const
 {
     for(const Lithology& litho : m_lithologies){
-        if(litho.name() == lithologyName){
+        if(litho.getName() == lithologyName){
             return litho;
         }
     }
@@ -40,7 +40,7 @@ int LithologyDictionary::addLithology(const int id, const QString& name)
     }
 
     for(const Lithology& litho : m_lithologies){
-        if(litho.id() == id || litho.name() == name){
+        if(litho.getId() == id || litho.getName() == name){
             return -1;
         }
     }

@@ -14,13 +14,19 @@ public:
     Lithology(const int id, const QString& name);
 
     // Se o id for -1, a litologia é inválida.
-    int id() const;
+    int getId() const;
 
-    const QString& name() const;
+    const QString& getName() const;
+
+    double getVelocity() const;
+
+    double getDensity() const;
 
 private:
-    int m_lithologyId;
+    int m_id;
     QString m_name;
+    double m_velocity;
+    double m_density;
 };
 
 } // namespace domain

@@ -11,25 +11,25 @@ class Wavelet
 public:
     Wavelet();
     QString getName() const;
-    void setName(const QString &getName);
+    void setName(const QString &name);
 
     double getFirst() const;
-    void setFirst(double getFirst);
+    void setFirst(double first);
 
     double getLast() const;
-    void setLast(double getLast);
+    void setLast(double last);
 
     unsigned int getStep() const;
-    void setStep(unsigned int getStep);
+    void setStep(unsigned int step);
 
     QString getUnits() const;
-    void setUnits(const QString &getUnits);
+    void setUnits(const QString &units);
 
     unsigned int getFrequency() const;
     void setFrequency(const unsigned int frequency);
 
-    std::vector<double> getTraces() const;
-    void setTraces(const std::vector<double> &getTraces);
+    std::vector<double>& getTraces() const;
+    void setTraces(const std::vector<double> traces);
 
 private:
     QString m_name;
@@ -38,7 +38,7 @@ private:
     unsigned int m_step;
     unsigned int m_frequency;
     QString m_units;
-    std::vector<double> m_traces;
+    std::shared_ptr<std::vector<double>> m_traces;
 };
 
 } // namespace domain

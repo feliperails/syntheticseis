@@ -61,12 +61,12 @@ void Wavelet::setUnits(const QString &units)
     m_units = units;
 }
 
-std::vector<double> Wavelet::getTraces() const
+std::vector<double>& Wavelet::getTraces() const
 {
     return m_traces;
 }
 
-void Wavelet::setTraces(const std::vector<double> &traces)
+void Wavelet::setTraces(const std::vector<double> traces)
 {
     m_traces = traces;
 }

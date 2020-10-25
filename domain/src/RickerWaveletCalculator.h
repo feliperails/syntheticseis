@@ -18,6 +18,7 @@ private:
     unsigned int m_step;
     unsigned int m_length;
     double m_frequency;
+    unsigned int m_wlength;
     QString m_units;
 };
 

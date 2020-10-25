@@ -44,6 +44,7 @@ add_library(SyntheticSeismic SHARED
     geometry/src/Point2D.cpp
 
     # domain
+    domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
     domain/src/DomainConstant.h
     domain/src/ExtractMinimumRectangle2D.cpp

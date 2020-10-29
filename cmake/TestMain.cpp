@@ -8,7 +8,8 @@
 class GTestExecutionControl : public ::testing::EmptyTestEventListener
 {
 public:
-    virtual ~GTestExecutionControl();
+    ~GTestExecutionControl() override;
+
     // Fired before the test case starts.
     void OnTestCaseStart(const ::testing::TestCase &test_case) override;
 

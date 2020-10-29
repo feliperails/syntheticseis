@@ -5,8 +5,8 @@ project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
 add_definitions(-D_USE_MATH_DEFINES)
 
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
-list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+list(REMOVE_DUPLICATES CMAKE_MODULE_PATH)
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
@@ -19,14 +19,46 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+
+## Download automatically, you can also just copy the conan.cmake file
+#if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake" )
+#    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+#    file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
+#        "${CMAKE_BINARY_DIR}/conan.cmake"
+#        TLS_VERIFY ON)
+#endif()
+
+#include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/conan.cmake)
+
+# Versão do conan
+conan_check(VERSION 1.25.0 REQUIRED)
+
+conan_cmake_run(REQUIRES hdf5/1.8.21
+    BASIC_SETUP
+    BUILD missing)
+
+conan_cmake_run(REQUIRES gtest/1.8.1
+    BASIC_SETUP
+    BUILD missing)
+
+conan_cmake_run(REQUIRED GMock/1.8.0@iblis_ms/stable
+    BASIC_SETUP
+    BUILD missing)
+
+conan_cmake_run(REQUIRES cgal/5.1
+    BASIC_SETUP
+    BUILD missing)
+
+conan_cmake_run(REQUIRES pthreads4w/3.0.0
+    BASIC_SETUP
+    BUILD missing)
+
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
-find_package(Threads REQUIRED)
-find_package(GTest REQUIRED)
-find_package(CGAL REQUIRED COMPONENTS Core)
-
-include_directories(${GTEST_INCLUDE_DIR})
-include_directories(${HDF5_INCLUDE_DIRS})
 
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -102,49 +134,35 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     )
 
-#install(FILES
-#    CoreExport.h
-#    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .
-#    )
+install(FILES
+    CoreExport.h
+    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .
+    )
 
-#add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
 generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
-    PUBLIC CGAL::CGAL
-    PUBLIC CGAL::CGAL_Core
-    PUBLIC ${HDF5_LIBRARIES}
-)
-
-#target_link_libraries(SyntheticSeismic
-#    PUBLIC Qt5::Core
-#    PUBLIC SyntheticSeismic)
+    PUBLIC ${CONAN_LIBS}
+    )
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
+    PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
-    PUBLIC GTest::GTest
-    #    PUBLIC GMock::GMock
     )
 
 target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
+    PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
-    PUBLIC GTest::GTest
-    PUBLIC ${HDF5_LIBRARIES}
-    #    PUBLIC GMock::GMock
     )
 
-
-
 if(WIN32)
-    target_compile_definitions(SyntheticSeismicTest PRIVATE -DGTEST_LINKED_AS_SHARED_LIBRARY)
-
     include(GetPrerequisites)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)

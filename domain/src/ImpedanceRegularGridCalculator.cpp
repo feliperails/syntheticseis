@@ -5,7 +5,8 @@
 namespace syntheticSeismic {
 namespace domain {
 
-ImpedanceRegularGridCalculator::ImpedanceRegularGridCalculator()
+ImpedanceRegularGridCalculator::ImpedanceRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology)
+    : m_undefinedLithology(undefinedLithology)
 {
 
 }
@@ -15,16 +16,17 @@ void ImpedanceRegularGridCalculator::addLithology(std::shared_ptr<Lithology> lit
     m_lithologies[lithology->getId()] = lithology;
 }
 
-std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid) const
+std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid)
 {
     const auto numberOfCellsInX = regularVolumeGrid.getNumberOfCellsInX();
     const auto numberOfCellsInY = regularVolumeGrid.getNumberOfCellsInY();
-    const auto numberOfCellsInZInt = static_cast<int>(regularVolumeGrid.getNumberOfCellsInZ());
+    const auto numberOfCellsInZ = regularVolumeGrid.getNumberOfCellsInZ();
+    const auto numberOfCellsInZInt = static_cast<int>(numberOfCellsInZ);
 
     auto regularGrid = std::make_shared<RegularGrid<double>>(
-                               regularVolumeGrid.getCellSizeInX(),
-                               regularVolumeGrid.getCellSizeInY(),
-                               regularVolumeGrid.getCellSizeInZ(),
+                               numberOfCellsInX,
+                               numberOfCellsInY,
+                               numberOfCellsInZ,
                                regularVolumeGrid.getCellSizeInX(),
                                regularVolumeGrid.getCellSizeInY(),
                                regularVolumeGrid.getCellSizeInZ(),
@@ -48,9 +50,8 @@ std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(Reg
                 }
 
                 const auto idLithology = gridDataVolumes[x][y][z]->idLithology;
-                const auto lithology = m_lithologies.at(idLithology);
-
-                data[x][y][z] = lithology->getVelocity() * lithology->getDensity();
+                const auto &lithology = *m_lithologies[idLithology];
+                data[x][y][z] = lithology.getVelocity() * lithology.getDensity();
             }
         }
     }

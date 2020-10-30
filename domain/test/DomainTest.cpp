@@ -6,6 +6,8 @@
 #include <domain/src/Facade.h>
 #include <domain/src/Lithology.h>
 #include <domain/src/LithologyDictionary.h>
+#include <domain/src/ImpedanceRegularGridCalculator.h>
+#include <domain/src/ReflectivityRegularGridCalculator.h>
 #include <domain/src/RickerWaveletCalculator.h>
 #include <domain/src/RotateVolumeCoordinate.h>
 #include <domain/src/SeismicWaveVelocityDictionary.h>
@@ -231,6 +233,72 @@ TEST(DomainTest, VolumeToRegularGrid)
                     EXPECT_EQ(Volume::UNDEFINED_LITHOLOGY, regularGridCompare.getData()[x][y][z])
                             << "Cell error: " << x << ", " << y << ", " << z;
                 }
+            }
+        }
+    }
+}
+
+TEST(DomainTest, ImpedanceCalculator)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto impedanceRegularGridCompare = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
+
+    const size_t numberOfCellsInX = 5;
+    const size_t numberOfCellsInY = 5;
+    const size_t numberOfCellsInZ = 5;
+    double epsilon = std::pow(10, 10);
+
+    VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+
+    ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2.500));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(1, "argilito - mudstone", 2.800));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(3, "siltito - siltite", 3.000));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(5, "arn mf - fine-grained sandstone", 3.200));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(7, "arn f - fine-grained sandstone", 3.200));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(9, "arn m - medium-grained sandstone", 3.500));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(11, "arn g - coarse-grained sandstone", 3.700));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(13, "arn mg - very coarse-grained sandstone", 4.000));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(15, "cgl gr - conglomerate", 4.500));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(17, "cgl sx - conglomerate", 4.500));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(24, "vulcanica - volcanic", 6.000));
+    std::shared_ptr<RegularGrid<double>> impedanceRegularGrid = impedanceCalculator.convert(regularGrid);
+
+    for (size_t x = 0; x < impedanceRegularGrid->getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < impedanceRegularGrid->getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < impedanceRegularGrid->getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(impedanceRegularGrid->getData(x, y, z) - impedanceRegularGridCompare.getData(x, y, z)), epsilon);
+            }
+        }
+    }
+}
+
+TEST(DomainTest, ReflectivityCalculator)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    auto reflectivityRegularGrid = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
+    const auto reflectivityRegularGridCompare = DomainTestValues::reflectivityRegularGridFromSimpleGridRotated30Degrees();
+    double epsilon = std::pow(10, 4);
+    const double undefinedImpedance = 2.5;
+
+    ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
+    reflectivityCalculator.convert(reflectivityRegularGrid);
+
+    for (size_t x = 0; x < reflectivityRegularGrid.getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < reflectivityRegularGrid.getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < reflectivityRegularGrid.getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(reflectivityRegularGrid.getData(x, y, z) - reflectivityRegularGridCompare.getData(x, y, z)), epsilon);
             }
         }
     }

@@ -18,11 +18,6 @@ void ReflectivityRegularGridCalculator::convert(RegularGrid<double> &regularImpe
     const auto numberOfCellsInY = regularImpedanceGrid.getNumberOfCellsInY();
     const auto numberOfCellsInZ = static_cast<int>(regularImpedanceGrid.getNumberOfCellsInZ());
 
-    RegularGrid<double> reflectivityGrid(
-                numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
-                regularImpedanceGrid.getCellSizeInX(), regularImpedanceGrid.getCellSizeInY(), regularImpedanceGrid.getCellSizeInZ(),
-                regularImpedanceGrid.getNoDataValue()
-            );
     auto &data = regularImpedanceGrid.getData();
 
     #pragma omp parallel for

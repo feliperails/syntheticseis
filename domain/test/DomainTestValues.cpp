@@ -669,6 +669,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99533, 100.00204, 100.00000),
         Point3D(999.99553, 200.00235, 100.00000),
     };
+    volumes[0]->idLithology = 1;
+
     volumes[1]->points = {
         Point3D(1199.99981, 49.99994, 0.00000),
         Point3D(1199.99979, 99.99988, 0.00000),
@@ -679,6 +681,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99553, 200.00235, 100.00000),
         Point3D(999.99558, 300.00240, 100.00000),
     };
+    volumes[1]->idLithology = 3;
+
     volumes[2]->points = {
         Point3D(999.99558, 0.00251, 0.00000),
         Point3D(999.99533, 100.00204, 0.00000),
@@ -689,6 +693,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99547, 100.00204, 100.00000),
         Point3D(599.99559, 250.00220, 100.00000),
     };
+    volumes[2]->idLithology = 5;
+
     volumes[3]->points = {
         Point3D(999.99533, 100.00204, 0.00000),
         Point3D(999.99553, 200.00235, 0.00000),
@@ -699,6 +705,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99559, 250.00220, 100.00000),
         Point3D(599.99567, 400.00228, 100.00000),
     };
+    volumes[3]->idLithology = 7;
+
     volumes[4]->points = {
         Point3D(599.99572, 0.00251, 0.00000),
         Point3D(599.99584, 150.00267, 0.00000),
@@ -709,6 +717,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00001, 99.99954, 100.00000),
         Point3D(0.00001, 299.99947, 100.00000),
     };
+    volumes[4]->idLithology = 9;
+
     volumes[5]->points = {
         Point3D(599.99584, 150.00267, 0.00000),
         Point3D(599.99547, 300.00197, 0.00000),
@@ -719,6 +729,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00001, 299.99947, 100.00000),
         Point3D(0.00001, 499.99940, 100.00000),
     };
+    volumes[5]->idLithology = 11;
+
     volumes[6]->points = {
         Point3D(1199.99979, 99.99988, 100.00000),
         Point3D(1199.99981, 149.99991, 100.00000),
@@ -729,6 +741,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99553, 200.00235, 200.00000),
         Point3D(999.99558, 300.00240, 200.00000),
     };
+    volumes[6]->idLithology = 13;
+
     volumes[7]->points = {
         Point3D(1199.99981, 149.99991, 100.00000),
         Point3D(1199.99984, 199.99994, 100.00000),
@@ -739,6 +753,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99558, 300.00240, 200.00000),
         Point3D(999.99558, 400.00237, 200.00000),
     };
+    volumes[7]->idLithology = 15;
+
     volumes[8]->points = {
         Point3D(999.99533, 100.00204, 100.00000),
         Point3D(999.99553, 200.00235, 100.00000),
@@ -749,6 +765,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99572, 200.00244, 200.00000),
         Point3D(599.99584, 350.00260, 200.00000),
     };
+    volumes[8]->idLithology = 17;
+
     volumes[9]->points = {
         Point3D(999.99553, 200.00235, 100.00000),
         Point3D(999.99558, 300.00240, 100.00000),
@@ -759,6 +777,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99584, 350.00260, 200.00000),
         Point3D(599.99568, 500.00227, 200.00000),
     };
+    volumes[9]->idLithology = 24;
+
     volumes[10]->points = {
         Point3D(599.99547, 100.00204, 100.00000),
         Point3D(599.99559, 250.00220, 100.00000),
@@ -769,6 +789,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00026, 199.99994, 200.00000),
         Point3D(0.00026, 399.99987, 200.00000),
     };
+    volumes[10]->idLithology = 1;
+
     volumes[11]->points = {
         Point3D(599.99559, 250.00220, 100.00000),
         Point3D(599.99567, 400.00228, 100.00000),
@@ -779,6 +801,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00026, 399.99987, 200.00000),
         Point3D(0.00026, 599.99980, 200.00000),
     };
+    volumes[11]->idLithology = 3;
+
     volumes[12]->points = {
         Point3D(1199.99984, 199.99994, 200.00000),
         Point3D(1199.99981, 249.99987, 200.00000),
@@ -789,6 +813,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99558, 300.00240, 300.00000),
         Point3D(999.99558, 400.00237, 300.00000),
     };
+    volumes[12]->idLithology = 5;
+
     volumes[13]->points = {
         Point3D(1199.99981, 249.99987, 200.00000),
         Point3D(1199.99959, 299.99947, 200.00000),
@@ -799,6 +825,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99558, 400.00237, 300.00000),
         Point3D(999.99583, 500.00276, 300.00000),
     };
+    volumes[13]->idLithology = 7;
+
     volumes[14]->points = {
         Point3D(999.99553, 200.00235, 200.00000),
         Point3D(999.99558, 300.00240, 200.00000),
@@ -809,6 +837,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99547, 300.00197, 300.00000),
         Point3D(599.99569, 450.00230, 300.00000),
     };
+    volumes[14]->idLithology = 9;
+
     volumes[15]->points = {
         Point3D(999.99558, 300.00240, 200.00000),
         Point3D(999.99558, 400.00237, 200.00000),
@@ -819,6 +849,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99569, 450.00230, 300.00000),
         Point3D(599.99572, 600.00230, 300.00000),
     };
+    volumes[15]->idLithology = 11;
+
     volumes[16]->points = {
         Point3D(599.99572, 200.00244, 200.00000),
         Point3D(599.99584, 350.00260, 200.00000),
@@ -829,6 +861,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00001, 299.99947, 300.00000),
         Point3D(0.00001, 499.99940, 300.00000),
     };
+    volumes[16]->idLithology = 13;
+
     volumes[17]->points = {
         Point3D(599.99584, 350.00260, 200.00000),
         Point3D(599.99568, 500.00227, 200.00000),
@@ -839,6 +873,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00001, 499.99940, 300.00000),
         Point3D(0.00001, 699.99933, 300.00000),
     };
+    volumes[17]->idLithology = 15;
+
     volumes[18]->points = {
         Point3D(1199.99959, 299.99947, 300.00000),
         Point3D(1199.99996, 350.00010, 300.00000),
@@ -849,6 +885,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99558, 400.00237, 400.00000),
         Point3D(999.99583, 500.00276, 400.00000),
     };
+    volumes[18]->idLithology = 17;
+
     volumes[19]->points = {
         Point3D(1199.99996, 350.00010, 300.00000),
         Point3D(1199.99984, 399.99987, 300.00000),
@@ -859,6 +897,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(999.99583, 500.00276, 400.00000),
         Point3D(999.99558, 600.00230, 400.00000),
     };
+    volumes[19]->idLithology = 24;
+
     volumes[20]->points = {
         Point3D(999.99558, 300.00240, 300.00000),
         Point3D(999.99558, 400.00237, 300.00000),
@@ -869,6 +909,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99567, 400.00228, 400.00000),
         Point3D(599.99569, 550.00227, 400.00000),
     };
+    volumes[20]->idLithology = 1;
+
     volumes[21]->points = {
         Point3D(999.99558, 400.00237, 300.00000),
         Point3D(999.99583, 500.00276, 300.00000),
@@ -879,6 +921,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(599.99569, 550.00227, 400.00000),
         Point3D(599.99547, 700.00183, 400.00000),
     };
+    volumes[21]->idLithology = 3;
+
     volumes[22]->points = {
         Point3D(599.99547, 300.00197, 300.00000),
         Point3D(599.99569, 450.00230, 300.00000),
@@ -889,6 +933,8 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00026, 399.99987, 400.00000),
         Point3D(0.00026, 599.99980, 400.00000),
     };
+    volumes[22]->idLithology = 5;
+
     volumes[23]->points = {
         Point3D(599.99569, 450.00230, 300.00000),
         Point3D(599.99572, 600.00230, 300.00000),
@@ -899,6 +945,7 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
         Point3D(0.00026, 599.99980, 400.00000),
         Point3D(0.00021, 799.99964, 400.00000),
     };
+    volumes[23]->idLithology = 7;
 
     return volumes;
 }
@@ -954,6 +1001,118 @@ RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees(
                                 {undefinedLithology,9,7,12,18},
                                 {undefinedLithology,undefinedLithology,undefinedLithology,15,19},
                                 {undefinedLithology,undefinedLithology,undefinedLithology,undefinedLithology,undefinedLithology}
+                            }
+                        });
+
+    return regularGrid;
+}
+
+syntheticSeismic::domain::RegularGrid<double> DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees()
+{
+    const size_t numberOfCellsInX = 5;
+    const size_t numberOfCellsInY = 5;
+    const size_t numberOfCellsInZ = 5;
+    const double cellSizeInX = 240;
+    const double cellSizeInY = 160;
+    const double cellSizeInZ = 80;
+
+    RegularGrid<double> regularGrid(
+                numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
+                cellSizeInX, cellSizeInY, cellSizeInZ,
+                0
+            );
+
+    regularGrid.setData({
+                            {
+                                {6, 2.5, 2.5, 2.5, 2.5},
+                                {6, 6, 2.8, 2.5, 2.5},
+                                {3, 3, 2.8, 4, 3.2},
+                                {2.5, 3, 3, 4.5, 3.2},
+                                {2.5, 2.5, 2.5, 4.5, 3.2},
+                            },
+                            {
+                                {6, 2.5, 2.5, 2.5, 2.5},
+                                {6, 6, 2.8, 2.5, 2.5},
+                                {3, 3, 2.8, 4, 3.2},
+                                {2.5, 3, 3, 4.5, 3.2},
+                                {2.5, 2.5, 2.5, 4.5, 3.2},
+                            },
+                            {
+                                {3, 2.5, 2.5, 2.5, 2.5},
+                                {3, 3, 4.5, 2.5, 2.5},
+                                {3.7, 3.7, 6, 3.5, 2.8},
+                                {2.5, 2.5, 3, 3.7, 2.8},
+                                {2.5, 2.5, 2.5, 2.5, 3},
+                            },
+                            {
+                                {3, 2.5, 2.5, 2.5, 2.5},
+                                {3, 3, 4.5, 2.5, 2.5},
+                                {2.5, 3.7, 6, 3.5, 2.8},
+                                {2.5, 2.5, 2.5, 3.7, 2.8},
+                                {2.5, 2.5, 2.5, 2.5, 2.5},
+                            },
+                            {
+                                {3.7, 2.5, 2.5, 2.5, 2.5},
+                                {3.7, 3.7, 3.2, 2.5, 2.5},
+                                {2.5, 6, 3.7, 3.2, 4.5},
+                                {2.5, 2.5, 2.5, 3.7, 6},
+                                {2.5, 2.5, 2.5, 2.5, 2.5},
+                            },
+                        });
+
+    return regularGrid;
+}
+
+syntheticSeismic::domain::RegularGrid<double> DomainTestValues::reflectivityRegularGridFromSimpleGridRotated30Degrees()
+{
+    const size_t numberOfCellsInX = 5;
+    const size_t numberOfCellsInY = 5;
+    const size_t numberOfCellsInZ = 5;
+    const double cellSizeInX = 240;
+    const double cellSizeInY = 160;
+    const double cellSizeInZ = 80;
+
+    RegularGrid<double> regularGrid(
+                numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
+                cellSizeInX, cellSizeInY, cellSizeInZ,
+                0
+            );
+
+    regularGrid.setData({
+                            {
+                                {-0.41176, 0.41176, 0, 0, 0},
+                                {-0.41176, 0, 0.36364, 0.056604, 0},
+                                {-0.090909, 0, 0.034483, -0.17647, 0.11111},
+                                {0, -0.090909, 0, -0.2, 0.16883},
+                                {0, 0, 0, -0.28571, 0.16883},
+                            },
+                            {
+                                {-0.41176, 0.41176, 0, 0, 0},
+                                {-0.41176, 0, 0.36364, 0.056604, 0},
+                                {-0.090909, 0, 0.034483, -0.17647, 0.11111},
+                                {0, -0.090909, 0, -0.2, 0.16883},
+                                {0, 0, 0, -0.28571, 0.16883},
+                            },
+                            {
+                                {-0.090909, 0.090909, 0, 0, 0},
+                                {-0.090909, 0, -0.2, 0.28571, 0},
+                                {-0.19355, 0, -0.23711, 0.26316, 0.11111},
+                                {0, 0, -0.090909, -0.10448, 0.13846},
+                                {0, 0, 0, 0, -0.090909},
+                            },
+                            {
+                                {-0.090909, 0.090909, 0, 0, 0},
+                                {-0.090909, 0, -0.2, 0.28571, 0},
+                                {0, -0.19355, -0.23711, 0.26316, 0.11111},
+                                {0, 0, 0, -0.19355, 0.13846},
+                                {0, 0, 0, 0, 0},
+                            },
+                            {
+                                {-0.19355, 0.19355, 0, 0, 0},
+                                {-0.19355, 0, 0.072464, 0.12281, 0},
+                                {0, -0.41176, 0.23711, 0.072464, -0.16883},
+                                {0, 0, 0, -0.19355, -0.23711},
+                                {0, 0, 0, 0, 0},
                             }
                         });
 

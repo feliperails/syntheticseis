@@ -26,6 +26,10 @@ public:
 
     static syntheticSeismic::domain::RegularGrid<size_t> regularGridFromSimpleGridRotated30Degrees();
 
+    static syntheticSeismic::domain::RegularGrid<double> impedanceRegularGridFromSimpleGridRotated30Degrees();
+
+    static syntheticSeismic::domain::RegularGrid<double> reflectivityRegularGridFromSimpleGridRotated30Degrees();
+
     static syntheticSeismic::domain::Wavelet rickerWavelet();
 
     static syntheticSeismic::domain::Wavelet waveletToTestConvolution();

@@ -15,7 +15,7 @@ void ImpedanceRegularGridCalculator::addLithology(std::shared_ptr<Lithology> lit
     m_lithologies[lithology->getId()] = lithology;
 }
 
-std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(RegularGrid<std::shared_ptr<geometry::Volume> > regularVolumeGrid) const
+std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid) const
 {
     const auto numberOfCellsInX = regularVolumeGrid.getNumberOfCellsInX();
     const auto numberOfCellsInY = regularVolumeGrid.getNumberOfCellsInY();

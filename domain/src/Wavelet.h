@@ -19,8 +19,8 @@ public:
     double getLast() const;
     void setLast(double last);
 
-    unsigned int getStep() const;
-    void setStep(unsigned int step);
+    double getStep() const;
+    void setStep(double step);
 
     QString getUnits() const;
     void setUnits(const QString &units);
@@ -28,17 +28,17 @@ public:
     unsigned int getFrequency() const;
     void setFrequency(const unsigned int frequency);
 
-    std::vector<double>& getTraces() const;
+    std::vector<double>& getTraces();
     void setTraces(const std::vector<double> traces);
 
 private:
     QString m_name;
     double m_first;
     double m_last;
-    unsigned int m_step;
+    double m_step;
     unsigned int m_frequency;
     QString m_units;
-    std::shared_ptr<std::vector<double>> m_traces;
+    std::vector<double> m_traces;
 };
 
 } // namespace domain

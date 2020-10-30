@@ -110,10 +110,6 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     )
 
-add_executable(SyntheticSeismicConsole
-    cmake/main.cpp
-    )
-
 #install(FILES
 #    CoreExport.h
 #    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .

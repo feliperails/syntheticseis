@@ -41,12 +41,12 @@ void Wavelet::setLast(double last)
     m_last = last;
 }
 
-unsigned int Wavelet::getStep() const
+double Wavelet::getStep() const
 {
     return m_step;
 }
 
-void Wavelet::setStep(unsigned int step)
+void Wavelet::setStep(double step)
 {
     m_step = step;
 }
@@ -61,7 +61,7 @@ void Wavelet::setUnits(const QString &units)
     m_units = units;
 }
 
-std::vector<double>& Wavelet::getTraces() const
+std::vector<double>& Wavelet::getTraces()
 {
     return m_traces;
 }

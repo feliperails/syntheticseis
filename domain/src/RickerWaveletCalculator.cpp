@@ -14,6 +14,36 @@ RickerWaveletCalculator::RickerWaveletCalculator()
 
 }
 
+double RickerWaveletCalculator::getStep() const
+{
+    return m_step;
+}
+
+void RickerWaveletCalculator::setStep(double step)
+{
+    m_step = step;
+}
+
+double RickerWaveletCalculator::getFrequency() const
+{
+    return m_frequency;
+}
+
+void RickerWaveletCalculator::setFrequency(double frequency)
+{
+    m_frequency = frequency;
+}
+
+unsigned int RickerWaveletCalculator::getLength() const
+{
+    return m_length;
+}
+
+QString RickerWaveletCalculator::getUnits() const
+{
+    return m_units;
+}
+
 std::shared_ptr<Wavelet> RickerWaveletCalculator::extract() const
 {
     auto wavelet = std::make_shared<Wavelet>();
@@ -32,18 +62,17 @@ std::shared_ptr<Wavelet> RickerWaveletCalculator::extract() const
     size_t betaSize = halfLength * 2 + 1;
     std::vector<double> beta(betaSize);
     std::vector<double> &traces = wavelet->getTraces();
-    size_t indexTrace = 0;
+    traces.resize(betaSize);
     double maximum = -std::numeric_limits<double>::max();
-    for (int position = -halfLength; position <= halfLength; ++position)
+    for (size_t position = 0; position < betaSize; ++position)
     {
-        const double value = position * m_step * m_frequency * M_PI * 0.001;
-        beta[indexTrace] = value * value;
-        traces[indexTrace] = (1 - beta[indexTrace]) * 2.0 * std::exp(-beta[indexTrace]);
-        if (maximum > traces[indexTrace])
+        const double value = (-wl2 + position * m_step) * m_frequency * M_PI * 0.001;
+        beta[position] = value * value;
+        traces[position] = (1 - beta[position]* 2.0) * std::exp(-beta[position]);
+        if (traces[position] > maximum)
         {
-            maximum = traces[indexTrace];
+            maximum = traces[position];
         }
-        ++indexTrace;
     }
 
     for (size_t indexTrace = 0; indexTrace < betaSize; ++indexTrace)

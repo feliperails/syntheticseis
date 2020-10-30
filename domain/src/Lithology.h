@@ -11,7 +11,7 @@ public:
     // Cria uma litologia inválida. O id será igual a -1.
     Lithology();
 
-    Lithology(const int id, const QString& name);
+    Lithology(const int id, const QString& name, double velocity = 0.0);
 
     // Se o id for -1, a litologia é inválida.
     int getId() const;

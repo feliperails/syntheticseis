@@ -14,8 +14,18 @@ public:
     RickerWaveletCalculator();
 
     std::shared_ptr<Wavelet> extract() const;
+
+    double getStep() const;
+    void setStep(double step);
+
+    double getFrequency() const;
+    void setFrequency(double frequency);
+
+    unsigned int getLength() const;
+
+    QString getUnits() const;
 private:
-    unsigned int m_step;
+    double m_step;
     unsigned int m_length;
     double m_frequency;
     unsigned int m_wlength;

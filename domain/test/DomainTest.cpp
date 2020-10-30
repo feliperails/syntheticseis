@@ -1,12 +1,14 @@
 #include <gtest/gtest.h>
-#include <domain/src/SeismicWaveVelocityDictionary.h>
-#include <domain/src/Lithology.h>
+#include <domain/src/ConvolutionRegularGridCalculator.h>
+#include <domain/src/EclipseGrid.h>
 #include <domain/src/ExtractMinimumRectangle2D.h>
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/Facade.h>
+#include <domain/src/Lithology.h>
 #include <domain/src/LithologyDictionary.h>
-#include <domain/src/EclipseGrid.h>
+#include <domain/src/RickerWaveletCalculator.h>
 #include <domain/src/RotateVolumeCoordinate.h>
+#include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>
@@ -229,6 +231,57 @@ TEST(DomainTest, VolumeToRegularGrid)
                     EXPECT_EQ(Volume::UNDEFINED_LITHOLOGY, regularGridCompare.getData()[x][y][z])
                             << "Cell error: " << x << ", " << y << ", " << z;
                 }
+            }
+        }
+    }
+}
+
+TEST(DomainTest, RickerWavelet)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto waveletCompare = DomainTestValues::rickerWavelet();
+
+    RickerWaveletCalculator rickerCalculator;
+    rickerCalculator.setStep(waveletCompare.getStep());
+    rickerCalculator.setFrequency(waveletCompare.getFrequency());
+    auto wavelet = rickerCalculator.extract();
+
+    EXPECT_EQ(wavelet->getTraces().size(), waveletCompare.getTraces().size());
+
+    if (wavelet->getTraces().size() == waveletCompare.getTraces().size())
+    {
+        double epsilon = std::pow(10, 26);
+        for (size_t i = 0; i < wavelet->getTraces().size(); ++i)
+        {
+            EXPECT_LT(std::abs(wavelet->getTraces()[i] - waveletCompare.getTraces()[i]), epsilon);
+        }
+    }
+}
+
+TEST(DomainTest, Convolution)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto regularGrid = DomainTestValues::regularGridToTestConvolution();
+    auto wavelet = DomainTestValues::waveletToTestConvolution();
+    auto convolutionRegularGridCompare = DomainTestValues::regularGridConvolution();
+    double epsilon = std::pow(10, 10);
+
+    ConvolutionRegularGridCalculator convolutionCalculator;
+    auto convolutionRegularGrid = convolutionCalculator.execute(regularGrid, wavelet);
+
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInX(), convolutionRegularGridCompare.getNumberOfCellsInX());
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInY(), convolutionRegularGridCompare.getNumberOfCellsInY());
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInZ(), convolutionRegularGridCompare.getNumberOfCellsInZ());
+
+    for (size_t x = 0; x < convolutionRegularGrid->getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < convolutionRegularGrid->getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < convolutionRegularGrid->getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(convolutionRegularGrid->getData(x, y, z) - convolutionRegularGridCompare.getData(x, y, z)), epsilon);
             }
         }
     }

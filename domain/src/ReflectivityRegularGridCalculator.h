@@ -10,14 +10,11 @@ class Volume;
 }
 
 namespace domain {
-
-class Lithology;
-
 class ReflectivityRegularGridCalculator
 {
 public:
-    ReflectivityRegularGridCalculator(double m_undefinedImpedance);
-    RegularGrid<double> convert(const RegularGrid<double> &regularVolumeGrid);
+    ReflectivityRegularGridCalculator(double undefinedImpedance);
+    void convert(RegularGrid<double> &regularVolumeGrid);
 private:
     double m_undefinedImpedance;
 };

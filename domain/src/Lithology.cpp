@@ -3,27 +3,39 @@
 namespace syntheticSeismic {
 namespace domain {
 
-Lithology::Lithology(const int code, const QString &name)
-    : m_lithologyId(code)
+Lithology::Lithology(const int code, const QString &name, double velocity)
+    : m_id(code)
     , m_name(name)
+    , m_velocity(velocity)
+    , m_density(0.0)
 {
-    Q_ASSERT(m_lithologyId != -1);
+    Q_ASSERT(m_id != -1);
     Q_ASSERT(!name.isEmpty());
 }
 
 Lithology::Lithology()
-    : m_lithologyId(-1)
+    : m_id(-1)
 {
 }
 
-int Lithology::id() const
+int Lithology::getId() const
 {
-    return m_lithologyId;
+    return m_id;
 }
 
-const QString &Lithology::name() const
+const QString &Lithology::getName() const
 {
     return m_name;
+}
+
+double Lithology::getVelocity() const
+{
+    return m_velocity;
+}
+
+double Lithology::getDensity() const
+{
+    return m_density;
 }
 
 }

@@ -30,18 +30,18 @@ EclipseGrid::EclipseGrid(const size_t numberOfCellsInX,
 {
 }
 
-EclipseGrid& EclipseGrid::operator=(const EclipseGrid& o)
-{
-    m_numberOfCellsInX = o.m_numberOfCellsInX;
-    m_numberOfCellsInY = o.m_numberOfCellsInY;
-    m_numberOfCellsInZ = o.m_numberOfCellsInZ;
+//EclipseGrid& EclipseGrid::operator=(const EclipseGrid& o)
+//{
+//    m_numberOfCellsInX = o.m_numberOfCellsInX;
+//    m_numberOfCellsInY = o.m_numberOfCellsInY;
+//    m_numberOfCellsInZ = o.m_numberOfCellsInZ;
 
-    m_coordinates = o.m_coordinates;
-    m_lithologyIds = o.m_lithologyIds;
-    m_zValues = o.m_zValues;
+//    m_coordinates = o.m_coordinates;
+//    m_lithologyIds = o.m_lithologyIds;
+//    m_zValues = o.m_zValues;
 
-    return *this;
-}
+//    return *this;
+//}
 
 size_t EclipseGrid::numberOfCellsInX() const
 {

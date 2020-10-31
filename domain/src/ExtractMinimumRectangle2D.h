@@ -8,13 +8,13 @@
 namespace syntheticSeismic {
 namespace domain {
 
-class extractMinimumRectangle2D
+class ExtractMinimumRectangle2D
 {
 public:
     static std::array<geometry::Point2D, 4> extractFrom(const std::vector<std::shared_ptr<geometry::Volume>>& volumes);
 private:
     // Class with static methods only. It must not be instantiated.
-    extractMinimumRectangle2D() = default;
+    ExtractMinimumRectangle2D() = default;
 };
 
 } // namespace domain

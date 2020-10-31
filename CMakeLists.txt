@@ -5,8 +5,8 @@ project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
 add_definitions(-D_USE_MATH_DEFINES)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
-list(REMOVE_DUPLICATES CMAKE_MODULE_PATH)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
@@ -18,7 +18,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 
+
+execute_process(
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure.bat
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
 
 ## Download automatically, you can also just copy the conan.cmake file
 #if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake" )
@@ -27,13 +33,16 @@ set(CMAKE_AUTOUIC ON)
 #        "${CMAKE_BINARY_DIR}/conan.cmake"
 #        TLS_VERIFY ON)
 #endif()
-
 #include(${CMAKE_BINARY_DIR}/conan.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/conan.cmake)
 
 # Versão do conan
 conan_check(VERSION 1.25.0 REQUIRED)
+
+conan_cmake_run(ninja/1.10.1
+    BASIC_SETUP
+    BUILD missing)
 
 conan_cmake_run(REQUIRES hdf5/1.8.21
     BASIC_SETUP
@@ -59,6 +68,10 @@ add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
+find_package(Threads REQUIRED)
+
+include_directories(${GTEST_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -76,6 +89,7 @@ add_library(SyntheticSeismic SHARED
     geometry/src/Point2D.cpp
 
     # domain
+    domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
     domain/src/DomainConstant.h
     domain/src/ExtractMinimumRectangle2D.cpp
@@ -90,8 +104,14 @@ add_library(SyntheticSeismic SHARED
     domain/src/Lithology.cpp
     domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
+    domain/src/ImpedanceRegularGridCalculator.h
+    domain/src/ImpedanceRegularGridCalculator.cpp
     domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
+    domain/src/ReflectivityRegularGridCalculator.h
+    domain/src/ReflectivityRegularGridCalculator.cpp
+    domain/src/RickerWaveletCalculator.h
+    domain/src/RickerWaveletCalculator.cpp
     domain/src/RotateVolumeCoordinate.h
     domain/src/RotateVolumeCoordinate.cpp
     domain/src/SeismicTraces.h
@@ -100,7 +120,8 @@ add_library(SyntheticSeismic SHARED
     domain/src/SeismicWaveVelocityDictionary.cpp
     domain/src/VolumeToRegularGrid.h
     domain/src/VolumeToRegularGrid.cpp
-
+    domain/src/Wavelet.h
+    domain/src/Wavelet.cpp
     # storage
     storage/src/Facade.h
     storage/src/Facade.cpp
@@ -134,23 +155,22 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     )
 
-install(FILES
-    CoreExport.h
-    ${CURRENT_BUILD_DIR}/CoreExport.h DESTINATION .
-    )
-
+#add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
 generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC ${GTEST_LIBRARIES}
     PUBLIC ${CONAN_LIBS}
-    )
+)
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
     PUBLIC ${CONAN_LIBS}
+    PUBLIC ${HDF5_LIBRARIES}
     PUBLIC SyntheticSeismic
     )
 
@@ -160,6 +180,9 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
+    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC ${CONAN_LIBS}
+    PUBLIC ${GTEST_LIBRARIES}
     )
 
 if(WIN32)

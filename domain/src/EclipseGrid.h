@@ -13,7 +13,7 @@ public:
     EclipseGrid();
 
     EclipseGrid(const EclipseGrid&) = default;
-    EclipseGrid& operator =(const EclipseGrid& o);
+    EclipseGrid& operator =(const EclipseGrid& o) = default;
 
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,

@@ -25,19 +25,19 @@ TEST(DomainTest, LithologyDictionaryTest)
     dictionary.addLithology(8, QString("e3"));
     dictionary.addLithology(6, QString("e4"));
 
-    EXPECT_EQ(dictionary.lithology(10).id(), 10);
-    EXPECT_EQ(dictionary.lithology(300).id(), 300);
-    EXPECT_EQ(dictionary.lithology(8).id(), 8);
-    EXPECT_EQ(dictionary.lithology(6).id(), 6);
-    EXPECT_EQ(dictionary.lithology(100).id(), -1);
-    EXPECT_EQ(dictionary.lithology(-1).id(), -1);
+    EXPECT_EQ(dictionary.lithology(10).getId(), 10);
+    EXPECT_EQ(dictionary.lithology(300).getId(), 300);
+    EXPECT_EQ(dictionary.lithology(8).getId(), 8);
+    EXPECT_EQ(dictionary.lithology(6).getId(), 6);
+    EXPECT_EQ(dictionary.lithology(100).getId(), -1);
+    EXPECT_EQ(dictionary.lithology(-1).getId(), -1);
 
-    EXPECT_EQ(dictionary.lithology(QString("e1")).name(), QString("e1"));
-    EXPECT_EQ(dictionary.lithology(QString("e2")).name(), QString("e2"));
-    EXPECT_EQ(dictionary.lithology(QString("e3")).name(), QString("e3"));
-    EXPECT_EQ(dictionary.lithology(QString("e4")).name(), QString("e4"));
-    EXPECT_EQ(dictionary.lithology(QString("e5")).name(), QString());
-    EXPECT_EQ(dictionary.lithology(QString()).name(), QString());
+    EXPECT_EQ(dictionary.lithology(QString("e1")).getName(), QString("e1"));
+    EXPECT_EQ(dictionary.lithology(QString("e2")).getName(), QString("e2"));
+    EXPECT_EQ(dictionary.lithology(QString("e3")).getName(), QString("e3"));
+    EXPECT_EQ(dictionary.lithology(QString("e4")).getName(), QString("e4"));
+    EXPECT_EQ(dictionary.lithology(QString("e5")).getName(), QString());
+    EXPECT_EQ(dictionary.lithology(QString()).getName(), QString());
 
     EXPECT_EQ(dictionary.lithologies().size(), 4);
 }
@@ -150,7 +150,7 @@ TEST(DomainTest, ExtractMinimumRectangle2DTest)
     using namespace syntheticSeismic::domain;
 
     const auto volumes = DomainTestValues::volumesFromSimpleGrid();
-    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+    const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(volumes);
 
     const auto minimumRectangleCompare = DomainTestValues::minimumRectangleFromSimpleGrid();
     for (size_t i = 0; i < minimumRectangle.size(); ++i)
@@ -166,7 +166,7 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
 
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
     const auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
-    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+    const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(volumes);
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
 

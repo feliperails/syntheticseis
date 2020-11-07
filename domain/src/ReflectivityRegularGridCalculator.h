@@ -14,7 +14,7 @@ class ReflectivityRegularGridCalculator
 {
 public:
     ReflectivityRegularGridCalculator(double undefinedImpedance);
-    void convert(RegularGrid<double> &regularVolumeGrid);
+    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<double> &regularVolumeGrid);
 private:
     double m_undefinedImpedance;
 };

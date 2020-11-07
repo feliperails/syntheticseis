@@ -37,4 +37,7 @@ public:
     static syntheticSeismic::domain::RegularGrid<double> regularGridToTestConvolution();
 
     static syntheticSeismic::domain::RegularGrid<double> regularGridConvolution();
+private:
+    // Totally static class
+    DomainTestValues() = default;
 };

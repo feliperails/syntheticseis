@@ -80,14 +80,14 @@ add_library(SyntheticSeismic SHARED
     # storage
     storage/src/Facade.h
     storage/src/Facade.cpp
+    storage/src/RegularGridHdf5Storage.h
+    storage/src/RegularGridHdf5Storage.cpp
     storage/src/reader/EclipseGridReader.h
     storage/src/reader/EclipseGridReader.cpp
     storage/src/writer/EclipseGridWriter.h
     storage/src/writer/EclipseGridWriter.cpp
     storage/src/writer/SEGYWriter.h
     storage/src/writer/SEGYWriter.cpp
-    storage/src/writer/RegularGridHdf5Writer.h
-    storage/src/writer/RegularGridHdf5Writer.cpp
     )
 
 add_library(SyntheticSeismicMock
@@ -107,6 +107,8 @@ add_executable(SyntheticSeismicTest
     domain/test/DomainTestValues.cpp
     domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
+    storage/test/StorageTestValues.cpp
+    storage/test/StorageTestValues.h
     storage/test/StorageTest.cpp
     )
 
@@ -185,6 +187,7 @@ install(FILES README.md
 # Arquivo para teste de leitura do EclipseGrid
 file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/gridMollesImpedance_5_5_5.h5" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 

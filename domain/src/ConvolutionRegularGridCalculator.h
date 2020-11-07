@@ -12,7 +12,7 @@ class ConvolutionRegularGridCalculator
 public:
     ConvolutionRegularGridCalculator();
 
-    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<double> &impedanceRegularGrid, Wavelet &wavelet);
+    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<double> &reflectivityRegularGrid, Wavelet &wavelet);
 };
 
 } // namespace domain

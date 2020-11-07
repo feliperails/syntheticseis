@@ -1,6 +1,7 @@
 #include "ImpedanceRegularGridCalculator.h"
 #include "Lithology.h"
 #include "geometry/src/Volume.h"
+#include <exception>
 
 namespace syntheticSeismic {
 namespace domain {
@@ -16,7 +17,7 @@ void ImpedanceRegularGridCalculator::addLithology(std::shared_ptr<Lithology> lit
     m_lithologies[lithology->getId()] = lithology;
 }
 
-std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid)
+std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::execute(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid)
 {
     const auto numberOfCellsInX = regularVolumeGrid.getNumberOfCellsInX();
     const auto numberOfCellsInY = regularVolumeGrid.getNumberOfCellsInY();
@@ -36,6 +37,8 @@ std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(Reg
 
     const auto &gridDataVolumes = regularVolumeGrid.getData();
 
+    bool error = false;
+    std::exception exception;
     #pragma omp parallel for
     for (int zInt = 0; zInt < numberOfCellsInZInt; ++zInt)
     {
@@ -44,16 +47,29 @@ std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::convert(Reg
         {
             for (size_t x = 0; x < numberOfCellsInX; ++x)
             {
-                if (gridDataVolumes[x][y][z] == nullptr)
+                if (gridDataVolumes[x][y][z] == nullptr || error)
                 {
                     continue;
                 }
-
                 const auto idLithology = gridDataVolumes[x][y][z]->idLithology;
+                if (m_lithologies.find(idLithology) == m_lithologies.end())
+                {
+                    QString message = "Lithology " + QString::number(gridDataVolumes[x][y][z]->idLithology) + " of volume " +
+                            QString::number(gridDataVolumes[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
+                            QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
+                    error = true;
+                    exception = std::exception(message.toStdString().c_str());
+                    continue;
+                }
+
                 const auto &lithology = *m_lithologies[idLithology];
                 data[x][y][z] = lithology.getVelocity() * lithology.getDensity();
             }
         }
+    }
+    if (error)
+    {
+        throw exception;
     }
 
     return regularGrid;

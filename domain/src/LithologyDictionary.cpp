@@ -45,7 +45,7 @@ int LithologyDictionary::addLithology(const int id, const QString& name)
         }
     }
 
-    m_lithologies.push_back(Lithology(id, name));
+    m_lithologies.push_back(Lithology(id, name, 0.0, 0.0));
     return m_lithologies.size() - 1;
 }
 

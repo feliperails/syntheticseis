@@ -155,6 +155,10 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     )
 
+add_executable(SyntheticSeismicConsole
+    console/main.cpp
+    )
+
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
 generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
@@ -185,13 +189,24 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC ${GTEST_LIBRARIES}
     )
 
+target_link_libraries(SyntheticSeismicConsole
+    PUBLIC Qt5::Core
+    PUBLIC Qt5::Test
+    PUBLIC ${CONAN_LIBS}
+    PUBLIC SyntheticSeismic
+    PUBLIC SyntheticSeismicMock
+    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC ${CONAN_LIBS}
+    PUBLIC ${GTEST_LIBRARIES}
+    )
+
 if(WIN32)
     include(GetPrerequisites)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
     set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
     MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
-    set(_search_paths ${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH})
+    set(_search_paths "${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH}")
     string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
 
     message(STATUS "SEARCH_PATHS: " ${_search_paths})
@@ -206,7 +221,6 @@ if(WIN32)
         -DSEARCH_PATHS=${_search_paths}
         -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
-
 endif()
 
 install(FILES README.md

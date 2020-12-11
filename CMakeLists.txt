@@ -67,7 +67,7 @@ conan_cmake_run(REQUIRES pthreads4w/3.0.0
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
-find_package(Qt5 COMPONENTS REQUIRED Core Test)
+find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets)
 find_package(Threads REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIR})
@@ -157,6 +157,8 @@ add_executable(SyntheticSeismicTest
 
 add_executable(SyntheticSeismicConsole
     console/main.cpp
+    console/Wizard.cpp
+    console/Wizard.h
     )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
@@ -192,6 +194,7 @@ target_link_libraries(SyntheticSeismicTest
 target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
+    PUBLIC Qt5::Widgets
     PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock

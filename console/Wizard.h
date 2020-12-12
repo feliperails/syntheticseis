@@ -3,13 +3,15 @@
 
 #include <QWizard>
 
-namespace Ui {
-class ProcessingPage;
-class RegularGridImportPage;
-}
+#include <QSharedData>
 
 namespace syntheticSeismic {
 namespace widgets {
+
+class PageData: public QSharedData
+{
+
+};
 
 /***************************************************************/
 
@@ -27,12 +29,37 @@ private:
 
 /***************************************************************/
 
+class FileSelectionPagePrivate;
+class FileSelectionPage : public QWizardPage
+{
+    Q_OBJECT
+public:
+    explicit FileSelectionPage(QWidget* parent);
+
+    bool validatePage() override;
+//    void initializePage() override;
+    bool isComplete() const override;
+
+protected:
+    void resizeEvent(QResizeEvent *event);
+
+private:
+    Q_DECLARE_PRIVATE(FileSelectionPage)
+    FileSelectionPagePrivate* const d_ptr;
+};
+
+/***************************************************************/
+
 class RegularGridImportPagePrivate;
 class RegularGridImportPage : public QWizardPage
 {
     Q_OBJECT
 public:
     explicit RegularGridImportPage(QWidget* parent);
+
+    bool validatePage() override;
+    void initializePage() override;
+    bool isComplete() const override;
 
 private:
     Q_DECLARE_PRIVATE(RegularGridImportPage)

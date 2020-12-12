@@ -2,7 +2,11 @@
 
 #include "geometry/src/Coordinate.h"
 
+#include <QMetaType>
 #include <QVector>
+#include <QtGlobal>
+
+#include <memory>
 
 namespace syntheticSeismic {
 namespace domain {
@@ -43,3 +47,7 @@ private:
 
 } // namespace domain
 } // namespace syntheticSeismic
+
+Q_DECLARE_METATYPE(syntheticSeismic::domain::EclipseGrid)
+Q_DECLARE_METATYPE(std::shared_ptr<syntheticSeismic::domain::EclipseGrid>)
+Q_DECLARE_METATYPE(QVector<std::shared_ptr<syntheticSeismic::domain::EclipseGrid>>)

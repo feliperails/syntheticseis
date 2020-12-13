@@ -2,8 +2,8 @@
 
 #include "ui_AddingVelocityWidget.h"
 #include "ui_FileSelectionPage.h"
-#include "ui_ProcessingPage.h"
-#include "ui_RegularGridImportPage.h"
+#include "ui_SegyCreationPage.h"
+#include "ui_EclipseGridImportPage.h"
 
 #include <QFileDialog>
 
@@ -40,12 +40,12 @@ WizardPrivate::WizardPrivate(Wizard *q)
     : q_ptr(q)
 {
     FileSelectionPage* fileSelectionPage = new FileSelectionPage(q);
-    RegularGridImportPage* importPage = new RegularGridImportPage(q);
-    ProcessingPage* processingPage = new ProcessingPage(q);
+    EclipseGridImportPage* importPage = new EclipseGridImportPage(q);
+    SegyCreationPage* segyCreationPage = new SegyCreationPage(q);
 
     q->addPage(fileSelectionPage);
     q->addPage(importPage);
-    q->addPage(processingPage);
+    q->addPage(segyCreationPage);
 
     q->button(QWizard::NextButton)->setEnabled(false);
 }
@@ -265,21 +265,21 @@ const QString ECLIPSE_GRIDS = QLatin1String("eclipseGrids");
 
 using syntheticSeismic::domain::EclipseGrid;
 
-class RegularGridImportPagePrivate
+class EclipseGridImportPagePrivate
 {
-    explicit RegularGridImportPagePrivate(RegularGridImportPage* q);
+    explicit EclipseGridImportPagePrivate(EclipseGridImportPage* q);
     void updateWidget();
 
-    Q_DECLARE_PUBLIC(RegularGridImportPage)
-    RegularGridImportPage* q_ptr;
-    std::unique_ptr<Ui::RegularGridImportPage> m_ui;
+    Q_DECLARE_PUBLIC(EclipseGridImportPage)
+    EclipseGridImportPage* q_ptr;
+    std::unique_ptr<Ui::EclipseGridImportPage> m_ui;
     QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_eclipseGrids;
     bool m_eclipseFilesImported;
 };
 
-RegularGridImportPagePrivate::RegularGridImportPagePrivate(RegularGridImportPage *q)
+EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage *q)
     : q_ptr(q)
-    , m_ui(std::make_unique<Ui::RegularGridImportPage>())
+    , m_ui(std::make_unique<Ui::EclipseGridImportPage>())
     , m_eclipseGrids()
     , m_eclipseFilesImported(false)
 {
@@ -294,9 +294,9 @@ RegularGridImportPagePrivate::RegularGridImportPagePrivate(RegularGridImportPage
     QObject::connect(m_ui->regularGridZDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, emitCompleteChangedFunction);
 }
 
-void RegularGridImportPagePrivate::updateWidget()
+void EclipseGridImportPagePrivate::updateWidget()
 {
-    Q_Q(RegularGridImportPage);
+    Q_Q(EclipseGridImportPage);
 
     m_ui->fileTreeWidget->clear();
 
@@ -349,9 +349,9 @@ void RegularGridImportPagePrivate::updateWidget()
 
 /*------------------------------------------------------------------------------------------------------------------------*/
 
-RegularGridImportPage::RegularGridImportPage(QWidget* parent)
+EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
     : QWizardPage(parent),
-      d_ptr(new RegularGridImportPagePrivate(this))
+      d_ptr(new EclipseGridImportPagePrivate(this))
 {
     registerField(REGULAR_GRID_X_DIMENSION, d_ptr->m_ui->regularGridXDimensionDoubleSpinBox);
     registerField(REGULAR_GRID_Y_DIMENSION, d_ptr->m_ui->regularGridYDimensionDoubleSpinBox);
@@ -360,9 +360,9 @@ RegularGridImportPage::RegularGridImportPage(QWidget* parent)
     registerField(ECLIPSE_GRIDS, d_ptr->m_ui->fileTreeWidget);
 }
 
-bool RegularGridImportPage::validatePage()
+bool EclipseGridImportPage::validatePage()
 {
-    Q_D(RegularGridImportPage);
+    Q_D(EclipseGridImportPage);
 
     setField(REGULAR_GRID_X_DIMENSION, d_ptr->m_ui->regularGridXDimensionDoubleSpinBox->value());
     setField(REGULAR_GRID_Y_DIMENSION, d_ptr->m_ui->regularGridYDimensionDoubleSpinBox->value());
@@ -388,9 +388,9 @@ bool RegularGridImportPage::validatePage()
     return true;
 }
 
-void RegularGridImportPage::initializePage()
+void EclipseGridImportPage::initializePage()
 {
-    Q_D(RegularGridImportPage);
+    Q_D(EclipseGridImportPage);
     d->m_eclipseGrids.clear();
     const QHash<QString, QSet<QString>> fileNames = field(INPUT_FILES_FIELD).value<QHash<QString, QSet<QString>>>();
 
@@ -404,9 +404,9 @@ void RegularGridImportPage::initializePage()
     d->updateWidget();
 }
 
-bool RegularGridImportPage::isComplete() const
+bool EclipseGridImportPage::isComplete() const
 {
-    Q_D(const RegularGridImportPage);
+    Q_D(const EclipseGridImportPage);
     return d->m_ui->fileTreeWidget->topLevelItemCount() != 0
             && d->m_eclipseFilesImported
             && !qFuzzyIsNull(d->m_ui->regularGridXDimensionDoubleSpinBox->value())
@@ -419,15 +419,15 @@ bool RegularGridImportPage::isComplete() const
 using syntheticSeismic::domain::Lithology;
 using syntheticSeismic::domain::LithologyDictionary;
 
-class ProcessingPagePrivate
+class SegyCreationPagePrivate
 {
-    explicit ProcessingPagePrivate(ProcessingPage* q);
+    explicit SegyCreationPagePrivate(SegyCreationPage* q);
     void updateWidget();
     void showWidgetToAddLithology();
 
-    Q_DECLARE_PUBLIC(ProcessingPage)
-    ProcessingPage* q_ptr;
-    std::unique_ptr<Ui::ProcessingPage> m_ui;
+    Q_DECLARE_PUBLIC(SegyCreationPage)
+    SegyCreationPage* q_ptr;
+    std::unique_ptr<Ui::SegyCreationPage> m_ui;
     QVector<Lithology> m_lithologies;
     QVector<std::shared_ptr<EclipseGrid>> m_eclipseGrids;
     size_t m_numberOfCellsInX;
@@ -435,9 +435,9 @@ class ProcessingPagePrivate
     size_t m_numberOfCellsInZ;
 };
 
-ProcessingPagePrivate::ProcessingPagePrivate(ProcessingPage *q)
+SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
     : q_ptr(q)
-    , m_ui(std::make_unique<Ui::ProcessingPage>())
+    , m_ui(std::make_unique<Ui::SegyCreationPage>())
     , m_lithologies()
     , m_eclipseGrids()
     , m_numberOfCellsInX(0)
@@ -477,9 +477,9 @@ ProcessingPagePrivate::ProcessingPagePrivate(ProcessingPage *q)
     updateWidget();
 }
 
-void ProcessingPagePrivate::showWidgetToAddLithology()
+void SegyCreationPagePrivate::showWidgetToAddLithology()
 {
-    Q_Q(ProcessingPage);
+    Q_Q(SegyCreationPage);
     AddingVelocityWidget* dialog = new AddingVelocityWidget(m_lithologies, q);
     dialog->setAttribute(Qt::WA_DeleteOnClose, true);
     dialog->open();
@@ -495,9 +495,9 @@ void ProcessingPagePrivate::showWidgetToAddLithology()
     });
 }
 
-void ProcessingPagePrivate::updateWidget()
+void SegyCreationPagePrivate::updateWidget()
 {
-    Q_Q(ProcessingPage);
+    Q_Q(SegyCreationPage);
 
     while(m_ui->velocityTableWidget->rowCount() != 0) {
         m_ui->velocityTableWidget->removeRow(0);
@@ -525,15 +525,15 @@ void ProcessingPagePrivate::updateWidget()
     }
 }
 
-ProcessingPage::ProcessingPage(QWidget* parent)
+SegyCreationPage::SegyCreationPage(QWidget* parent)
     : QWizardPage(parent),
-      d_ptr(new ProcessingPagePrivate(this))
+      d_ptr(new SegyCreationPagePrivate(this))
 {
 }
 
-bool ProcessingPage::isComplete() const
+bool SegyCreationPage::isComplete() const
 {
-    Q_D(const ProcessingPage);
+    Q_D(const SegyCreationPage);
 
     return !d->m_lithologies.isEmpty()
             && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
@@ -541,9 +541,9 @@ bool ProcessingPage::isComplete() const
             && !d->m_ui->segyFileNameLineEdit->text().isEmpty();
 }
 
-bool ProcessingPage::validatePage()
+bool SegyCreationPage::validatePage()
 {
-    Q_D(ProcessingPage);
+    Q_D(SegyCreationPage);
     d->m_lithologies;
     d->m_eclipseGrids;
 
@@ -580,9 +580,9 @@ bool ProcessingPage::validatePage()
     return true;
 }
 
-void ProcessingPage::initializePage()
+void SegyCreationPage::initializePage()
 {
-    Q_D(ProcessingPage);
+    Q_D(SegyCreationPage);
     d->m_eclipseGrids = field(ECLIPSE_GRIDS).value<QVector<std::shared_ptr<EclipseGrid>>>();
 
     d->m_numberOfCellsInX = field(REGULAR_GRID_X_DIMENSION).value<size_t>();

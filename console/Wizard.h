@@ -52,38 +52,38 @@ private:
 
 /***************************************************************/
 
-class RegularGridImportPagePrivate;
-class RegularGridImportPage : public QWizardPage
+class EclipseGridImportPagePrivate;
+class EclipseGridImportPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit RegularGridImportPage(QWidget* parent);
+    explicit EclipseGridImportPage(QWidget* parent);
 
     bool validatePage() override;
     void initializePage() override;
     bool isComplete() const override;
 
 private:
-    Q_DECLARE_PRIVATE(RegularGridImportPage)
-    RegularGridImportPagePrivate* const d_ptr;
+    Q_DECLARE_PRIVATE(EclipseGridImportPage)
+    EclipseGridImportPagePrivate* const d_ptr;
 };
 
 /***************************************************************/
 
-class ProcessingPagePrivate;
-class ProcessingPage : public QWizardPage
+class SegyCreationPagePrivate;
+class SegyCreationPage : public QWizardPage
 {
     Q_OBJECT
 public:
-    explicit ProcessingPage(QWidget* parent);
+    explicit SegyCreationPage(QWidget* parent);
 
     bool isComplete() const override;
     bool validatePage() override;
     void initializePage() override;
 
 private:
-    Q_DECLARE_PRIVATE(ProcessingPage)
-    ProcessingPagePrivate* const d_ptr;
+    Q_DECLARE_PRIVATE(SegyCreationPage)
+    SegyCreationPagePrivate* const d_ptr;
 };
 
 class AddingVelocityWidgetPrivate;
@@ -96,7 +96,7 @@ private:
     syntheticSeismic::domain::Lithology lithology() const;
 
 private:
-    friend class ProcessingPagePrivate;
+    friend class SegyCreationPagePrivate;
     Q_DECLARE_PRIVATE(AddingVelocityWidget)
     AddingVelocityWidgetPrivate* const d_ptr;
 };

@@ -116,8 +116,6 @@ add_library(SyntheticSeismic SHARED
     domain/src/RotateVolumeCoordinate.cpp
     domain/src/SeismicTraces.h
     domain/src/SeismicTraces.cpp
-    domain/src/SeismicWaveVelocityDictionary.h
-    domain/src/SeismicWaveVelocityDictionary.cpp
     domain/src/VolumeToRegularGrid.h
     domain/src/VolumeToRegularGrid.cpp
     domain/src/Wavelet.h

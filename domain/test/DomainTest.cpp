@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/Lithology.h>
 #include <domain/src/ExtractMinimumRectangle2D.h>
 #include <domain/src/ExtractVolumes.h>
@@ -20,10 +19,10 @@ TEST(DomainTest, LithologyDictionaryTest)
 
     LithologyDictionary dictionary;
 
-    dictionary.addLithology(10, QString("e1"));
-    dictionary.addLithology(300, QString("e2"));
-    dictionary.addLithology(8, QString("e3"));
-    dictionary.addLithology(6, QString("e4"));
+    dictionary.addLithology(10, QString("e1"), 0.0, 0.0);
+    dictionary.addLithology(300, QString("e2"), 0.0, 0.0);
+    dictionary.addLithology(8, QString("e3"), 0.0, 0.0);
+    dictionary.addLithology(6, QString("e4"), 0.0, 0.0);
 
     EXPECT_EQ(dictionary.lithology(10).getId(), 10);
     EXPECT_EQ(dictionary.lithology(300).getId(), 300);

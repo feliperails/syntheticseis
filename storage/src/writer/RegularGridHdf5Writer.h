@@ -17,7 +17,7 @@ class RegularGridHdf5Writer
 {
 public:
     /// Construtor
-    RegularGridHdf5Writer(QString pathFile, QString datasetName)
+    RegularGridHdf5Writer(const QString& pathFile, const QString& datasetName)
     {
         setPathFile(pathFile);
         setDatasetName(datasetName);

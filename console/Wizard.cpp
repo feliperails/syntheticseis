@@ -1,5 +1,6 @@
 #include "Wizard.h"
 
+#include "ui_AddingVelocityWidget.h"
 #include "ui_FileSelectionPage.h"
 #include "ui_ProcessingPage.h"
 #include "ui_RegularGridImportPage.h"
@@ -7,6 +8,16 @@
 #include <QFileDialog>
 
 #include "storage/src/reader/EclipseGridReader.h"
+
+#include "domain/src/ExtractVolumes.h"
+#include "domain/src/Facade.h"
+#include "domain/src/Lithology.h"
+#include "domain/src/LithologyDictionary.h"
+#include "domain/src/VolumeToRegularGrid.h"
+#include "geometry/src/Volume.h"
+#include "domain/src/RegularGrid.h"
+
+#include "storage/src/writer/RegularGridHdf5Writer.h"
 
 #include <memory>
 
@@ -74,7 +85,7 @@ FileSelectionPagePrivate::FileSelectionPagePrivate(FileSelectionPage *q)
     , m_ui(std::make_unique<Ui::FileSelectionPage>())
     , m_fileNames()
 {
-    m_ui->setupUi(q);    
+    m_ui->setupUi(q);
 
     QObject::connect(m_ui->eclipseGridFilePushButton, &QPushButton::clicked, q_ptr, [this](const bool){
         const QStringList fileNames = QFileDialog::getOpenFileNames(q_ptr,
@@ -91,6 +102,8 @@ FileSelectionPagePrivate::FileSelectionPagePrivate(FileSelectionPage *q)
         updateWidget();
     });
 
+    m_fileNames["E:/syntheticSeis/debug/bin"].insert("EclipseGridTest - Copia (6).grdecl");
+    updateWidget();
 
     QObject::connect(m_ui->cleanSelectedFilesPushButton, &QPushButton::clicked, q_ptr, [this](const bool){
         m_fileNames.clear();
@@ -168,7 +181,9 @@ void FileSelectionPagePrivate::updateWidget()
 
     m_ui->fileTreeWidget->expandAll();
     resizeColumns();
-    Q_EMIT q->completeChanged();
+    if (q->isVisible()) {
+        Q_EMIT q->completeChanged();
+    }
 }
 
 void FileSelectionPagePrivate::resizeColumns()
@@ -320,9 +335,9 @@ void RegularGridImportPagePrivate::updateWidget()
 
                 treeWidgetItem->setText(DIMENSIONS_COLUMN, text);
             } else {
-              treeWidgetItem->setText(MESSAGE_COLUMN, error);
-              treeWidgetItem->setText(DIMENSIONS_COLUMN, QLatin1Literal("--"));
-              m_eclipseFilesImported = false;
+                treeWidgetItem->setText(MESSAGE_COLUMN, error);
+                treeWidgetItem->setText(DIMENSIONS_COLUMN, QLatin1Literal("--"));
+                m_eclipseFilesImported = false;
             }
         }
     }
@@ -401,20 +416,113 @@ bool RegularGridImportPage::isComplete() const
 
 /************************************************************************************************************************************************************************/
 
+using syntheticSeismic::domain::Lithology;
+using syntheticSeismic::domain::LithologyDictionary;
+
 class ProcessingPagePrivate
 {
     explicit ProcessingPagePrivate(ProcessingPage* q);
+    void updateWidget();
+    void showWidgetToAddLithology();
 
     Q_DECLARE_PUBLIC(ProcessingPage)
     ProcessingPage* q_ptr;
     std::unique_ptr<Ui::ProcessingPage> m_ui;
+    QVector<Lithology> m_lithologies;
+    QVector<std::shared_ptr<EclipseGrid>> m_eclipseGrids;
+    size_t m_numberOfCellsInX;
+    size_t m_numberOfCellsInY;
+    size_t m_numberOfCellsInZ;
 };
 
 ProcessingPagePrivate::ProcessingPagePrivate(ProcessingPage *q)
     : q_ptr(q)
     , m_ui(std::make_unique<Ui::ProcessingPage>())
+    , m_lithologies()
+    , m_eclipseGrids()
+    , m_numberOfCellsInX(0)
+    , m_numberOfCellsInY(0)
+    , m_numberOfCellsInZ(0)
 {
     m_ui->setupUi(q);
+    m_lithologies = syntheticSeismic::domain::Facade::lithologyDictionary().lithologies();
+
+    QObject::connect(m_ui->restoreDefaultVelocitiesPushButton, &QPushButton::clicked, q_ptr, [this](const bool){
+        m_lithologies = syntheticSeismic::domain::Facade::lithologyDictionary().lithologies();
+        updateWidget();
+    });
+
+    QObject::connect(m_ui->addVelocityPushButton, &QPushButton::clicked, q_ptr, [this](const bool){
+        showWidgetToAddLithology();
+    });
+
+    QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
+        Q_EMIT q_ptr->completeChanged();
+    });
+
+    QObject::connect(m_ui->rickerWaveletStepDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
+        Q_EMIT q_ptr->completeChanged();
+    });
+
+    QObject::connect(m_ui->segyFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&){
+        Q_EMIT q_ptr->completeChanged();
+    });
+
+    QObject::connect(m_ui->outputFileNameToolButton, &QPushButton::clicked, q_ptr, [this](const bool){
+        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
+        m_ui->segyFileNameLineEdit->setText(fileName);
+        Q_EMIT q_ptr->completeChanged();
+    });
+
+    updateWidget();
+}
+
+void ProcessingPagePrivate::showWidgetToAddLithology()
+{
+    Q_Q(ProcessingPage);
+    AddingVelocityWidget* dialog = new AddingVelocityWidget(m_lithologies, q);
+    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+    dialog->open();
+
+    QObject::connect(dialog, &QDialog::accepted, q, [this, dialog]() {
+        m_lithologies.push_back(dialog->lithology());
+        dialog->close();
+        updateWidget();
+    });
+
+    QObject::connect(dialog, &QDialog::rejected, q, [dialog]() {
+        dialog->close();
+    });
+}
+
+void ProcessingPagePrivate::updateWidget()
+{
+    Q_Q(ProcessingPage);
+
+    while(m_ui->velocityTableWidget->rowCount() != 0) {
+        m_ui->velocityTableWidget->removeRow(0);
+    }
+
+    m_ui->velocityTableWidget->setRowCount(m_lithologies.size());
+    m_ui->velocityTableWidget->setColumnCount(4);
+
+    for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row) {
+
+        QTableWidgetItem* id = new QTableWidgetItem(QString::number(m_lithologies.at(row).getId()));
+        QTableWidgetItem* name = new QTableWidgetItem(m_lithologies.at(row).getName());
+        QTableWidgetItem* velocity = new QTableWidgetItem(QString::number(m_lithologies.at(row).getVelocity()));
+        QTableWidgetItem* density = new QTableWidgetItem(QString::number(m_lithologies.at(row).getDensity()));
+
+        m_ui->velocityTableWidget->setItem(row, 0, id);
+        m_ui->velocityTableWidget->setItem(row, 1, name);
+        m_ui->velocityTableWidget->setItem(row, 2, velocity);
+        m_ui->velocityTableWidget->setItem(row, 3, density);
+    }
+
+    m_ui->velocityTableWidget->resizeColumnsToContents();
+    if (q->isVisible()) {
+        Q_EMIT q->completeChanged();
+    }
 }
 
 ProcessingPage::ProcessingPage(QWidget* parent)
@@ -423,5 +531,163 @@ ProcessingPage::ProcessingPage(QWidget* parent)
 {
 }
 
+bool ProcessingPage::isComplete() const
+{
+    Q_D(const ProcessingPage);
+
+    return !d->m_lithologies.isEmpty()
+            && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
+            && !qFuzzyIsNull(d->m_ui->rickerWaveletStepDoubleSpinBox->value())
+            && !d->m_ui->segyFileNameLineEdit->text().isEmpty();
+}
+
+bool ProcessingPage::validatePage()
+{
+    Q_D(ProcessingPage);
+    d->m_lithologies;
+    d->m_eclipseGrids;
+
+    using syntheticSeismic::geometry::Volume;
+    using syntheticSeismic::domain::VolumeToRegularGrid;
+    using syntheticSeismic::domain::RegularGrid;
+    using syntheticSeismic::storage::RegularGridHdf5Writer;
+
+
+    const std::vector<std::shared_ptr<Volume>> volumesOfFirstLayer = syntheticSeismic::domain::ExtractVolumes::extractFirstLayerFrom(*d->m_eclipseGrids.first());
+    std::vector<std::shared_ptr<Volume>> allVolumes;
+
+    for (const std::shared_ptr<Volume> vol : volumesOfFirstLayer) {
+        allVolumes.push_back(vol);
+    }
+
+    for (int i = 1, size = d->m_eclipseGrids.size(); i < size; ++i) {
+
+        const std::vector<std::shared_ptr<Volume>> volumes = syntheticSeismic::domain::ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *d->m_eclipseGrids.at(i));
+        for (const std::shared_ptr<Volume> vol : volumes) {
+            allVolumes.push_back(vol);
+        }
+    }
+
+    VolumeToRegularGrid converter(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
+
+    RegularGrid<std::shared_ptr<Volume>> regularGrid = converter.convertVolumesToRegularGrid(allVolumes);
+
+    syntheticSeismic::storage::RegularGridHdf5Writer<std::shared_ptr<Volume>> writer(d->m_ui->segyFileNameLineEdit->text(), QString("segy"));
+    writer.setPathFile(d->m_ui->segyFileNameLineEdit->text());
+    writer.setDatasetName(QString("segy"));
+    writer.write(regularGrid);
+
+    return true;
+}
+
+void ProcessingPage::initializePage()
+{
+    Q_D(ProcessingPage);
+    d->m_eclipseGrids = field(ECLIPSE_GRIDS).value<QVector<std::shared_ptr<EclipseGrid>>>();
+
+    d->m_numberOfCellsInX = field(REGULAR_GRID_X_DIMENSION).value<size_t>();
+    d->m_numberOfCellsInY = field(REGULAR_GRID_Y_DIMENSION).value<size_t>();
+    d->m_numberOfCellsInZ = field(REGULAR_GRID_Z_DIMENSION).value<size_t>();
+}
+
+/*--------------------------------------------------------------------------------------------------------------------------------------*/
+
+class AddingVelocityWidgetPrivate
+{
+    explicit AddingVelocityWidgetPrivate(AddingVelocityWidget* q, const QVector<domain::Lithology> &lithologies);
+    bool defineState();
+
+    Q_DECLARE_PUBLIC(AddingVelocityWidget)
+    AddingVelocityWidget* q_ptr;
+    std::unique_ptr<Ui::AddingVelocityWidget> m_ui;
+    const QVector<syntheticSeismic::domain::Lithology>& m_lithologies;
+};
+
+AddingVelocityWidgetPrivate::AddingVelocityWidgetPrivate(AddingVelocityWidget *q, const QVector<domain::Lithology> &lithologies)
+    : q_ptr(q)
+    , m_ui(std::make_unique<Ui::AddingVelocityWidget>())
+    , m_lithologies(lithologies)
+{
+    m_ui->setupUi(q);
+
+    int identifier = 0;
+    for (const Lithology& lithology : m_lithologies) {
+        identifier = std::max(identifier, lithology.getId());
+    }
+    ++identifier;
+    m_ui->identifierSpinBox->setValue(identifier);
+
+    QObject::connect(m_ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked, q_ptr, [this](const bool){
+        q_ptr->accept();
+    });
+
+    QObject::connect(m_ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked, q_ptr, [this](const bool){
+        q_ptr->reject();
+    });
+
+    QObject::connect(m_ui->densityDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
+        defineState();
+    });
+
+    QObject::connect(m_ui->velocityDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
+        defineState();
+    });
+
+    QObject::connect(m_ui->identifierSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), q_ptr, [this](const double){
+        defineState();
+    });
+
+    defineState();
+}
+
+bool AddingVelocityWidgetPrivate::defineState()
+{
+    QString msg;
+    m_ui->infoLabel->clear();
+
+    QPushButton* okButton = m_ui->buttonBox->button(QDialogButtonBox::Ok);
+    Q_ASSERT(okButton);
+
+    if (m_ui->nameLineEdit->text().isEmpty()) {
+        okButton->setEnabled(false);
+    } else {
+        const int identifier = m_ui->identifierSpinBox->value();
+        const QString name = m_ui->nameLineEdit->text();
+        for (const Lithology& lithology : m_lithologies) {
+            if (lithology.getId() == identifier) {
+                msg = QObject::tr("The velocity identifier must be unique.\n");
+            } else {
+                if (lithology.getId() == name) {
+                    msg += QObject::tr("The velocity name must be unique.\n");
+                }
+            }
+        }
+    }
+
+    m_ui->infoLabel->setText(msg);
+    okButton->setEnabled(msg.isEmpty());
+
+    return okButton->isEnabled();
+}
+
+
+/*-------------------------------------------------------------------------------------------------------------------------*/
+
+AddingVelocityWidget::AddingVelocityWidget(const QVector<domain::Lithology> &lithologies, QWidget *parent)
+    : QDialog(parent)
+    , d_ptr(new AddingVelocityWidgetPrivate(this, lithologies))
+{
+}
+
+Lithology AddingVelocityWidget::lithology() const
+{
+    Q_D(const AddingVelocityWidget);
+    return Lithology(d->m_ui->identifierSpinBox->value(),
+                     d->m_ui->nameLineEdit->text(),
+                     d->m_ui->velocityDoubleSpinBox->value(),
+                     d->m_ui->densityDoubleSpinBox->value());
+}
+
 }
 }
+

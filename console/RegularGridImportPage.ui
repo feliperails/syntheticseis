@@ -151,6 +151,15 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>85.000000000000000</double>
+        </property>
        </widget>
       </item>
       <item row="1" column="0">
@@ -161,7 +170,17 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="regularGridYDimensionDoubleSpinBox"/>
+       <widget class="QDoubleSpinBox" name="regularGridYDimensionDoubleSpinBox">
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>69.000000000000000</double>
+        </property>
+       </widget>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_6">
@@ -171,7 +190,17 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="regularGridZDimensionDoubleSpinBox"/>
+       <widget class="QDoubleSpinBox" name="regularGridZDimensionDoubleSpinBox">
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>474.000000000000000</double>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

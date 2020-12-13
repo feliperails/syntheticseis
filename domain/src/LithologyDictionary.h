@@ -21,7 +21,9 @@ public:
     // Se a litologia não foi encotraa, retorna uma rerência para uma litologia inválida.
     const Lithology& lithology(const QString& lithologyName) const;
 
-    int addLithology(const int id, const QString& name);
+    int addLithology(const int id, const QString& name, const double velocity, const double density);
+
+    bool changeData(const int lithologyId, const Lithology& newLithologyData);
 
 private:
     QVector<Lithology> m_lithologies;

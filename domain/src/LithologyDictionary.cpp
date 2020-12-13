@@ -22,6 +22,24 @@ const Lithology& LithologyDictionary::lithology(const int lithologyId) const
     return m_invalidLithology;
 }
 
+bool LithologyDictionary::changeData(const int lithologyId, const Lithology& newLithologyData)
+{
+    const Lithology& existingLithology = this->lithology(lithologyId);
+    if (existingLithology.getId() == -1) {
+        return false;
+    }
+
+    for (int i = 0, size= m_lithologies.size(); i <size; ++i) {
+        const Lithology& litho = m_lithologies[i];
+        if(litho.getId() == lithologyId) {
+            m_lithologies[i] = Lithology(lithologyId, newLithologyData.getName(), newLithologyData.getVelocity(), newLithologyData.getDensity());
+            return true;
+        }
+    }
+
+    return false;
+}
+
 const Lithology& LithologyDictionary::lithology(const QString& lithologyName) const
 {
     for(const Lithology& litho : m_lithologies){
@@ -33,7 +51,7 @@ const Lithology& LithologyDictionary::lithology(const QString& lithologyName) co
     return m_invalidLithology;
 }
 
-int LithologyDictionary::addLithology(const int id, const QString& name)
+int LithologyDictionary::addLithology(const int id, const QString& name, const double velocity, const double density)
 {
     if (id < 0 || name.isEmpty()) {
         return -1;
@@ -45,7 +63,7 @@ int LithologyDictionary::addLithology(const int id, const QString& name)
         }
     }
 
-    m_lithologies.push_back(Lithology(id, name));
+    m_lithologies.push_back(Lithology(id, name, velocity, density));
     return m_lithologies.size() - 1;
 }
 

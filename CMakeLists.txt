@@ -133,6 +133,8 @@ add_library(SyntheticSeismic SHARED
     storage/src/writer/RegularGridHdf5Writer.cpp
     )
 
+qt5_add_resources(RESOURCES console/images/SyntheticSeisApp.qrc)
+
 add_library(SyntheticSeismicMock
     # geometry
     geometry/mock/GeometryMock.cpp
@@ -157,6 +159,7 @@ add_executable(SyntheticSeismicConsole
     console/main.cpp
     console/Wizard.cpp
     console/Wizard.h
+    ${RESOURCES}
     )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)

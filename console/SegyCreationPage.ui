@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>605</width>
+    <width>559</width>
     <height>509</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>0</width>
+    <width>550</width>
     <height>500</height>
    </size>
   </property>
@@ -86,6 +86,11 @@
         <column>
          <property name="text">
           <string>Density (kg/m^3)</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string/>
          </property>
         </column>
        </widget>

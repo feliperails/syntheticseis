@@ -114,7 +114,7 @@ FileSelectionPagePrivate::FileSelectionPagePrivate(FileSelectionPage *q)
 int FileSelectionPagePrivate::calculateActionMessageWidth () const
 {
     Q_Q(const FileSelectionPage);
-    return QFontMetrics(q->font()).width(REMOVE_ACTION_MESSAGE) * 2;
+    return QFontMetrics(q->font()).width(REMOVE_ACTION_MESSAGE);
 }
 
 void FileSelectionPagePrivate::updateWidget()
@@ -148,7 +148,8 @@ void FileSelectionPagePrivate::updateWidget()
     QList<QString> dirs = m_fileNames.keys();
     std::sort(dirs.begin(), dirs.end());
 
-    const int removeActionMessageWidth = this->calculateActionMessageWidth();
+    const QIcon removeIcon = QIcon(QLatin1String(":/remove"));
+    const QPixmap pixmap(QLatin1String(":/remove"));
 
     for (int i = 0, countI = dirs.size(); i < countI; ++i) {
 
@@ -167,9 +168,9 @@ void FileSelectionPagePrivate::updateWidget()
             topLevelItem->addChild(item);
             item->setData(ACTION_COLUMN, Qt::UserRole, identifier);
 
-            QPushButton* removeAction = new QPushButton(REMOVE_ACTION_MESSAGE, q);
-            removeAction->setIcon(QIcon(QLatin1String(":/images/remove")));
-            removeAction->setMaximumWidth(removeActionMessageWidth);
+            QPushButton* removeAction = new QPushButton(q);
+            removeAction->setIcon(removeIcon);
+            removeAction->setFixedWidth(pixmap.width());
 
             QObject::connect(removeAction, &QPushButton::clicked, q, [this, item](const bool){
                 this->removeItem(item);
@@ -189,9 +190,9 @@ void FileSelectionPagePrivate::updateWidget()
 void FileSelectionPagePrivate::resizeColumns()
 {
     Q_Q(FileSelectionPage);
-    const int width = q->width();
-    const int actionMessageWidth = this->calculateActionMessageWidth();
-    m_ui->fileTreeWidget->setColumnWidth(0, width - actionMessageWidth * 3/2);
+    const int width = m_ui->fileTreeWidget->width();
+    const QPixmap pixmap(QLatin1String(":/remove"));
+    m_ui->fileTreeWidget->setColumnWidth(0, width - pixmap.width() *2);
 }
 
 void FileSelectionPagePrivate::removeItem(QTreeWidgetItem* item)
@@ -424,6 +425,7 @@ class SegyCreationPagePrivate
     explicit SegyCreationPagePrivate(SegyCreationPage* q);
     void updateWidget();
     void showWidgetToAddLithology();
+    void removeRow(const int row);
 
     Q_DECLARE_PUBLIC(SegyCreationPage)
     SegyCreationPage* q_ptr;
@@ -499,12 +501,21 @@ void SegyCreationPagePrivate::updateWidget()
 {
     Q_Q(SegyCreationPage);
 
+    for (int row = 0, rowCount = m_ui->velocityTableWidget->rowCount(); row < rowCount; ++row) {
+        for (int column = 0, columnCount = m_ui->velocityTableWidget->columnCount(); column < columnCount; ++column) {
+            QWidget* widget = m_ui->velocityTableWidget->cellWidget(row, column);
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+    }
+
     while(m_ui->velocityTableWidget->rowCount() != 0) {
         m_ui->velocityTableWidget->removeRow(0);
     }
 
     m_ui->velocityTableWidget->setRowCount(m_lithologies.size());
-    m_ui->velocityTableWidget->setColumnCount(4);
+    m_ui->velocityTableWidget->setColumnCount(5);
 
     for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row) {
 
@@ -512,16 +523,42 @@ void SegyCreationPagePrivate::updateWidget()
         QTableWidgetItem* name = new QTableWidgetItem(m_lithologies.at(row).getName());
         QTableWidgetItem* velocity = new QTableWidgetItem(QString::number(m_lithologies.at(row).getVelocity()));
         QTableWidgetItem* density = new QTableWidgetItem(QString::number(m_lithologies.at(row).getDensity()));
+        QTableWidgetItem* removeAction = new QTableWidgetItem(REMOVE_ACTION_MESSAGE);
 
         m_ui->velocityTableWidget->setItem(row, 0, id);
         m_ui->velocityTableWidget->setItem(row, 1, name);
         m_ui->velocityTableWidget->setItem(row, 2, velocity);
         m_ui->velocityTableWidget->setItem(row, 3, density);
+        m_ui->velocityTableWidget->setItem(row, 4, removeAction);
+
+        QPushButton* removeButton = new QPushButton(q_ptr);
+        removeButton->setIcon(QIcon(QLatin1String(":/remove")));
+        m_ui->velocityTableWidget->setCellWidget(row, 4, removeButton);
+
+        QObject::connect(removeButton, &QPushButton::clicked, [this, row](const bool){
+            removeRow(row);
+        });
     }
 
     m_ui->velocityTableWidget->resizeColumnsToContents();
     if (q->isVisible()) {
         Q_EMIT q->completeChanged();
+    }
+}
+
+void SegyCreationPagePrivate::removeRow(const int row)
+{
+    if (m_ui->velocityTableWidget->rowCount() == 0) {
+        return;
+    }
+
+    QWidget* widget = m_ui->velocityTableWidget->cellWidget(row, 4);
+    if (widget) {
+        widget->deleteLater();
+    }
+
+    if (row < m_ui->velocityTableWidget->rowCount()) {
+        m_ui->velocityTableWidget->removeRow(row);
     }
 }
 

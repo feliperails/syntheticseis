@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     syntheticSeismic::domain::Facade facade;
-
     syntheticSeismic::widgets::Wizard wizard;
+    wizard.setWindowTitle(QLatin1Literal("SyntheticSeismic 1.0"));
     wizard.show();
 
     return app.exec();

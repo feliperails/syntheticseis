@@ -38,7 +38,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Wizard message</string>
+      <string>Siga os passos para criar o volume sísmico sintético à partir de grades estratigráficas.</string>
      </property>
     </widget>
    </item>

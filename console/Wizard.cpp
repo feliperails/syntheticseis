@@ -598,7 +598,6 @@ bool SegyCreationPage::validatePage()
     }
 
     for (int i = 1, size = d->m_eclipseGrids.size(); i < size; ++i) {
-
         const std::vector<std::shared_ptr<Volume>> volumes = syntheticSeismic::domain::ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *d->m_eclipseGrids.at(i));
         for (const std::shared_ptr<Volume> vol : volumes) {
             allVolumes.push_back(vol);
@@ -609,9 +608,9 @@ bool SegyCreationPage::validatePage()
 
     RegularGrid<std::shared_ptr<Volume>> regularGrid = converter.convertVolumesToRegularGrid(allVolumes);
 
-    syntheticSeismic::storage::RegularGridHdf5Writer<std::shared_ptr<Volume>> writer(d->m_ui->segyFileNameLineEdit->text(), QString("segy"));
+    syntheticSeismic::storage::RegularGridHdf5Writer<std::shared_ptr<Volume>> writer(d->m_ui->segyFileNameLineEdit->text(), QString("hdf5"));
     writer.setPathFile(d->m_ui->segyFileNameLineEdit->text());
-    writer.setDatasetName(QString("segy"));
+    writer.setDatasetName(QString("hdf5"));
     writer.write(regularGrid);
 
     return true;

@@ -21,14 +21,14 @@ Facade::Facade()
 void Facade::init()
 {
     LithologyDictionary& lithologyDictionary = this->lithologyDictionary();
-    lithologyDictionary.addLithology(1, QLatin1String("Mudstone"), 2800.0, 0.0);
-    lithologyDictionary.addLithology(3, QLatin1String("Siltite"), 3000.0, 0.0);
-    lithologyDictionary.addLithology(7, QLatin1String("Fine-grained sandstone"), 3200.0, 0.0);
-    lithologyDictionary.addLithology(9, QLatin1String("Medium-grained sandstone"), 3500.0, 0.0);
-    lithologyDictionary.addLithology(11, QLatin1String("Coarse-grained sandstone"), 3700.0, 0.0);
-    lithologyDictionary.addLithology(13, QLatin1String("Very coarse-grained"), 4000.0, 0.0);
-    lithologyDictionary.addLithology(15, QLatin1String("Conglomerate"), 4500.0, 0.0);
-    lithologyDictionary.addLithology(24, QLatin1String("Volcanic"), 6000.0, 0.0);
+    lithologyDictionary.addLithology(1, QLatin1String("Mudstone"), 2800.0, 1.0);
+    lithologyDictionary.addLithology(3, QLatin1String("Siltite"), 3000.0, 1.0);
+    lithologyDictionary.addLithology(7, QLatin1String("Fine-grained sandstone"), 3200.0, 1.0);
+    lithologyDictionary.addLithology(9, QLatin1String("Medium-grained sandstone"), 3500.0, 1.0);
+    lithologyDictionary.addLithology(11, QLatin1String("Coarse-grained sandstone"), 3700.0, 1.0);
+    lithologyDictionary.addLithology(13, QLatin1String("Very coarse-grained"), 4000.0, 1.0);
+    lithologyDictionary.addLithology(15, QLatin1String("Conglomerate"), 4500.0, 1.0);
+    lithologyDictionary.addLithology(24, QLatin1String("Volcanic"), 6000.0, 1.0);
 }
 
 LithologyDictionary& Facade::lithologyDictionary()

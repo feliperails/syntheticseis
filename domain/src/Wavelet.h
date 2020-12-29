@@ -14,13 +14,13 @@ public:
     void setName(const QString &name);
 
     double getFirst() const;
-    void setFirst(const double first);
+    void setFirst(double first);
 
     double getLast() const;
-    void setLast(const double last);
+    void setLast(double last);
 
     double getStep() const;
-    void setStep(const double step);
+    void setStep(double step);
 
     QString getUnits() const;
     void setUnits(const QString &units);

@@ -56,7 +56,7 @@ conan_cmake_run(REQUIRED GMock/1.8.0@iblis_ms/stable
     BASIC_SETUP
     BUILD missing)
 
-conan_cmake_run(REQUIRES cgal/5.1
+conan_cmake_run(REQUIRES cgal/5.0
     BASIC_SETUP
     BUILD missing)
 
@@ -68,6 +68,7 @@ add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test)
+find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(Threads REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIR})
@@ -125,6 +126,8 @@ add_library(SyntheticSeismic SHARED
     # storage
     storage/src/Facade.h
     storage/src/Facade.cpp
+    storage/src/RegularGridHdf5Storage.h
+    storage/src/RegularGridHdf5Storage.cpp
     storage/src/reader/EclipseGridReader.h
     storage/src/reader/EclipseGridReader.cpp
     storage/src/writer/EclipseGridWriter.h
@@ -152,6 +155,8 @@ add_executable(SyntheticSeismicTest
     domain/test/DomainTestValues.cpp
     domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
+    storage/test/StorageTestValues.cpp
+    storage/test/StorageTestValues.h
     storage/test/StorageTest.cpp
     )
 
@@ -162,6 +167,8 @@ generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC CGAL::CGAL
+    PUBLIC CGAL::CGAL_Core
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${GTEST_LIBRARIES}
     PUBLIC ${CONAN_LIBS}
@@ -169,6 +176,8 @@ target_link_libraries(SyntheticSeismic
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
+    PUBLIC CGAL::CGAL
+    PUBLIC CGAL::CGAL_Core
     PUBLIC ${CONAN_LIBS}
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC SyntheticSeismic
@@ -177,12 +186,13 @@ target_link_libraries(SyntheticSeismicMock
 target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
-    PUBLIC ${CONAN_LIBS}
+    PUBLIC CGAL::CGAL
+    PUBLIC CGAL::CGAL_Core
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
     PUBLIC ${GTEST_LIBRARIES}
+    PUBLIC ${CONAN_LIBS}
     )
 
 if(WIN32)
@@ -218,6 +228,7 @@ install(FILES README.md
 # Arquivo para teste de leitura do EclipseGrid
 file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/gridMollesImpedance_5_5_5.h5" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 

@@ -141,22 +141,5 @@ std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFromVolumesOfFirstLa
     return volumes;
 }
 
-size_t ExtractVolumes::calculateReorderedIndex(const size_t originalIndex)
-{
-    // Reorders the points on the volume to store all points on the first layer first and then all points on the second layer.
-    // The points are organized in this way to facilitate the drawing of the volume.
-    // Mapping
-    // original   reordered
-    //    0           0
-    //    1           2
-    //    2           4
-    //    3           6
-    //    4           1
-    //    5           3
-    //    6           5
-    //    7           7
-    return (originalIndex - originalIndex % 2) / 2 + originalIndex % 2 * 4;
-}
-
 }
 }

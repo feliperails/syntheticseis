@@ -82,7 +82,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
             );
     auto &regularGridData = regularGrid.getData();
 
-#pragma omp parallel for schedule(dynamic, PROCESS_VOLUME_CHUNK)
+    #pragma omp parallel for schedule(dynamic, PROCESS_VOLUME_CHUNK)
     for (int i = 0; i < volumesSize; ++i)
     {
         const auto indexVolume = static_cast<size_t>(i);
@@ -101,7 +101,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
                         CgalPoint3D(points[indexes[3]].x, points[indexes[3]].y, points[indexes[3]].z)
                     );
 
-            CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
+            const CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
             tree.accelerate_distance_queries();
             const CgalPolyhedronPointInside3D pointInside(tree);
 

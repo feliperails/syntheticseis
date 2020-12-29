@@ -1,12 +1,16 @@
 #include <gtest/gtest.h>
-#include <domain/src/SeismicWaveVelocityDictionary.h>
-#include <domain/src/Lithology.h>
+#include <domain/src/ConvolutionRegularGridCalculator.h>
+#include <domain/src/EclipseGrid.h>
 #include <domain/src/ExtractMinimumRectangle2D.h>
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/Facade.h>
+#include <domain/src/Lithology.h>
 #include <domain/src/LithologyDictionary.h>
-#include <domain/src/EclipseGrid.h>
+#include <domain/src/ImpedanceRegularGridCalculator.h>
+#include <domain/src/ReflectivityRegularGridCalculator.h>
+#include <domain/src/RickerWaveletCalculator.h>
 #include <domain/src/RotateVolumeCoordinate.h>
+#include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>
@@ -229,6 +233,123 @@ TEST(DomainTest, VolumeToRegularGrid)
                     EXPECT_EQ(Volume::UNDEFINED_LITHOLOGY, regularGridCompare.getData()[x][y][z])
                             << "Cell error: " << x << ", " << y << ", " << z;
                 }
+            }
+        }
+    }
+}
+
+TEST(DomainTest, ImpedanceCalculator)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto impedanceRegularGridCompare = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
+
+    const size_t numberOfCellsInX = 5;
+    const size_t numberOfCellsInY = 5;
+    const size_t numberOfCellsInZ = 5;
+    double epsilon = std::pow(10, -10);
+
+    VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+
+    ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2.500, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(1, "argilito - mudstone", 2.800, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(3, "siltito - siltite", 3.000, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(5, "arn mf - fine-grained sandstone", 3.200, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(7, "arn f - fine-grained sandstone", 3.200, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(9, "arn m - medium-grained sandstone", 3.500, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(11, "arn g - coarse-grained sandstone", 3.700, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(13, "arn mg - very coarse-grained sandstone", 4.000, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(15, "cgl gr - conglomerate", 4.500, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(17, "cgl sx - conglomerate", 4.500, 1));
+    impedanceCalculator.addLithology(std::make_shared<Lithology>(24, "vulcanica - volcanic", 6.000, 1));
+    std::shared_ptr<RegularGrid<double>> impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
+
+    for (size_t x = 0; x < impedanceRegularGrid->getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < impedanceRegularGrid->getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < impedanceRegularGrid->getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(impedanceRegularGrid->getData(x, y, z) - impedanceRegularGridCompare.getData(x, y, z)), epsilon);
+            }
+        }
+    }
+}
+
+TEST(DomainTest, ReflectivityCalculator)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    auto impedanceRegularGrid = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
+    const auto reflectivityRegularGridCompare = DomainTestValues::reflectivityRegularGridFromSimpleGridRotated30Degrees();
+    double epsilon = std::pow(10, -4);
+    const double undefinedImpedance = 2.5;
+
+    ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
+    const auto reflectivityRegularGrid = reflectivityCalculator.execute(impedanceRegularGrid);
+
+    for (size_t x = 0; x < impedanceRegularGrid.getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < impedanceRegularGrid.getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < impedanceRegularGrid.getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(reflectivityRegularGrid->getData(x, y, z) - reflectivityRegularGridCompare.getData(x, y, z)), epsilon);
+            }
+        }
+    }
+}
+
+TEST(DomainTest, RickerWavelet)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto waveletCompare = DomainTestValues::rickerWavelet();
+
+    RickerWaveletCalculator rickerCalculator;
+    rickerCalculator.setStep(waveletCompare.getStep());
+    rickerCalculator.setFrequency(waveletCompare.getFrequency());
+    auto wavelet = rickerCalculator.extract();
+
+    EXPECT_EQ(wavelet->getTraces().size(), waveletCompare.getTraces().size());
+
+    if (wavelet->getTraces().size() == waveletCompare.getTraces().size())
+    {
+        double epsilon = std::pow(10, -14);
+        for (size_t i = 0; i < wavelet->getTraces().size(); ++i)
+        {
+            EXPECT_LT(std::abs(wavelet->getTraces()[i] - waveletCompare.getTraces()[i]), epsilon);
+        }
+    }
+}
+
+TEST(DomainTest, Convolution)
+{
+    using namespace syntheticSeismic::domain;
+
+    auto regularGrid = DomainTestValues::regularGridToTestConvolution();
+    auto wavelet = DomainTestValues::waveletToTestConvolution();
+    auto convolutionRegularGridCompare = DomainTestValues::regularGridConvolution();
+    double epsilon = std::pow(10, -10);
+
+    ConvolutionRegularGridCalculator convolutionCalculator;
+    auto convolutionRegularGrid = convolutionCalculator.execute(regularGrid, wavelet);
+
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInX(), convolutionRegularGridCompare.getNumberOfCellsInX());
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInY(), convolutionRegularGridCompare.getNumberOfCellsInY());
+    EXPECT_EQ(convolutionRegularGrid->getNumberOfCellsInZ(), convolutionRegularGridCompare.getNumberOfCellsInZ());
+
+    for (size_t x = 0; x < convolutionRegularGrid->getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < convolutionRegularGrid->getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < convolutionRegularGrid->getNumberOfCellsInZ(); ++z)
+            {
+                EXPECT_LT(std::abs(convolutionRegularGrid->getData(x, y, z) - convolutionRegularGridCompare.getData(x, y, z)), epsilon);
             }
         }
     }

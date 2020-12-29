@@ -12,13 +12,24 @@ ReflectivityRegularGridCalculator::ReflectivityRegularGridCalculator(double unde
 
 }
 
-void ReflectivityRegularGridCalculator::convert(RegularGrid<double> &regularImpedanceGrid)
+std::shared_ptr<RegularGrid<double>> ReflectivityRegularGridCalculator::execute(RegularGrid<double> &regularImpedanceGrid)
 {
     const auto numberOfCellsInX = regularImpedanceGrid.getNumberOfCellsInX();
     const auto numberOfCellsInY = regularImpedanceGrid.getNumberOfCellsInY();
     const auto numberOfCellsInZ = static_cast<int>(regularImpedanceGrid.getNumberOfCellsInZ());
 
-    auto &data = regularImpedanceGrid.getData();
+    auto regularGrid = std::make_shared<RegularGrid<double>>(
+                               numberOfCellsInX,
+                               numberOfCellsInY,
+                               numberOfCellsInZ,
+                               regularImpedanceGrid.getCellSizeInX(),
+                               regularImpedanceGrid.getCellSizeInY(),
+                               regularImpedanceGrid.getCellSizeInZ(),
+                               0, 0
+                            );
+
+    auto &dataImpedance = regularImpedanceGrid.getData();
+    auto &data = regularGrid->getData();
 
     #pragma omp parallel for
     for (int zInt = 0; zInt < numberOfCellsInZ; ++zInt)
@@ -28,20 +39,21 @@ void ReflectivityRegularGridCalculator::convert(RegularGrid<double> &regularImpe
         {
             for (size_t x = 0; x < numberOfCellsInX; ++x)
             {
+                const auto impedance1 = dataImpedance[x][y][z];
                 if (z == 0)
                 {
-                    const auto impedance1 = data[x][y][z];
                     data[x][y][z] = (m_undefinedImpedance - impedance1) / (m_undefinedImpedance + impedance1);
                 }
                 else
                 {
-                    const auto impedance1 = data[x][y][z - 1];
-                    const auto impedance2 = data[x][y][z];
+                    const auto impedance2 = dataImpedance[x][y][z - 1];
                     data[x][y][z] = (impedance2 - impedance1) / (impedance2 + impedance1);
                 }
             }
         }
     }
+
+    return regularGrid;
 }
 
 } // namespace domain

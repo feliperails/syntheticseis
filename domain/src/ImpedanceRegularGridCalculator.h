@@ -19,7 +19,7 @@ public:
     ImpedanceRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
 
     void addLithology(std::shared_ptr<Lithology> lithology);
-    std::shared_ptr<RegularGrid<double>> convert(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid);
+    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid);
 private:
     std::map<int, std::shared_ptr<Lithology>> m_lithologies;
     std::shared_ptr<Lithology> m_undefinedLithology;

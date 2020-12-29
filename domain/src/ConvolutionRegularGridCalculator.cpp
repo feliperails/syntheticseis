@@ -12,15 +12,15 @@ ConvolutionRegularGridCalculator::ConvolutionRegularGridCalculator()
 
 }
 
-std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(RegularGrid<double> &impedanceRegularGrid, Wavelet &wavelet)
+std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(RegularGrid<double> &reflectivityRegularGrid, Wavelet &wavelet)
 {
-    const auto impedanceSize = impedanceRegularGrid.getNumberOfCellsInZ();
+    const auto reflectivitySize = reflectivityRegularGrid.getNumberOfCellsInZ();
     const auto &waveletTraces = wavelet.getTraces();
     const auto waveletSize = waveletTraces.size();
-    const auto numberOfCellsInX = impedanceRegularGrid.getNumberOfCellsInX();
+    const auto numberOfCellsInX = reflectivityRegularGrid.getNumberOfCellsInX();
     const auto numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
-    const auto numberOfCellsInY = impedanceRegularGrid.getNumberOfCellsInY();
-    const auto numberOfCellsInZ = impedanceSize + waveletSize - 1;
+    const auto numberOfCellsInY = reflectivityRegularGrid.getNumberOfCellsInY();
+    const auto numberOfCellsInZ = reflectivitySize + waveletSize - 1;
     const double defaultValue = 0.0;
     const int noDataValue = 0;
 
@@ -28,13 +28,13 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
                                numberOfCellsInX,
                                numberOfCellsInY,
                                numberOfCellsInZ,
-                               impedanceRegularGrid.getCellSizeInX(),
-                               impedanceRegularGrid.getCellSizeInY(),
-                               impedanceRegularGrid.getCellSizeInZ(),
+                               reflectivityRegularGrid.getCellSizeInX(),
+                               reflectivityRegularGrid.getCellSizeInY(),
+                               static_cast<double>(reflectivitySize) / static_cast<double>(numberOfCellsInZ) * reflectivityRegularGrid.getCellSizeInZ(),
                                defaultValue,
                                noDataValue
                             );
-    const auto &impedanceData = impedanceRegularGrid.getData();
+    const auto &impedanceData = reflectivityRegularGrid.getData();
     auto &data = regularGrid->getData();
 
     #pragma omp parallel for schedule(dynamic, PROCESS_TRACE_CHUNK)
@@ -46,7 +46,7 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
             for (size_t z = 0; z < numberOfCellsInZ; ++z)
             {
                 const size_t jmn = (z >= waveletSize - 1) ? z - (waveletSize - 1) : 0;
-                const size_t jmx = (z < impedanceSize - 1) ? z : impedanceSize - 1;
+                const size_t jmx = (z < reflectivitySize - 1) ? z : reflectivitySize - 1;
                 for (auto j = jmn; j <= jmx; ++j)
                 {
                     data[x][y][z] += (impedanceData[x][y][j] * waveletTraces[z - j]);

@@ -16,15 +16,14 @@ public:
     std::shared_ptr<Wavelet> extract() const;
 
     double getStep() const;
-    void setStep(const double step);
+    void setStep(double step);
 
     double getFrequency() const;
-    void setFrequency(const double frequency);
+    void setFrequency(double frequency);
 
     unsigned int getLength() const;
 
     QString getUnits() const;
-
 private:
     double m_step;
     unsigned int m_length;

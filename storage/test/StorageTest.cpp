@@ -4,6 +4,8 @@
 #include "domain/src/EclipseGrid.h"
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/EclipseGridWriter.h"
+#include "storage/src/RegularGridHdf5Storage.h"
+#include "storage/test/StorageTestValues.h"
 
 #include <QCryptographicHash>
 #include <QFile>
@@ -147,8 +149,8 @@ bool compareFiles(const QString& firstFilename, const QString& secondFilename)
 
 TEST(storageTest, EclipseGridWriterTest)
 {
-    using namespace  syntheticSeismic::storage;
-    using namespace  syntheticSeismic::domain;
+    using namespace syntheticSeismic::storage;
+    using namespace syntheticSeismic::domain;
 
     syntheticSeismic::storage::EclipseGridReader reader(ECLIPSEGRID_SMALL_FILENAME);
     QString error;
@@ -161,3 +163,38 @@ TEST(storageTest, EclipseGridWriterTest)
     EXPECT_TRUE(compareFiles(ECLIPSEGRID_SMALL_FILENAME, ECLIPSEGRID_SMALL_OUTPUT_FILENAME));
 }
 
+TEST(storageTest, RegularGridHdf5StorageTest)
+{
+    using namespace syntheticSeismic::storage;
+    using namespace syntheticSeismic::domain;
+
+    double epsilon = std::pow(10, 10);
+
+    auto regularGridCompare = StorageTestValues::regularGridImpedanceFiveFiveFive();
+
+    RegularGridHdf5Storage<double> regularGridHdf5Writer("gridMollesImpedance_5_5_5.h5", "/data");
+    auto regularGrid = regularGridHdf5Writer.read();
+
+    EXPECT_EQ(regularGrid->getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
+    EXPECT_EQ(regularGrid->getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
+    EXPECT_EQ(regularGrid->getNumberOfCellsInZ(), regularGridCompare.getNumberOfCellsInZ());
+    EXPECT_LT(std::abs(regularGrid->getCellSizeInX() - regularGridCompare.getCellSizeInX()), epsilon);
+    EXPECT_LT(std::abs(regularGrid->getCellSizeInY() - regularGridCompare.getCellSizeInY()), epsilon);
+    EXPECT_LT(std::abs(regularGrid->getCellSizeInZ() - regularGridCompare.getCellSizeInZ()), epsilon);
+    EXPECT_EQ(regularGrid->getNoDataValue(), regularGridCompare.getNoDataValue());
+
+    auto limitX = std::min(regularGrid->getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
+    auto limitY = std::min(regularGrid->getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
+    auto limitZ = std::min(regularGrid->getNumberOfCellsInZ(), regularGridCompare.getNumberOfCellsInZ());
+
+    for (size_t x = 0; x < limitX; ++x)
+    {
+        for (size_t y = 0; y < limitY; ++y)
+        {
+            for (size_t z = 0; z < limitZ; ++z)
+            {
+                EXPECT_LT(std::abs(regularGrid->getData(x, y, z) - regularGridCompare.getData(x, y, z)), epsilon);
+            }
+        }
+    }
+}

@@ -15,6 +15,9 @@ Lithology::Lithology(const int code, const QString &name, const double velocity,
 
 Lithology::Lithology()
     : m_id(-1)
+    , m_name("")
+    , m_velocity(0.0)
+    , m_density(0.0)
 {
 }
 

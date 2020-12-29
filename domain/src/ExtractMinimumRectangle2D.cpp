@@ -26,7 +26,7 @@ typedef CGAL::Polygon_2<CgalKernel> CgalPolygon2D;
 namespace syntheticSeismic {
 namespace domain {
 
-std::array<Point2D, 4> extractMinimumRectangle2D::extractFrom(const std::vector<std::shared_ptr<Volume>> &volumes)
+std::array<Point2D, 4> ExtractMinimumRectangle2D::extractFrom(const std::vector<std::shared_ptr<Volume>> &volumes)
 {
     const auto numberOfPointsInVolume = DomainConstant::NumberOfPointsInAnEclipseGridVolume;
 

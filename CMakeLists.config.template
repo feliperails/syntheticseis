@@ -1,37 +1,6 @@
-# Defines boost path
-#set(BOOST_ROOT )
-
-# Defines VTK path
-#set(VTK_ROOT )
-
 # Defines Qt path
-#set(QMAKE_DIR )
-
-# Defines Python path
-#set(PYTHON_DIR )
-
-# Defines HDF5 path
-#set(HDF5_DIR )
-
-# Defines SQLite path
-#set(SQLITE_DIR )
-
-# Defines Qwt path
-#set(QWT_DIR )
-
-set(EXTERNALS_ROOT_DIR E:/externals/win64-msvc2015)
-
-# Include CGAL
-# Download in https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-5.0.2/CGAL-5.0.2-Setup.exe
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "[DIR_INSTALL_CGAL]/CGAL-5.0.2/cmake/modules")
-set(CGAL_DIR [DIR_INSTALL_CGAL]/CGAL-5.0.2)
-
-# Defines GTest path
-set(GTest_ROOT ${EXTERNALS_ROOT_DIR}/googletest-1.8.0)
-set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
-
-# Defines GoogleMock path
-set(GMOCK_ROOT ${GTest_ROOT})
+set(Qt5_DIR C:/Qt/Qt5.12.5/5.12.5/msvc2015_64/lib/cmake/Qt5)
+set(QMAKE_DIR C:/Qt/Qt5.12.5/5.12.5/msvc2015_64/bin/qmake.exe)
 
 # -- Define pastas default para geração dos binarios
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

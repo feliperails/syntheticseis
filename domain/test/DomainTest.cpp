@@ -154,7 +154,7 @@ TEST(DomainTest, ExtractMinimumRectangle2DTest)
     using namespace syntheticSeismic::domain;
 
     const auto volumes = DomainTestValues::volumesFromSimpleGrid();
-    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+    const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(volumes);
 
     const auto minimumRectangleCompare = DomainTestValues::minimumRectangleFromSimpleGrid();
     for (size_t i = 0; i < minimumRectangle.size(); ++i)
@@ -170,7 +170,7 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
 
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
     const auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
-    const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+    const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(volumes);
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
 

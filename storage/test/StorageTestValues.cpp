@@ -1,6 +1,7 @@
 #include "StorageTestValues.h"
 
 using namespace syntheticSeismic::domain;
+using namespace syntheticSeismic::geometry;
 
 RegularGrid<double> StorageTestValues::regularGridImpedanceFiveFiveFive()
 {
@@ -11,8 +12,14 @@ RegularGrid<double> StorageTestValues::regularGridImpedanceFiveFiveFive()
     double cellSizeInY = 2607.6262039715043;
     double cellSizeInZ = 231.61104720000003;
     int noDataValue = 0;
-    RegularGrid<double> regularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
+    RegularGrid<double> regularGrid(
+            numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
             cellSizeInX, cellSizeInY, cellSizeInZ,
+            rectanglePoints,
+            0.0,
+            0.0,
+            noDataValue,
             noDataValue
         );
 

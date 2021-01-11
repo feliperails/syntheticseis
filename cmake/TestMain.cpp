@@ -5,12 +5,18 @@
 #include <QtTest/QtTest>
 #include <type_traits>
 
+#include <domain/src/ConvolutionRegularGridCalculator.h>
 #include <domain/src/ExtractVolumes.h>
-#include <domain/src/VolumeToRegularGrid.h>
 #include <domain/src/ExtractMinimumRectangle2D.h>
+#include <domain/src/Lithology.h>
+#include <domain/src/ImpedanceRegularGridCalculator.h>
+#include <domain/src/ReflectivityRegularGridCalculator.h>
+#include <domain/src/RickerWaveletCalculator.h>
 #include <domain/src/RotateVolumeCoordinate.h>
+#include <domain/src/VolumeToRegularGrid.h>
+#include <geometry/src/Point2D.h>
 #include <storage/src/reader/EclipseGridReader.h>
-#include <storage/src/writer/RegularGridHdf5Writer.h>
+#include <storage/src/RegularGridHdf5Storage.h>
 
 class GTestExecutionControl : public ::testing::EmptyTestEventListener
 {
@@ -81,21 +87,20 @@ void TestMain::runGTest()
 //}
 //#else
 
-std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> read(QString basePath,
-          QString path
-          )
+std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> read(QString path)
 {
     using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
 
     QString error;
 
-    std::cout << "read..." << std::endl;
-    const syntheticSeismic::storage::EclipseGridReader reader(basePath + "/" + path);
+    std::cout << "read...\n" << std::flush;
+    const syntheticSeismic::storage::EclipseGridReader reader(path);
     const auto eclipseGrid = reader.read(error);
-    std::cout << "volumesOfFirstLayer..." << std::endl;
+    std::cout << "volumesOfFirstLayer...\n" << std::flush;
     const auto volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
 
-    std::cout << "extractFromVolumesOfFirstLayer..." << std::endl;
+    std::cout << "extractFromVolumesOfFirstLayer...\n" << std::flush;
     return ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid, true);
 }
 
@@ -105,185 +110,266 @@ int main(int argc, char *argv[])
     using namespace syntheticSeismic::geometry;
     using namespace syntheticSeismic::storage;
 
-    RegularGrid<int> *regularGridLithology;
-    size_t numberOfCellsInX = 287;
-    size_t numberOfCellsInY = 735;
-    size_t numberOfCellsInZ = 993;
-    QString basePathHdf5 = "D:/gridMolles/";
-
+    if (1)
     {
-        QString basePathForRead = "D:/gridMolles/";
+        std::vector<double> frequencies = {10.0, 25.0, 40.0, 75.0};
+        double step = 0.46;
 
-        std::vector<std::shared_ptr<Volume>> volumes;
+        RickerWaveletCalculator rickerWaveletCalculator;
+        rickerWaveletCalculator.setFrequency(25.0);
+        rickerWaveletCalculator.setStep(step);
+        const auto wavelet = rickerWaveletCalculator.extract();
+        const auto waveletSize = wavelet->getTraces().size();
 
+        /*
+        size_t numberOfCellsInX = 287;
+        size_t numberOfCellsInY = 1536;
+        size_t numberOfCellsInZ = 2048;
+        // size_t numberOfCellsInZ = 2048 - waveletSize + 1;
+        QString gridLithologiesPath = "D:/gridMolles/gridMollesLithologies_287_1536_2048.h5";
+        QString gridImpedancePath = "D:/gridMolles/gridMollesImpedance_287_1536_2048.h5";
+        QString gridReflectivityPath = "D:/gridMolles/gridMollesReflectivity_287_1536_2048.h5";
+        QString gridConvolutionPath = "D:/gridMolles/gridMollesConvolution25hz_287_1536_2048.h5";
+        */
+
+        size_t numberOfCellsInX = 287;
+        size_t numberOfCellsInY = 735;
+        // size_t numberOfCellsInZ = 1252 - waveletSize + 1;
+        size_t numberOfCellsInZ = 1252;
+        std::cout << "numberOfCellsInZ: " << numberOfCellsInZ << std::endl;
+
+        bool saveGridLithologies = true;
+        bool saveGridImpedance = false;
+        bool saveGridReflectivity = false;
+
+        QString gridLithologiesPath  = "D:/gridMolles/regularGrid/gridMollesSequences_287_735_1252.h5";
+        QString gridImpedancePath    = "D:/gridMolles/regularGrid/gridMollesImpedance_287_735_1252.h5";
+        QString gridReflectivityPath = "D:/gridMolles/regularGrid/gridMollesReflectivity_287_735_1252.h5";
+
+        QString gridMolles10Path = "D:/gridMolles/EclipseGrid/grid_Molles10.grdecl";
+        QString gridMolles20Path = "D:/gridMolles/EclipseGrid/grid_Molles20.grdecl";
+        QString gridMolles30Path = "D:/gridMolles/EclipseGrid/grid_Molles30.grdecl";
+        QString gridMolles40Path = "D:/gridMolles/EclipseGrid/grid_Molles40.grdecl";
+        QString gridLithologiesDatasetName = "data";
+        QString gridImpedanceDatasetName = "data";
+        QString gridReflectivityDatasetName = "data";
+        QString gridConvolutionDatasetName = "data";
+
+        std::shared_ptr<RegularGrid<double>> impedanceRegularGrid;
+        std::array<Point2D, 4> minimumRectangle;
+        std::shared_ptr<RotateVolumeCoordinate::Result> rotateByMinimumRectangleResult;
+        if (1)
         {
-            std::cout << "Processando grid_Molles10:" << std::endl;
-            auto volumesGridMolles10 = read(basePathForRead, "grid_Molles10.grdecl");
-            std::cout << "Processando grid_Molles20:" << std::endl;
-            auto volumesGridMolles20 = read(basePathForRead, "grid_Molles20.grdecl");
-            std::cout << "Processando grid_Molles30:" << std::endl;
-            auto volumesGridMolles30 = read(basePathForRead, "grid_Molles30.grdecl");
-            std::cout << "Processando grid_Molles40:" << std::endl;
-            auto volumesGridMolles40 = read(basePathForRead, "grid_Molles40.grdecl");
-            std::cout << "Fim processando." << std::endl << std::endl;
-
-            std::cout << "Merge de volumes..." << std::endl;
-
-            volumes.insert(volumes.end(), volumesGridMolles10.begin(), volumesGridMolles10.end());
-            volumes.insert(volumes.end(), volumesGridMolles20.begin(), volumesGridMolles20.end());
-            volumes.insert(volumes.end(), volumesGridMolles30.begin(), volumesGridMolles30.end());
-            volumes.insert(volumes.end(), volumesGridMolles40.begin(), volumesGridMolles40.end());
-        }
-
-        std::cout << "Calculando retângulo mínimo..." << std::endl;
-        std::cout << std::setprecision(9);
-        const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
-        for (const auto &item : minimumRectangle)
-        {
-            std::cout << "x: " << item.x << " y: " << item.y << std::endl;
-        }
-        std::cout << "Rotacionando volumes..." << std::endl;
-        RotateVolumeCoordinate::rotateByMinimumRectangle(volumes, minimumRectangle);
-        std::cout << "Quantidade de volumes: " << volumes.size() << std::endl;
-
-        std::cout << "Fim processamento dos volumes" << std::endl << std::endl;
-
-        std::cout << "Transformando em regular grid..." << std::endl;
-
-        VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
-        auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
-        const auto &data = regularGrid.getData();
-
-        std::cout << "Fim Transformando em regular grid." << std::endl;
-
-        std::cout << "Transformando em regular grid lithology ..." << std::endl;
-        regularGridLithology = new RegularGrid<int>(
-                    regularGrid.getNumberOfCellsInX(), regularGrid.getNumberOfCellsInY(), regularGrid.getNumberOfCellsInZ(),
-                    regularGrid.getCellSizeInX(), regularGrid.getCellSizeInY(), regularGrid.getCellSizeInZ(),
-                    -1,
-                    -1
-                );
-        regularGridLithology->setRectanglePoints(minimumRectangle);
-
-        auto &dataLithology = regularGridLithology->getData();
-        for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
-        {
-            for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
+            std::vector<std::shared_ptr<Volume>> volumes;
             {
-                for (size_t z = 0; z < regularGrid.getNumberOfCellsInZ(); ++z)
+                std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesGridMolles10;
+                std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesGridMolles20;
+                std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesGridMolles30;
+                std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesGridMolles40;
+
+                std::cout << "Processando leitura dos arquivos..." << std::endl;
+
+                #pragma omp parallel sections
                 {
-                    if (data[x][y][z] == nullptr)
+                    #pragma omp section
                     {
-                        dataLithology[x][y][z] = regularGridLithology->getNoDataValue();
+                        std::cout << "Processando grid_Molles10...\n" << std::flush;
+                        volumesGridMolles10 = read(gridMolles10Path);
+                        std::cout << "Fim Processando grid_Molles10.\n" << std::flush;
+                        for (auto &volume : volumesGridMolles10)
+                        {
+                            if (volume->idLithology >= 1)
+                            {
+                                volume->idLithology = 1;
+                            }
+                        }
                     }
-                    else
+                    #pragma omp section
                     {
-                        dataLithology[x][y][z] = data[x][y][z]->idLithology;
+                        std::cout << "Processando grid_Molles20...\n" << std::flush;
+                        volumesGridMolles20 = read(gridMolles20Path);
+                        std::cout << "Fim Processando grid_Molles20.\n" << std::flush;
+                        for (auto &volume : volumesGridMolles20)
+                        {
+                            if (volume->idLithology >= 1)
+                            {
+                                volume->idLithology = 2;
+                            }
+                        }
+                    }
+                    #pragma omp section
+                    {
+                        std::cout << "Processando grid_Molles30...\n" << std::flush;
+                        volumesGridMolles30 = read(gridMolles30Path);
+                        std::cout << "Fim Processando grid_Molles30.\n" << std::flush;
+                        for (auto &volume : volumesGridMolles30)
+                        {
+                            if (volume->idLithology >= 1)
+                            {
+                                volume->idLithology = 3;
+                            }
+                        }
+                    }
+                    #pragma omp section
+                    {
+                        std::cout << "Processando grid_Molles40...\n" << std::flush;
+                        volumesGridMolles40 = read(gridMolles40Path);
+                        std::cout << "Fim Processando grid_Molles40.\n" << std::flush;
+                        for (auto &volume : volumesGridMolles40)
+                        {
+                            if (volume->idLithology >= 1)
+                            {
+                                volume->idLithology = 4;
+                            }
+                        }
                     }
                 }
+
+                std::cout << "Fim processando leitura dos arquivos." << std::endl << std::endl;
+
+                std::cout << "Merge de volumes..." << std::endl;
+
+                volumes.insert(volumes.end(), volumesGridMolles10.begin(), volumesGridMolles10.end());
+                volumes.insert(volumes.end(), volumesGridMolles20.begin(), volumesGridMolles20.end());
+                volumes.insert(volumes.end(), volumesGridMolles30.begin(), volumesGridMolles30.end());
+                volumes.insert(volumes.end(), volumesGridMolles40.begin(), volumesGridMolles40.end());
             }
-        }
 
-        std::cout << "Fim transformando em regular grid lithology." << std::endl;
-    }
-
-    size_t numberOfParts = 1;
-    size_t sectionIncrement = numberOfCellsInZ / numberOfParts;
-    for (size_t sectionStart = 0, sectionIndex = 0; sectionStart < numberOfCellsInZ; sectionStart += sectionIncrement, ++sectionIndex)
-    {
-        std::cout << "Gravando section " << sectionIndex << "..." << std::endl;
-
-        QString fileName = basePathHdf5;
-        fileName += "regularGridData_993InZ";
-        fileName += QString::number(sectionIndex);
-        fileName += ".h5";
-
-        QString datasetName = "grid";
-        auto regularGridWriter = RegularGridHdf5Writer<int>(fileName, datasetName);
-
-        auto limitZ = std::min(regularGridLithology->getNumberOfCellsInZ(), sectionStart + sectionIncrement);
-
-        auto numberZ = limitZ - sectionStart;
-        RegularGrid<int> regularGridSection(
-                    regularGridLithology->getNumberOfCellsInX(), regularGridLithology->getNumberOfCellsInY(), numberZ,
-                    regularGridLithology->getCellSizeInX(), regularGridLithology->getCellSizeInY(), regularGridLithology->getCellSizeInZ(),
-                    -1,
-                    -1
-                );
-
-        for (size_t x = 0; x < regularGridLithology->getNumberOfCellsInX(); ++x)
-        {
-            for (size_t y = 0; y < regularGridLithology->getNumberOfCellsInY(); ++y)
+            std::cout << "Calculando retângulo mínimo..." << std::endl;
+            minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
+            for (const auto &item : minimumRectangle)
             {
-                for (size_t z = sectionStart, zAux = 0; z < limitZ; ++z, ++zAux)
-                {
-                    regularGridSection.getData()[x][y][zAux] = regularGridLithology->getData()[x][y][z];
-                }
+                std::cout << "x: " << item.x << " y: " << item.y << std::endl;
             }
-        }
-        regularGridWriter.write(regularGridSection);
-    }
+            std::cout << "Rotacionando volumes..." << std::endl;
+            rotateByMinimumRectangleResult = RotateVolumeCoordinate::rotateByMinimumRectangle(volumes, minimumRectangle);
+            std::cout << "Quantidade de volumes: " << volumes.size() << std::endl;
+            std::cout << "minimumZ: " << rotateByMinimumRectangleResult->minimumZ << std::endl;
+            std::cout << "maximumZ: " << rotateByMinimumRectangleResult->maximumZ << std::endl;
 
-    return 0;
-/*
-    size_t numberOfParts = 5;
-    size_t sectionIncrement = numberOfCellsInZ / numberOfParts;
-    for (size_t sectionStart = 0, sectionIndex = 0; sectionStart < numberOfCellsInZ; sectionStart += sectionIncrement, ++sectionIndex)
-    {
-        std::cout << "Gravando section " << sectionIndex << "..." << std::endl;
+            std::cout << "Fim processamento dos volumes" << std::endl << std::endl;
 
-        QString fileName = basePath;
-        fileName += "regularGridData_";
-        fileName += QString::number(sectionIndex);
-        fileName += ".py";
-        const QString lineBreaker("\n");
-        const QString comma(", ");
+            std::cout << "Transformando em regular grid..." << std::endl;
+            VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
+            RegularGrid<std::shared_ptr<Volume>> regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(
+                        volumes,
+                        minimumRectangle,
+                        rotateByMinimumRectangleResult->minimumZ,
+                        rotateByMinimumRectangleResult->maximumZ
+                    );
+            std::cout << "Fim Transformando em regular grid." << std::endl;
 
-        QFile fs(fileName);
-        if (!fs.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            throw std::invalid_argument("Error openning file!");
-        }
-        QTextStream out(&fs);
-        out << "import numpy as np" << lineBreaker << lineBreaker;
-        out << "cellSizeInX = " << regularGrid.getCellSizeInX() << lineBreaker;
-        out << "cellSizeInY = " << regularGrid.getCellSizeInY() << lineBreaker;
-        out << "cellSizeInZ = " << regularGrid.getCellSizeInZ() << lineBreaker;
-        out << lineBreaker;
-
-        out << "values = np.array(" << lineBreaker;
-        out << "\t[" << lineBreaker;
-        auto limitZ = std::min(regularGrid.getNumberOfCellsInZ(), sectionStart + sectionIncrement);
-        for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
-        {
-            out << "\t\t[" << lineBreaker;
-            for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
+            if (saveGridLithologies)
             {
-                out << "\t\t\t[";
-                for (size_t z = sectionStart; z < limitZ; ++z)
+                auto regularGridShort = std::make_shared<RegularGrid<int>>(
+                                           regularGrid.getNumberOfCellsInX(),
+                                           regularGrid.getNumberOfCellsInY(),
+                                           regularGrid.getNumberOfCellsInZ(),
+                                           regularGrid.getCellSizeInX(),
+                                           regularGrid.getCellSizeInY(),
+                                           regularGrid.getCellSizeInZ(),
+                                           regularGrid.getRectanglePoints(),
+                                           regularGrid.getZBottom(),
+                                           regularGrid.getZTop(),
+                                           -1,
+                                           0
+                                        );
+                auto &data = regularGridShort->getData();
+                for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
                 {
-                    if (data[x][y][z] == nullptr)
+                    for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
                     {
-                        out << "-1";
+                        for (size_t z = 0; z < regularGrid.getNumberOfCellsInZ(); ++z)
+                        {
+                            if (regularGrid.getData(x, y, z) != nullptr)
+                            {
+                                data[x][y][z] = regularGrid.getData(x, y, z)->idLithology;
+                            }
+                        }
                     }
-                    else
-                    {
-                        out << data[x][y][z]->idLithology;
-                    }
-                    out << comma;
                 }
-                out << "]" << comma << lineBreaker;
+
+                std::cout << "Salvando de litologias em arquivo HDF5..." << std::endl;
+                RegularGridHdf5Storage<int> regularGridHdf5Writer(gridLithologiesPath, gridLithologiesDatasetName);
+                regularGridHdf5Writer.write(*regularGridShort);
+                std::cout << "Fim salvando de litologias em arquivo HDF5..." << std::endl;
+
+                return 0;
             }
-            out << "\t\t]" << comma << lineBreaker;
+
+            std::cout << "Transformando regular grid em impedencia..." << std::endl;
+            ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2.500, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(1, "Mudstone", 2.800, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(2, "Siltstone", 3.000, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(3, "Fine-grained Sandstone", 3.200, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(4, "Medium-grained Sandstone", 3.500, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(5, "Coarse-grained Sandstone", 3.700, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(6, "Very Coarse-grained Sandstone", 4.000, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(7, "Conglomerate", 4.500, 1));
+            impedanceCalculator.addLithology(std::make_shared<Lithology>(8, "Volcanic", 6.000, 1));
+            impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
+            std::cout << "Fim Transformando regular grid em impedencia..." << std::endl;
+
+            if (saveGridImpedance)
+            {
+                std::cout << "Salvando impedância em arquivo HDF5..." << std::endl;
+                RegularGridHdf5Storage<double> regularGridHdf5Writer(gridImpedancePath, gridImpedanceDatasetName);
+                regularGridHdf5Writer.write(*impedanceRegularGrid);
+                std::cout << "Fim salvando impedância em arquivo HDF5..." << std::endl;
+            }
         }
-        out << "\t]" << lineBreaker;
-        out << ")";
+        else
+        {
+            RegularGridHdf5Storage<double> regularGridHdf5Writer(gridImpedancePath, gridImpedanceDatasetName);
+            impedanceRegularGrid = regularGridHdf5Writer.read();
+        }
+
+        std::cout << "Transformando impedencia em refletividade..." << std::endl;
+        const double undefinedImpedance = 2.500;
+        ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
+        const auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
+        std::cout << "Fim Transformando impedencia em refletividade..." << std::endl;
+
+        if (saveGridReflectivity)
+        {
+            std::cout << "Salvando refletividade em arquivo HDF5..." << std::endl;
+            RegularGridHdf5Storage<double> regularGridHdf5Writer(gridReflectivityPath, gridReflectivityDatasetName);
+            regularGridHdf5Writer.write(*reflectivityRegularGrid);
+            std::cout << "Fim salvando refletividade em arquivo HDF5..." << std::endl;
+        }
+
+        try {
+            const int frequenciesSize = static_cast<int>(frequencies.size());
+            #pragma omp parallel for
+            for (int i = 0; i < frequenciesSize; ++i)
+            {
+                RickerWaveletCalculator rickerWaveletCalculator;
+                rickerWaveletCalculator.setFrequency(frequencies[i]);
+                rickerWaveletCalculator.setStep(step);
+                const auto wavelet = rickerWaveletCalculator.extract();
+
+                QString gridConvolutionPath  = "D:/gridMolles/convolution/gridMollesConvolution" + QString::number(static_cast<int>(rickerWaveletCalculator.getFrequency())) + "hz_287_735_1252.h5";
+
+                std::cout << std::setprecision(9);
+                std::cout << "wavelet size: " << waveletSize << "\n" << std::flush;
+
+                std::cout << "Aplicação da convolução " << frequencies[i] << "hz...\n" << std::flush;
+                ConvolutionRegularGridCalculator convolutionCalculator;
+                auto seismicRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
+                std::cout << "Fim aplicação da convolução " << frequencies[i] << "hz...\n" << std::flush;
+
+                std::cout << "Salvando de convolução em arquivo HDF5 " << frequencies[i] << "hz...\n" << std::flush;
+                std::cout << gridConvolutionPath.toStdString() << std::endl;
+                RegularGridHdf5Storage<double> regularGridHdf5Writer(gridConvolutionPath, gridConvolutionDatasetName);
+                regularGridHdf5Writer.write(*seismicRegularGrid);
+                std::cout << "Fim salvando de convolução em arquivo HDF5 " << frequencies[i] << "hz...\n" << std::flush;
+            }
+        }  catch (std::exception e) {
+            std::cout << "ERROR: " << e.what() << std::endl;
+        }
+
+        return 0;
     }
-
-    return 0;
-*/
-
-
 
     ::testing::InitGoogleTest(&argc, argv);
     ::testing::UnitTest::GetInstance()->listeners().Append(new GTestExecutionControl());

@@ -652,7 +652,7 @@ std::pair<Point2D, double> DomainTestValues::referencePointAndAngleInRadiansFrom
     };
 }
 
-std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees()
+DomainTestValues::VolumesResult DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees()
 {
     std::vector<std::shared_ptr<Volume>> volumes(24);
     for (size_t i = 0; i < volumes.size(); ++i)
@@ -947,7 +947,9 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
     };
     volumes[23]->idLithology = 7;
 
-    return volumes;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
+
+    return {volumes, rectanglePoints, 0.0, 0.0};
 }
 
 RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees()
@@ -959,10 +961,14 @@ RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees(
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
     const size_t undefinedLithology = Volume::UNDEFINED_LITHOLOGY;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<size_t> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 undefinedLithology
             );
 
@@ -1015,10 +1021,14 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::impedanceRegular
     const double cellSizeInX = 240;
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 0
             );
 
@@ -1071,10 +1081,14 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::reflectivityRegu
     const double cellSizeInX = 240;
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 0
             );
 
@@ -1415,11 +1429,16 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridToTes
     const double cellSizeInX = 1;
     const double cellSizeInY = 1;
     const double cellSizeInZ = 1;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
-                0.0, 0
+                rectanglePoints,
+                0.0,
+                0.0,
+                0.0,
+                0
             );
 
     regularGrid.setData({{{0.2, 0.5, -0.4, 1.0, 0.0}}});
@@ -1435,11 +1454,16 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridConvo
     const double cellSizeInX = 1;
     const double cellSizeInY = 1;
     const double cellSizeInZ = 1;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
-                0.0, 0
+                rectanglePoints,
+                0.0,
+                0.0,
+                0.0,
+                0
             );
 
     regularGrid.setData({{{0.12, 0.68, 0.27, -1.26, 2.78, -2.2, 0}}});

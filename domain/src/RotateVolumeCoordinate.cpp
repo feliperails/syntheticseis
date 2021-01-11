@@ -83,7 +83,7 @@ std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(co
     return {minimumZ, maximumZ};
 }
 
-void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<std::shared_ptr<Volume>> &volumes, const std::array<Point2D, 4> &minimumRectanglePoints)
+std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<std::shared_ptr<Volume>> &volumes, const std::array<Point2D, 4> &minimumRectanglePoints)
 {
     const auto minimumAndMaximumZ = calculateMinimumAndMaximumZ(volumes);
 
@@ -129,6 +129,8 @@ void RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<std::shared_pt
             }
         }
     }
+
+    return std::make_shared<Result>(referencePoint, minimumAndMaximumZ.first, minimumAndMaximumZ.second);
 }
 
 

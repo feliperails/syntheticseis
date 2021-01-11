@@ -25,7 +25,11 @@ std::shared_ptr<RegularGrid<double>> ReflectivityRegularGridCalculator::execute(
                                regularImpedanceGrid.getCellSizeInX(),
                                regularImpedanceGrid.getCellSizeInY(),
                                regularImpedanceGrid.getCellSizeInZ(),
-                               0, 0
+                               regularImpedanceGrid.getRectanglePoints(),
+                               regularImpedanceGrid.getZBottom(),
+                               regularImpedanceGrid.getZTop(),
+                               0,
+                               0
                             );
 
     auto &dataImpedance = regularImpedanceGrid.getData();

@@ -169,7 +169,7 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
     using namespace syntheticSeismic::domain;
 
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
-    const auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesCompareResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto minimumRectangle = extractMinimumRectangle2D::extractFrom(volumes);
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
@@ -185,11 +185,11 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
         {
             // Uses 5 decimal places for comparison, as the values in DomainTestValues have been stored rounded up to 5 decimal places.
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].x * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].x)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].x * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].y * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].y)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].y * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].y)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].z)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].z * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
@@ -200,7 +200,7 @@ TEST(DomainTest, VolumeToRegularGrid)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
 
     const size_t numberOfCellsInX = 5;
@@ -208,7 +208,7 @@ TEST(DomainTest, VolumeToRegularGrid)
     const size_t numberOfCellsInZ = 5;
 
     VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
-    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumesResult.volumes, volumesResult.rectanglePoints, volumesResult.zBottom, volumesResult.zTop);
 
     EXPECT_EQ(regularGrid.getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
     EXPECT_EQ(regularGrid.getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
@@ -243,7 +243,7 @@ TEST(DomainTest, ImpedanceCalculator)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto impedanceRegularGridCompare = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
 
     const size_t numberOfCellsInX = 5;
@@ -252,7 +252,7 @@ TEST(DomainTest, ImpedanceCalculator)
     double epsilon = std::pow(10, -10);
 
     VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
-    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumesResult.volumes, volumesResult.rectanglePoints, volumesResult.zBottom, volumesResult.zTop);
 
     ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2.500, 1));
     impedanceCalculator.addLithology(std::make_shared<Lithology>(1, "argilito - mudstone", 2.800, 1));

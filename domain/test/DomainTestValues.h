@@ -10,6 +10,15 @@
 class DomainTestValues
 {
 public:
+    class VolumesResult
+    {
+        public:
+            std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumes;
+            std::array<syntheticSeismic::geometry::Point2D, 4> rectanglePoints;
+            double zBottom;
+            double zTop;
+    };
+
     static syntheticSeismic::domain::EclipseGrid eclipseGridFromSimpleGrid();
 
     static std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesOfFirstLayerFromSimpleGrid();
@@ -22,7 +31,7 @@ public:
 
     static std::pair<syntheticSeismic::geometry::Point2D, double> referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
 
-    static std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> unrotatedVolumesFromSimpleGridRotated30Degrees();
+    static VolumesResult unrotatedVolumesFromSimpleGridRotated30Degrees();
 
     static syntheticSeismic::domain::RegularGrid<size_t> regularGridFromSimpleGridRotated30Degrees();
 

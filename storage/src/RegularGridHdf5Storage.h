@@ -72,25 +72,23 @@ public:
         attributes["numberOfCellsInX"] = static_cast<int>(regularGrid.getNumberOfCellsInX());
         attributes["numberOfCellsInY"] = static_cast<int>(regularGrid.getNumberOfCellsInY());
         attributes["numberOfCellsInZ"] = static_cast<int>(regularGrid.getNumberOfCellsInZ());
-        attributes["cellSizeInX"] = static_cast<double>(regularGrid.getCellSizeInX());
-        attributes["cellSizeInY"] = static_cast<double>(regularGrid.getCellSizeInY());
-        attributes["cellSizeInZ"] = static_cast<double>(regularGrid.getCellSizeInZ());
+        attributes["cellSizeInX"] = regularGrid.getCellSizeInX();
+        attributes["cellSizeInY"] = regularGrid.getCellSizeInY();
+        attributes["cellSizeInZ"] = regularGrid.getCellSizeInZ();
         attributes["noDataValue"] = static_cast<int>(regularGrid.getNoDataValue());
-
+        // BEGIN rectanglePoints
         auto &rectanglePoints = regularGrid.getRectanglePoints();
-        for (size_t i = 0; i < rectanglePoints.size(); ++i)
-        {
-            QString nameX = "rectanglePoint_";
-            nameX += QString::number(i);
-            nameX += "_x";
-            QString nameY = "rectanglePoint_";
-            nameY += QString::number(i);
-            nameY += "_y";
-
-            attributes[nameX] = static_cast<double>(rectanglePoints[i].x);
-            attributes[nameY] = static_cast<double>(rectanglePoints[i].y);
-        }
-
+        attributes["geometryInlineEndCrosslineEndX"] = rectanglePoints[0].x;
+        attributes["geometryInlineEndCrosslineEndY"] = rectanglePoints[0].y;
+        attributes["geometryInlineEndX"] = rectanglePoints[1].x;
+        attributes["geometryInlineEndY"] = rectanglePoints[1].y;
+        attributes["geometryOriginX"] = rectanglePoints[2].x;
+        attributes["geometryOriginY"] = rectanglePoints[2].y;
+        attributes["geometryOriginZ"] = regularGrid.getZTop();
+        attributes["geometryCrosslineEndX"] = rectanglePoints[3].x;
+        attributes["geometryCrosslineEndY"] = rectanglePoints[3].y;
+        // END rectanglePoints
+        attributes["zBottom"] = regularGrid.getZBottom();
         attributes["version"] = version;
 
         for (auto pair : extraAttributes)
@@ -163,15 +161,32 @@ public:
         auto numberOfCellsInX = static_cast<size_t>(attributes["numberOfCellsInX"].toInt());
         auto numberOfCellsInY = static_cast<size_t>(attributes["numberOfCellsInY"].toInt());
         auto numberOfCellsInZ = static_cast<size_t>(attributes["numberOfCellsInZ"].toInt());
-        auto cellSizeInX = static_cast<double>(attributes["cellSizeInX"].toDouble());
-        auto cellSizeInY = static_cast<double>(attributes["cellSizeInY"].toDouble());
-        auto cellSizeInZ = static_cast<double>(attributes["cellSizeInZ"].toDouble());
+        auto cellSizeInX = attributes["cellSizeInX"].toDouble();
+        auto cellSizeInY = attributes["cellSizeInY"].toDouble();
+        auto cellSizeInZ = attributes["cellSizeInZ"].toDouble();
+        // BEGIN rectanglePoints
+        std::array<geometry::Point2D, 4> rectanglePoints;
+        rectanglePoints[0].x = attributes["geometryInlineEndCrosslineEndX"].toDouble();
+        rectanglePoints[0].y = attributes["geometryInlineEndCrosslineEndY"].toDouble();
+        rectanglePoints[1].x = attributes["geometryInlineEndX"].toDouble();
+        rectanglePoints[1].y = attributes["geometryInlineEndY"].toDouble();
+        rectanglePoints[2].x = attributes["geometryOriginX"].toDouble();
+        rectanglePoints[2].y = attributes["geometryOriginY"].toDouble();
+        auto zTop = attributes["geometryOriginZ"].toDouble();
+        rectanglePoints[3].x = attributes["geometryCrosslineEndX"].toDouble();
+        rectanglePoints[3].y = attributes["geometryCrosslineEndY"].toDouble();
+        // END rectanglePoints
+        auto zBottom = attributes["zBottom"].toDouble();
         auto noDataValue = static_cast<int>(attributes["noDataValue"].toInt());
 
         auto regularGrid = std::make_shared<domain::RegularGrid<RasterType>>(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
-                noDataValue, noDataValue
+                rectanglePoints,
+                zBottom,
+                zTop,
+                noDataValue,
+                noDataValue
             );
         auto &regularGridData = regularGrid->getData();
 

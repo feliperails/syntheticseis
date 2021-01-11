@@ -31,6 +31,9 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
                                reflectivityRegularGrid.getCellSizeInX(),
                                reflectivityRegularGrid.getCellSizeInY(),
                                static_cast<double>(reflectivitySize) / static_cast<double>(numberOfCellsInZ) * reflectivityRegularGrid.getCellSizeInZ(),
+                               reflectivityRegularGrid.getRectanglePoints(),
+                               reflectivityRegularGrid.getZBottom(),
+                               reflectivityRegularGrid.getZTop(),
                                defaultValue,
                                noDataValue
                             );

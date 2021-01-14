@@ -693,7 +693,7 @@ bool AddingVelocityWidgetPrivate::defineState()
             if (lithology.getId() == identifier) {
                 msg = QObject::tr("The velocity identifier must be unique.\n");
             } else {
-                if (lithology.getId() == name) {
+                if (lithology.getName() == name) {
                     msg += QObject::tr("The velocity name must be unique.\n");
                 }
             }

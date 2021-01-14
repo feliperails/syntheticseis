@@ -10,7 +10,6 @@
 #include <domain/src/ReflectivityRegularGridCalculator.h>
 #include <domain/src/RickerWaveletCalculator.h>
 #include <domain/src/RotateVolumeCoordinate.h>
-#include <domain/src/SeismicWaveVelocityDictionary.h>
 #include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>

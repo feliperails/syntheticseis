@@ -49,6 +49,11 @@
        <string>Number of cells</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Main surface</string>
+      </property>
+     </column>
      <item>
       <property name="text">
        <string>E:\syntheticSeis\debug\bin</string>

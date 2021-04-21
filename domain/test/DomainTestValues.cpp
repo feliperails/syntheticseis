@@ -652,7 +652,7 @@ std::pair<Point2D, double> DomainTestValues::referencePointAndAngleInRadiansFrom
     };
 }
 
-std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees()
+DomainTestValues::VolumesResult DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees()
 {
     std::vector<std::shared_ptr<Volume>> volumes(24);
     for (size_t i = 0; i < volumes.size(); ++i)
@@ -947,7 +947,9 @@ std::vector<std::shared_ptr<Volume>> DomainTestValues::unrotatedVolumesFromSimpl
     };
     volumes[23]->idLithology = 7;
 
-    return volumes;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
+
+    return {volumes, rectanglePoints, 0.0, 0.0};
 }
 
 RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees()
@@ -959,10 +961,14 @@ RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees(
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
     const size_t undefinedLithology = Volume::UNDEFINED_LITHOLOGY;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<size_t> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 undefinedLithology
             );
 
@@ -1007,7 +1013,7 @@ RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees(
     return regularGrid;
 }
 
-syntheticSeismic::domain::RegularGrid<double> DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees()
+RegularGrid<double> DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees()
 {
     const size_t numberOfCellsInX = 5;
     const size_t numberOfCellsInY = 5;
@@ -1015,10 +1021,14 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::impedanceRegular
     const double cellSizeInX = 240;
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 0
             );
 
@@ -1063,7 +1073,7 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::impedanceRegular
     return regularGrid;
 }
 
-syntheticSeismic::domain::RegularGrid<double> DomainTestValues::reflectivityRegularGridFromSimpleGridRotated30Degrees()
+RegularGrid<double> DomainTestValues::reflectivityRegularGridFromSimpleGridRotated30Degrees()
 {
     const size_t numberOfCellsInX = 5;
     const size_t numberOfCellsInY = 5;
@@ -1071,10 +1081,14 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::reflectivityRegu
     const double cellSizeInX = 240;
     const double cellSizeInY = 160;
     const double cellSizeInZ = 80;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                rectanglePoints,
+                0.0,
+                0.0,
                 0
             );
 
@@ -1407,7 +1421,7 @@ Wavelet DomainTestValues::waveletToTestConvolution()
     return wavelet;
 }
 
-syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridToTestConvolution()
+RegularGrid<double> DomainTestValues::regularGridToTestConvolution()
 {
     const size_t numberOfCellsInX = 1;
     const size_t numberOfCellsInY = 1;
@@ -1415,11 +1429,16 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridToTes
     const double cellSizeInX = 1;
     const double cellSizeInY = 1;
     const double cellSizeInZ = 1;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
-                0.0, 0
+                rectanglePoints,
+                0.0,
+                0.0,
+                0.0,
+                0
             );
 
     regularGrid.setData({{{0.2, 0.5, -0.4, 1.0, 0.0}}});
@@ -1427,7 +1446,7 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridToTes
     return regularGrid;
 }
 
-syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridConvolution()
+RegularGrid<double> DomainTestValues::regularGridConvolution()
 {
     const size_t numberOfCellsInX = 1;
     const size_t numberOfCellsInY = 1;
@@ -1435,14 +1454,49 @@ syntheticSeismic::domain::RegularGrid<double> DomainTestValues::regularGridConvo
     const double cellSizeInX = 1;
     const double cellSizeInY = 1;
     const double cellSizeInZ = 1;
+    std::array<Point2D, 4> rectanglePoints = {Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0), Point2D(0.0, 0.0)};
 
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
-                0.0, 0
+                rectanglePoints,
+                0.0,
+                0.0,
+                0.0,
+                0
             );
 
     regularGrid.setData({{{0.12, 0.68, 0.27, -1.26, 2.78, -2.2, 0}}});
 
     return regularGrid;
+}
+
+std::tuple<EclipseGridSurface::Result, double, double, double, double> DomainTestValues::simpleGrdSurfaceResult()
+{
+    EclipseGridSurface::Result result(GrdSurface<double>(5, 5), GrdSurface<int>(5, 5));
+
+    result.getSurface().setXMin(1000.0);
+    result.getSurface().setXMax(1400.0);
+    result.getSurface().setYMin(2000.0);
+    result.getSurface().setYMax(3200.0);
+
+    result.getLithologySurface().setXMin(result.getSurface().getXMin());
+    result.getLithologySurface().setXMax(result.getSurface().getXMax());
+    result.getLithologySurface().setYMin(result.getSurface().getYMin());
+    result.getLithologySurface().setYMax(result.getSurface().getYMax());
+    auto &data = result.getSurface().getData();
+    data[0] = {1000,   1000,  1000,  1000, 1000};
+    data[1] = {1000,   1000,  1000,  1000, 1000};
+    data[2] = {99999,  1000,  1000,  1000, 1000};
+    data[3] = {99999, 99999,  1000,  1000, 1000};
+    data[4] = {99999, 99999, 99999, 99999, 1000};
+
+    auto &lithologyData = result.getLithologySurface().getData();
+    lithologyData[0] = {    1,     3,     3,     5, 5};
+    lithologyData[1] = {    2,     4,     3,     5, 5};
+    lithologyData[2] = {99999,     4,     4,     6, 6};
+    lithologyData[3] = {99999, 99999,     4,     6, 6};
+    lithologyData[4] = {99999, 99999, 99999, 99999, 6};
+
+    return {result, 1000, 1000, 1, 6};
 }

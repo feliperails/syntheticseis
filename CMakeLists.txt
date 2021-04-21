@@ -44,6 +44,14 @@ conan_cmake_run(ninja/1.10.1
     BASIC_SETUP
     BUILD missing)
 
+conan_cmake_run(zlib/1.2.11
+    BASIC_SETUP
+    BUILD missing)
+
+conan_cmake_run(boost/1.74.0
+    BASIC_SETUP
+    BUILD missing)
+
 conan_cmake_run(REQUIRES hdf5/1.8.21
     BASIC_SETUP
     BUILD missing)
@@ -77,64 +85,49 @@ include_directories(${HDF5_INCLUDE_DIRS})
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-add_library(SyntheticSeismic SHARED
+FILE(GLOB SyntheticSeis_UI "console/*.ui")
+qt5_wrap_ui(
+    Plugin_UI_HEADERS
+    ${SyntheticSeis_UI}
+)
 
+add_library(SyntheticSeismic SHARED
     # geometry
-    geometry/src/Coordinate.h
     geometry/src/Coordinate.cpp
-    geometry/src/Point3D.h
     geometry/src/Point3D.cpp
-    geometry/src/Volume.h
     geometry/src/Volume.cpp
-    geometry/src/Point2D.h
     geometry/src/Point2D.cpp
 
     # domain
     domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
-    domain/src/DomainConstant.h
+    domain/src/EclipseGridSurface.cpp
+    domain/src/EquationPlane.cpp
     domain/src/ExtractMinimumRectangle2D.cpp
-    domain/src/ExtractMinimumRectangle2D.h
-    domain/src/ExtractVolumes.h
     domain/src/ExtractVolumes.cpp
-    domain/src/Facade.h
     domain/src/Facade.cpp
-    domain/src/EclipseGrid.h
     domain/src/EclipseGrid.cpp
-    domain/src/Lithology.h
+    domain/src/GrdSurface.cpp
     domain/src/Lithology.cpp
-    domain/src/LithologyDictionary.h
     domain/src/LithologyDictionary.cpp
-    domain/src/ImpedanceRegularGridCalculator.h
     domain/src/ImpedanceRegularGridCalculator.cpp
-    domain/src/RegularGrid.h
     domain/src/RegularGrid.cpp
-    domain/src/ReflectivityRegularGridCalculator.h
     domain/src/ReflectivityRegularGridCalculator.cpp
-    domain/src/RickerWaveletCalculator.h
     domain/src/RickerWaveletCalculator.cpp
-    domain/src/RotateVolumeCoordinate.h
     domain/src/RotateVolumeCoordinate.cpp
-    domain/src/SeismicTraces.h
     domain/src/SeismicTraces.cpp
-    domain/src/VolumeToRegularGrid.h
     domain/src/VolumeToRegularGrid.cpp
-    domain/src/Wavelet.h
     domain/src/Wavelet.cpp
     # storage
-    storage/src/Facade.h
     storage/src/Facade.cpp
-    storage/src/RegularGridHdf5Storage.h
     storage/src/RegularGridHdf5Storage.cpp
-    storage/src/reader/EclipseGridReader.h
     storage/src/reader/EclipseGridReader.cpp
-    storage/src/writer/EclipseGridWriter.h
     storage/src/writer/EclipseGridWriter.cpp
-    storage/src/writer/SEGYWriter.h
-    storage/src/writer/SEGYWriter.cpp
-    storage/src/writer/RegularGridHdf5Writer.h
-    storage/src/writer/RegularGridHdf5Writer.cpp
-    )
+    storage/src/writer/SegyWriter.cpp
+    storage/src/writer/GrdSurfaceWriter.cpp
+    # infrastructure
+    infrastructure/src/OperatingSystemCommand.cpp
+)
 
 qt5_add_resources(RESOURCES console/images/SyntheticSeisApp.qrc)
 
@@ -147,25 +140,22 @@ add_library(SyntheticSeismicMock
 
     # storage
     storage/mock/StorageMock.cpp
-    )
+)
 
 add_executable(SyntheticSeismicTest
     cmake/TestMain.cpp
     geometry/test/GeometryTest.cpp
     domain/test/DomainTestValues.cpp
-    domain/test/DomainTestValues.h
     domain/test/DomainTest.cpp
     storage/test/StorageTestValues.cpp
-    storage/test/StorageTestValues.h
     storage/test/StorageTest.cpp
-    )
+)
 
 add_executable(SyntheticSeismicConsole
     console/main.cpp
     console/Wizard.cpp
-    console/Wizard.h
     ${RESOURCES}
-    )
+)
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
 include(GenerateExportHeader)
@@ -188,7 +178,7 @@ target_link_libraries(SyntheticSeismicMock
     PUBLIC ${CONAN_LIBS}
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC SyntheticSeismic
-    )
+)
 
 target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
@@ -200,7 +190,7 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${GTEST_LIBRARIES}
     PUBLIC ${CONAN_LIBS}
-    )
+)
 
 target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Core
@@ -212,7 +202,7 @@ target_link_libraries(SyntheticSeismicConsole
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${CONAN_LIBS}
     PUBLIC ${GTEST_LIBRARIES}
-    )
+)
 
 if(WIN32)
     include(GetPrerequisites)
@@ -234,14 +224,19 @@ if(WIN32)
         -DPREREQUISITES_DEST_DIR=${CMAKE_BINARY_DIR}/bin
         -DSEARCH_PATHS=${_search_paths}
         -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake)
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake
+    )
 endif()
 
 install(FILES README.md
     version.txt
     DESTINATION .
     PERMISSIONS OWNER_READ GROUP_READ WORLD_READ
-    )
+)
+
+# Arquivo de execução Python
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/python")
+file(COPY "${CMAKE_SOURCE_DIR}/python/generate_segy.py" DESTINATION "${CMAKE_BINARY_DIR}/bin/python/")
 
 # Arquivo para teste de leitura do EclipseGrid
 file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
@@ -253,7 +248,7 @@ enable_testing()
 add_test(
     NAME SyntheticSeismicTest
     COMMAND SyntheticSeismicTest
-    )
+)
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/CPackConfig.cmake)
     include(${CMAKE_SOURCE_DIR}/CPackConfig.cmake)

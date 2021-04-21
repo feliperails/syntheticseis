@@ -31,6 +31,9 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
                                reflectivityRegularGrid.getCellSizeInX(),
                                reflectivityRegularGrid.getCellSizeInY(),
                                static_cast<double>(reflectivitySize) / static_cast<double>(numberOfCellsInZ) * reflectivityRegularGrid.getCellSizeInZ(),
+                               reflectivityRegularGrid.getRectanglePoints(),
+                               reflectivityRegularGrid.getZBottom(),
+                               reflectivityRegularGrid.getZTop(),
                                defaultValue,
                                noDataValue
                             );
@@ -55,7 +58,33 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
         }
     }
 
-    return regularGrid;
+    auto regularGridWithoutBorders = std::make_shared<RegularGrid<double>>(
+                               numberOfCellsInX,
+                               numberOfCellsInY,
+                               reflectivitySize,
+                               reflectivityRegularGrid.getCellSizeInX(),
+                               reflectivityRegularGrid.getCellSizeInY(),
+                               reflectivityRegularGrid.getCellSizeInZ(),
+                               reflectivityRegularGrid.getRectanglePoints(),
+                               reflectivityRegularGrid.getZBottom(),
+                               reflectivityRegularGrid.getZTop(),
+                               defaultValue,
+                               noDataValue
+                            );
+    auto &dataWithoutBorders = regularGridWithoutBorders->getData();
+    const auto startZ = static_cast<size_t>((numberOfCellsInZ - reflectivitySize) / 2.0);
+    for (size_t x = 0; x < numberOfCellsInX; ++x)
+    {
+        for (size_t y = 0; y < numberOfCellsInY; ++y)
+        {
+            for (size_t z = 0; z < reflectivitySize; ++z)
+            {
+                dataWithoutBorders[x][y][z] = data[x][y][startZ + z];
+            }
+        }
+    }
+
+    return regularGridWithoutBorders;
 }
 
 } // namespace domain

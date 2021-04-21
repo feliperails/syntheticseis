@@ -31,6 +31,9 @@ std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::execute(Reg
                                regularVolumeGrid.getCellSizeInX(),
                                regularVolumeGrid.getCellSizeInY(),
                                regularVolumeGrid.getCellSizeInZ(),
+                               regularVolumeGrid.getRectanglePoints(),
+                               regularVolumeGrid.getZBottom(),
+                               regularVolumeGrid.getZTop(),
                                m_undefinedLithology->getVelocity() * m_undefinedLithology->getDensity()
                             );
     auto &data = regularGrid->getData();

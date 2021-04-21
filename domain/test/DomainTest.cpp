@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <domain/src/ConvolutionRegularGridCalculator.h>
 #include <domain/src/EclipseGrid.h>
+#include <domain/src/EclipseGridSurface.h>
+#include <domain/src/EquationPlane.h>
 #include <domain/src/ExtractMinimumRectangle2D.h>
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/Facade.h>
@@ -15,6 +17,7 @@
 #include <storage/src/reader/EclipseGridReader.h>
 #include <QFile>
 #include <QTextStream>
+#include <iostream>
 #include "DomainTestValues.h"
 
 TEST(DomainTest, LithologyDictionaryTest)
@@ -168,7 +171,7 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
     using namespace syntheticSeismic::domain;
 
     auto volumes = DomainTestValues::volumesFromSimpleGridRotated30Degrees();
-    const auto volumesCompare = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesCompareResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(volumes);
     const auto referencePointAndAngleInRadians = RotateVolumeCoordinate::calculateReferencePoint(minimumRectangle);
     const auto referencePointAndAngleInRadiansCompare = DomainTestValues::referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
@@ -184,11 +187,11 @@ TEST(DomainTest, RotateVolumeCoordinateWithSimpleGridTest)
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
         {
             // Uses 5 decimal places for comparison, as the values in DomainTestValues have been stored rounded up to 5 decimal places.
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].x * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].x)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].x * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].x)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate X";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].y * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].y)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].y * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].y)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Y";
-            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].z * 100000) / 100000, volumesCompare[volumeIndex]->points[pointIndex].z)
+            EXPECT_DOUBLE_EQ(ceil(volumes[volumeIndex]->points[pointIndex].z * 100000) / 100000, volumesCompareResult.volumes[volumeIndex]->points[pointIndex].z)
                     << "Volume error: " << volumeIndex << " point error: " << pointIndex << " coordinate Z";
         }
     }
@@ -199,7 +202,7 @@ TEST(DomainTest, VolumeToRegularGrid)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
 
     const size_t numberOfCellsInX = 5;
@@ -207,7 +210,7 @@ TEST(DomainTest, VolumeToRegularGrid)
     const size_t numberOfCellsInZ = 5;
 
     VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
-    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumesResult.volumes, volumesResult.rectanglePoints, volumesResult.zBottom, volumesResult.zTop);
 
     EXPECT_EQ(regularGrid.getNumberOfCellsInX(), regularGridCompare.getNumberOfCellsInX());
     EXPECT_EQ(regularGrid.getNumberOfCellsInY(), regularGridCompare.getNumberOfCellsInY());
@@ -242,7 +245,7 @@ TEST(DomainTest, ImpedanceCalculator)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const auto volumes = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
+    const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     const auto impedanceRegularGridCompare = DomainTestValues::impedanceRegularGridFromSimpleGridRotated30Degrees();
 
     const size_t numberOfCellsInX = 5;
@@ -251,7 +254,7 @@ TEST(DomainTest, ImpedanceCalculator)
     double epsilon = std::pow(10, -10);
 
     VolumeToRegularGrid volumeToRegularGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ);
-    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumes);
+    auto regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(volumesResult.volumes, volumesResult.rectanglePoints, volumesResult.zBottom, volumesResult.zTop);
 
     ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2.500, 1));
     impedanceCalculator.addLithology(std::make_shared<Lithology>(1, "argilito - mudstone", 2.800, 1));
@@ -332,8 +335,8 @@ TEST(DomainTest, Convolution)
 
     auto regularGrid = DomainTestValues::regularGridToTestConvolution();
     auto wavelet = DomainTestValues::waveletToTestConvolution();
-    auto convolutionRegularGridCompare = DomainTestValues::regularGridConvolution();
-    double epsilon = std::pow(10, -10);
+    const auto convolutionRegularGridCompare = DomainTestValues::regularGridConvolution();
+    const double epsilon = std::pow(10, -10);
 
     ConvolutionRegularGridCalculator convolutionCalculator;
     auto convolutionRegularGrid = convolutionCalculator.execute(regularGrid, wavelet);
@@ -350,6 +353,55 @@ TEST(DomainTest, Convolution)
             {
                 EXPECT_LT(std::abs(convolutionRegularGrid->getData(x, y, z) - convolutionRegularGridCompare.getData(x, y, z)), epsilon);
             }
+        }
+    }
+}
+
+TEST(DomainTest, EquationPlane)
+{
+    using namespace syntheticSeismic::domain;
+    using namespace syntheticSeismic::geometry;
+
+    EquationPlane equationPlane(Point3D(-2.0, 1.0, 0.0), Point3D(-1.0, 4.0, 2.0), Point3D(0.0, -2.0, 2.0));
+
+    const double epsilon = std::pow(10, -10);
+
+    EXPECT_LT(std::abs(equationPlane.getNormalVector().x - -12), epsilon);
+    EXPECT_LT(std::abs(equationPlane.getNormalVector().y - -2), epsilon);
+    EXPECT_LT(std::abs(equationPlane.getNormalVector().z - 9), epsilon);
+}
+
+TEST(DomainTest, EclipseGridSurface)
+{
+    using namespace syntheticSeismic::domain;
+
+    const auto simpleGrid = DomainTestValues::eclipseGridFromSimpleGrid();
+    auto compare = DomainTestValues::simpleGrdSurfaceResult();
+    auto resultCompare = std::get<0>(compare);
+    const double epsilon = std::pow(10, -10);
+
+    EclipseGridSurface eclipseGridSurface;
+    EclipseGridSurface::Result result = eclipseGridSurface.extractFromMainSurface(simpleGrid, 5, 5);
+    EXPECT_LT(std::abs(result.getSurface().getXMin() - resultCompare.getSurface().getXMin()), epsilon);
+    EXPECT_LT(std::abs(result.getSurface().getYMin() - resultCompare.getSurface().getYMin()), epsilon);
+    EXPECT_LT(std::abs(result.getSurface().getXMax() - resultCompare.getSurface().getXMax()), epsilon);
+    EXPECT_LT(std::abs(result.getSurface().getYMax() - resultCompare.getSurface().getYMax()), epsilon);
+    EXPECT_LT(std::abs(result.getSurface().getZMin() - std::get<1>(compare)), epsilon);
+    EXPECT_LT(std::abs(result.getSurface().getZMax() - std::get<2>(compare)), epsilon);
+
+    EXPECT_LT(std::abs(result.getLithologySurface().getXMin() - resultCompare.getLithologySurface().getXMin()), epsilon);
+    EXPECT_LT(std::abs(result.getLithologySurface().getYMin() - resultCompare.getLithologySurface().getYMin()), epsilon);
+    EXPECT_LT(std::abs(result.getLithologySurface().getXMax() - resultCompare.getLithologySurface().getXMax()), epsilon);
+    EXPECT_LT(std::abs(result.getLithologySurface().getYMax() - resultCompare.getLithologySurface().getYMax()), epsilon);
+    EXPECT_LT(std::abs(result.getLithologySurface().getZMin() - std::get<3>(compare)), epsilon);
+    EXPECT_LT(std::abs(result.getLithologySurface().getZMax() - std::get<4>(compare)), epsilon);
+
+    for (size_t i = 0; i < result.getSurface().getData().size(); ++i)
+    {
+        for (size_t j = 0; j < result.getSurface().getData()[0].size(); ++j)
+        {
+            EXPECT_LT(std::abs(result.getSurface().getData()[i][j] - resultCompare.getSurface().getData()[i][j]), epsilon);
+            EXPECT_EQ(result.getLithologySurface().getData()[i][j], resultCompare.getLithologySurface().getData()[i][j]);
         }
     }
 }

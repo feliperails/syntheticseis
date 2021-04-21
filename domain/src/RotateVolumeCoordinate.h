@@ -10,7 +10,22 @@ namespace domain {
 class RotateVolumeCoordinate
 {
 public:
-    static void rotateByMinimumRectangle(
+    class Result
+    {
+        public:
+            explicit Result(const geometry::Point3D &origin, const double minimumZ, const double maximumZ)
+                : origin(origin)
+                , minimumZ(minimumZ)
+                , maximumZ(maximumZ)
+            {
+
+            }
+            const geometry::Point3D origin;
+            const double minimumZ;
+            const double maximumZ;
+    };
+
+    static std::shared_ptr<Result> rotateByMinimumRectangle(
             std::vector<std::shared_ptr<geometry::Volume>>& volumes,
             const std::array<geometry::Point2D, 4>& minimumRectanglePoints
         );
@@ -22,7 +37,7 @@ public:
     static std::pair<geometry::Point2D, double> calculateReferencePoint(const std::array<geometry::Point2D, 4> &minimumRectanglePoints);
 private:
     // Class with static methods only. It must not be instantiated.
-    RotateVolumeCoordinate() = default;
+    explicit RotateVolumeCoordinate() = default;
 
     /// Calculates the minimum and maximum value in z
     /// @param Volumes

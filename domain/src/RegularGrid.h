@@ -12,10 +12,13 @@ class RegularGrid
 {
 public:
     RegularGrid(
-            size_t numberOfCellsInX, size_t numberOfCellsInY, size_t numberOfCellsInZ,
-            double cellSizeInX, double cellSizeInY, double cellSizeInZ,
+            const size_t numberOfCellsInX, const size_t numberOfCellsInY, const size_t numberOfCellsInZ,
+            const double cellSizeInX, const double cellSizeInY, const double cellSizeInZ,
+            const std::array<geometry::Point2D, 4> &rectanglePoints,
+            const double zBottom,
+            const double zTop,
             T defaultValue,
-            int noDataValue = 0
+            const int noDataValue = 0
         ) : m_data(std::vector<std::vector<std::vector<T>>>(
                        numberOfCellsInX,
                        std::vector<std::vector<T>>(
@@ -29,6 +32,9 @@ public:
             m_numberOfCellsInX(numberOfCellsInX),
             m_numberOfCellsInY(numberOfCellsInY),
             m_numberOfCellsInZ(numberOfCellsInZ),
+            m_rectanglePoints(rectanglePoints),
+            m_zBottom(zBottom),
+            m_zTop(zTop),
             m_noDataValue(noDataValue)
     {
 
@@ -84,31 +90,32 @@ public:
         return m_noDataValue;
     }
 
-    void setNoDataValue(int value)
-    {
-        m_noDataValue = value;
-    }
-
     std::array<geometry::Point2D, 4> getRectanglePoints() const
     {
         return m_rectanglePoints;
     }
 
-    void setRectanglePoints(const std::array<geometry::Point2D, 4> &value)
+    double getZBottom() const
     {
-        m_rectanglePoints = value;
+        return m_zBottom;
     }
 
+    double getZTop() const
+    {
+        return m_zTop;
+    }
 private:
     std::vector<std::vector<std::vector<T>>> m_data;
-    double m_cellSizeInX;
-    double m_cellSizeInY;
-    double m_cellSizeInZ;
-    size_t m_numberOfCellsInX;
-    size_t m_numberOfCellsInY;
-    size_t m_numberOfCellsInZ;
-    std::array<geometry::Point2D, 4> m_rectanglePoints;
-    int m_noDataValue;
+    const double m_cellSizeInX;
+    const double m_cellSizeInY;
+    const double m_cellSizeInZ;
+    const size_t m_numberOfCellsInX;
+    const size_t m_numberOfCellsInY;
+    const size_t m_numberOfCellsInZ;
+    const std::array<geometry::Point2D, 4> m_rectanglePoints;
+    const double m_zBottom;
+    const double m_zTop;
+    const int m_noDataValue;
 };
 
 } // namespace domain

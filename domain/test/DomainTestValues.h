@@ -1,6 +1,7 @@
 #pragma once
 
 #include <domain/src/EclipseGrid.h>
+#include <domain/src/EclipseGridSurface.h>
 #include <domain/src/ExtractVolumes.h>
 #include <domain/src/RegularGrid.h>
 #include <domain/src/Wavelet.h>
@@ -10,6 +11,15 @@
 class DomainTestValues
 {
 public:
+    class VolumesResult
+    {
+        public:
+            std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumes;
+            std::array<syntheticSeismic::geometry::Point2D, 4> rectanglePoints;
+            double zBottom;
+            double zTop;
+    };
+
     static syntheticSeismic::domain::EclipseGrid eclipseGridFromSimpleGrid();
 
     static std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesOfFirstLayerFromSimpleGrid();
@@ -22,7 +32,7 @@ public:
 
     static std::pair<syntheticSeismic::geometry::Point2D, double> referencePointAndAngleInRadiansFromSimpleGridRotated30Degrees();
 
-    static std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> unrotatedVolumesFromSimpleGridRotated30Degrees();
+    static VolumesResult unrotatedVolumesFromSimpleGridRotated30Degrees();
 
     static syntheticSeismic::domain::RegularGrid<size_t> regularGridFromSimpleGridRotated30Degrees();
 
@@ -37,6 +47,8 @@ public:
     static syntheticSeismic::domain::RegularGrid<double> regularGridToTestConvolution();
 
     static syntheticSeismic::domain::RegularGrid<double> regularGridConvolution();
+
+    static std::tuple<syntheticSeismic::domain::EclipseGridSurface::Result, double, double, double, double> simpleGrdSurfaceResult();
 private:
     // Totally static class
     DomainTestValues() = default;

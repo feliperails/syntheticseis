@@ -28,7 +28,10 @@ VolumeToRegularGrid::VolumeToRegularGrid(const size_t numberOfCellsInX, const si
 }
 
 RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegularGrid(
-        const std::vector<std::shared_ptr<Volume>> volumes
+        const std::vector<std::shared_ptr<Volume>> volumes,
+        const std::array<geometry::Point2D, 4> &minimumRectangle,
+        const double zBottom,
+        const double zTop
     )
 {
     const std::vector<std::vector<size_t>> indexesTetraedronsInHexaedron = {
@@ -78,6 +81,9 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
     RegularGrid<std::shared_ptr<Volume>> regularGrid(
                 m_numberOfCellsInX, m_numberOfCellsInY, m_numberOfCellsInZ,
                 m_cellSizeInX, m_cellSizeInY, m_cellSizeInZ,
+                minimumRectangle,
+                zBottom,
+                zTop,
                 nullptr
             );
     auto &regularGridData = regularGrid.getData();

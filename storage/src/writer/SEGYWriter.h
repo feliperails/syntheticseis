@@ -1,18 +1,18 @@
 #pragma once
 
-#include "domain/src/EclipseGrid.h"
+#include <QString>
 
 namespace syntheticSeismic {
 namespace storage {
 
-class EclipseGridReader
+class SegyWriter
 {
 public:
-    explicit EclipseGridReader(const QString& path);
+    explicit SegyWriter(const QString& path);
 
-    syntheticSeismic::domain::EclipseGrid read(bool *ok = nullptr) const;
+    bool writeByHdf5File(const QString& hdf5FilePath) const;
 
-    const QString& path() const;
+    const QString& getPath() const;
 
 private:
     const QString m_path;

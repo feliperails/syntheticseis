@@ -36,4 +36,8 @@ CMakeLists.txt.user.*
 build
 install
 
+.vs
+CMakeSettings.json
 CMakeLists.config
+
+python/.idea

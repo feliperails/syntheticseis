@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "../../geometry/src/Point3D.h"
 
 namespace syntheticSeismic {
 namespace domain {
@@ -109,6 +110,27 @@ public:
     {
         return m_numberOfCellsY;
     }
+
+    double getAngle() const
+    {
+        return m_angle;
+    }
+
+    void setAngle(double angle)
+    {
+        m_angle = angle;
+    }
+
+    geometry::Point3D getReferencePoint()
+    {
+        return m_referencePoint;
+    }
+
+    void setReferencePoint(geometry::Point3D referencePoint)
+    {
+        m_referencePoint = referencePoint;
+    }
+
 private:
     size_t m_numberOfCellsX = 0;
     size_t m_numberOfCellsY = 0;
@@ -116,6 +138,8 @@ private:
     double m_xMax = 0.0;
     double m_yMin = 0.0;
     double m_yMax = 0.0;
+    double m_angle = 0.0;
+    geometry::Point3D m_referencePoint;
     std::vector<std::vector<T>> m_data;
 };
 

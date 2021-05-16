@@ -3,6 +3,7 @@
 #include "geometry/src/Coordinate.h"
 #include "domain/src/EclipseGrid.h"
 #include "storage/src/reader/EclipseGridReader.h"
+#include "storage/src/reader/GrdSurfaceReader.h"
 #include "storage/src/writer/EclipseGridWriter.h"
 #include "storage/src/RegularGridHdf5Storage.h"
 #include "storage/test/StorageTestValues.h"
@@ -12,12 +13,11 @@
 #include <QTextStream>
 #include <QTime>
 
-namespace{
+namespace {
 const QLatin1String ECLIPSEGRID_SMALL_FILENAME = QLatin1String("EclipseGridTest.grdecl");
 const QLatin1String ECLIPSEGRID_SMALL_OUTPUT_FILENAME = QLatin1String("EclipseGridTestOutput.grdecl");
 const QLatin1String ECLIPSEGRID_BIG_FILENAME = QLatin1String("EclipseGridPerformanceTest.grdecl");
 const QLatin1String ECLIPSEGRID_BIG_OUTPUT_FILENAME = QLatin1String("EclipseGridPerformanceTestOutput.grdecl");
-
 }
 
 TEST(storageTest, EclipseGridReaderTest)
@@ -195,6 +195,32 @@ TEST(storageTest, RegularGridHdf5StorageTest)
             {
                 EXPECT_LT(std::abs(regularGrid->getData(x, y, z) - regularGridCompare.getData(x, y, z)), epsilon);
             }
+        }
+    }
+}
+
+TEST(storageTest, GrdSurfaceReader)
+{
+    using namespace syntheticSeismic::storage;
+    using namespace syntheticSeismic::domain;
+
+    double epsilon = std::pow(10, 10);
+
+    GrdSurface<double> surfaceCompare = StorageTestValues::simpleGrdSurface();
+
+    GrdSurfaceReader<double> reader("grdDsaaTest.grd");
+    GrdSurface<double> surface = reader.read();
+
+    EXPECT_LT(std::abs(surface.getXMin() - surfaceCompare.getXMin()), epsilon);
+    EXPECT_LT(std::abs(surface.getYMin() - surfaceCompare.getYMin()), epsilon);
+    EXPECT_LT(std::abs(surface.getXMax() - surfaceCompare.getXMax()), epsilon);
+    EXPECT_LT(std::abs(surface.getYMax() - surfaceCompare.getYMax()), epsilon);
+
+    for (size_t i = 0; i < surface.getData().size(); ++i)
+    {
+        for (size_t j = 0; j < surface.getData()[0].size(); ++j)
+        {
+            EXPECT_LT(std::abs(surface.getData()[i][j] - surfaceCompare.getData()[i][j]), epsilon);
         }
     }
 }

@@ -20,7 +20,7 @@ public:
             double zTop;
     };
 
-    static syntheticSeismic::domain::EclipseGrid eclipseGridFromSimpleGrid();
+    static std::shared_ptr<syntheticSeismic::domain::EclipseGrid> eclipseGridFromSimpleGrid();
 
     static std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>> volumesOfFirstLayerFromSimpleGrid();
 
@@ -48,7 +48,7 @@ public:
 
     static syntheticSeismic::domain::RegularGrid<double> regularGridConvolution();
 
-    static std::tuple<syntheticSeismic::domain::EclipseGridSurface::Result, double, double, double, double> simpleGrdSurfaceResult();
+    static std::tuple<syntheticSeismic::domain::EclipseGridSurface::Result, double, double, double, double, double, double> simpleGrdSurfaceResult();
 private:
     // Totally static class
     DomainTestValues() = default;

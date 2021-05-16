@@ -5,7 +5,7 @@
 using namespace syntheticSeismic::geometry;
 using namespace syntheticSeismic::domain;
 
-EclipseGrid DomainTestValues::eclipseGridFromSimpleGrid()
+std::shared_ptr<EclipseGrid> DomainTestValues::eclipseGridFromSimpleGrid()
 {
     const size_t numberOfCellsInX = 2;
     const size_t numberOfCellsInY = 3;
@@ -56,7 +56,31 @@ EclipseGrid DomainTestValues::eclipseGridFromSimpleGrid()
         19, 20, 21, 22, 23, 24
     };
 
-    return EclipseGrid(numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ, coordinates, zCoordinates, lithologyIds);
+    const std::vector<int> faciesAssociationIds = {
+         10,  20,  30,  40,  50,  60,
+         70,  80,  90, 100, 110, 120,
+        130, 140, 150, 160, 170, 180,
+        190, 200, 210, 220, 230, 240
+    };
+
+    const std::vector<double> ages = {
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    };
+
+    const std::vector<bool> actnums = {
+        true, true, true, true, true, true,
+        true, true, true, true, true, true,
+        true, true, true, true, true, true,
+        true, true, true, true, true, true
+    };
+
+    return std::make_shared<EclipseGrid>(
+        numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ, coordinates, zCoordinates,
+        lithologyIds, faciesAssociationIds, ages, actnums
+    );
 }
 
 std::vector<std::shared_ptr<Volume>> DomainTestValues::volumesOfFirstLayerFromSimpleGrid()
@@ -1471,32 +1495,51 @@ RegularGrid<double> DomainTestValues::regularGridConvolution()
     return regularGrid;
 }
 
-std::tuple<EclipseGridSurface::Result, double, double, double, double> DomainTestValues::simpleGrdSurfaceResult()
+std::tuple<EclipseGridSurface::Result, double, double, double, double, double, double> DomainTestValues::simpleGrdSurfaceResult()
 {
-    EclipseGridSurface::Result result(GrdSurface<double>(5, 5), GrdSurface<int>(5, 5));
+    EclipseGridSurface::Result result(
+        std::make_shared<GrdSurface<double>>(5, 5),
+        std::make_shared<GrdSurface<int>>(5, 5),
+        std::make_shared<GrdSurface<int>>(5, 5),
+        0
+    );
 
-    result.getSurface().setXMin(1000.0);
-    result.getSurface().setXMax(1400.0);
-    result.getSurface().setYMin(2000.0);
-    result.getSurface().setYMax(3200.0);
+    result.getSurface()->setXMin(1000.0);
+    result.getSurface()->setXMax(1400.0);
+    result.getSurface()->setYMin(2000.0);
+    result.getSurface()->setYMax(3200.0);
 
-    result.getLithologySurface().setXMin(result.getSurface().getXMin());
-    result.getLithologySurface().setXMax(result.getSurface().getXMax());
-    result.getLithologySurface().setYMin(result.getSurface().getYMin());
-    result.getLithologySurface().setYMax(result.getSurface().getYMax());
-    auto &data = result.getSurface().getData();
+    result.getLithologySurface()->setXMin(result.getSurface()->getXMin());
+    result.getLithologySurface()->setXMax(result.getSurface()->getXMax());
+    result.getLithologySurface()->setYMin(result.getSurface()->getYMin());
+    result.getLithologySurface()->setYMax(result.getSurface()->getYMax());
+
+    result.getFaciesAssociationSurface()->setXMin(result.getSurface()->getXMin());
+    result.getFaciesAssociationSurface()->setXMax(result.getSurface()->getXMax());
+    result.getFaciesAssociationSurface()->setYMin(result.getSurface()->getYMin());
+    result.getFaciesAssociationSurface()->setYMax(result.getSurface()->getYMax());
+    
+    const auto ndv = GrdSurface<int>::NoDataValue;
+    auto &data = result.getSurface()->getData();
     data[0] = {1000,   1000,  1000,  1000, 1000};
     data[1] = {1000,   1000,  1000,  1000, 1000};
-    data[2] = {99999,  1000,  1000,  1000, 1000};
-    data[3] = {99999, 99999,  1000,  1000, 1000};
-    data[4] = {99999, 99999, 99999, 99999, 1000};
+    data[2] = { ndv,   1000,  1000,  1000, 1000};
+    data[3] = { ndv,    ndv,  1000,  1000, 1000};
+    data[4] = { ndv,    ndv,   ndv,   ndv, 1000};
 
-    auto &lithologyData = result.getLithologySurface().getData();
+    auto &lithologyData = result.getLithologySurface()->getData();
     lithologyData[0] = {    1,     3,     3,     5, 5};
     lithologyData[1] = {    2,     4,     3,     5, 5};
-    lithologyData[2] = {99999,     4,     4,     6, 6};
-    lithologyData[3] = {99999, 99999,     4,     6, 6};
-    lithologyData[4] = {99999, 99999, 99999, 99999, 6};
+    lithologyData[2] = {  ndv,     4,     4,     6, 6};
+    lithologyData[3] = {  ndv,   ndv,     4,     6, 6};
+    lithologyData[4] = {  ndv,   ndv,   ndv,   ndv, 6};
 
-    return {result, 1000, 1000, 1, 6};
+    auto& faciesAssociationData = result.getFaciesAssociationSurface()->getData();
+    faciesAssociationData[0] = {  10,  30,  30,  50, 50 };
+    faciesAssociationData[1] = {  20,  40,  30,  50, 50 };
+    faciesAssociationData[2] = { ndv,  40,  40,  60, 60 };
+    faciesAssociationData[3] = { ndv, ndv,  40,  60, 60 };
+    faciesAssociationData[4] = { ndv, ndv, ndv, ndv, 60 };
+
+    return { result, 1000.0, 1000.0, 1.0, 6.0, 10.0, 60.0 };
 }

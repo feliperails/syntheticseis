@@ -130,7 +130,12 @@ std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateBy
         }
     }
 
-    return std::make_shared<Result>(referencePoint, minimumAndMaximumZ.first, minimumAndMaximumZ.second);
+    return std::make_shared<Result>(
+                referencePoint,
+                minimumAndMaximumZ.first,
+                minimumAndMaximumZ.second,
+                referencePointAndAngleInRadians.second
+            );
 }
 
 

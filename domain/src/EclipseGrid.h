@@ -14,6 +14,8 @@ namespace domain {
 class EclipseGrid
 {
 public:
+    const static int NoDataValue = -99999;
+
     EclipseGrid();
 
     EclipseGrid(const EclipseGrid&) = default;
@@ -22,9 +24,12 @@ public:
     EclipseGrid(const size_t numberOfCellsInX,
                 const size_t numberOfCellsInY,
                 const size_t numberOfCellsInZ,
-                const std::vector<syntheticSeismic::geometry::Coordinate>& coordinates,
+                const std::vector<geometry::Coordinate>& coordinates,
                 const std::vector<double>& zCoordinates,
-                const std::vector<int>& lithologyIds);
+                const std::vector<int>& lithologyIds,
+                const std::vector<int>& faciesAssociationIds,
+                const std::vector<double>& ages,
+                const std::vector<bool>& actnums);
 
     size_t numberOfCellsInX() const;
     size_t numberOfCellsInY() const;
@@ -36,13 +41,22 @@ public:
 
     const std::vector<int>& lithologyIds() const;
 
+    const std::vector<int>& faciesAssociationIds() const;
+
+    const std::vector<double>& ages() const;
+
+    const std::vector<bool>& actnums() const;
+
 private:
-    size_t m_numberOfCellsInX;
-    size_t m_numberOfCellsInY;
-    size_t m_numberOfCellsInZ;
-    std::vector<syntheticSeismic::geometry::Coordinate> m_coordinates;
-    std::vector<double> m_zValues;
-    std::vector<int> m_lithologyIds;
+    const size_t m_numberOfCellsInX;
+    const size_t m_numberOfCellsInY;
+    const size_t m_numberOfCellsInZ;
+    const std::vector<geometry::Coordinate> m_coordinates;
+    const std::vector<double> m_zValues;
+    const std::vector<int> m_lithologyIds;
+    const std::vector<int> m_faciesAssociationIds;
+    const std::vector<double> m_ages;
+    const std::vector<bool> m_actnums;
 };
 
 } // namespace domain

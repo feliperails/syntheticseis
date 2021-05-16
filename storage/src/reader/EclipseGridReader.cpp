@@ -15,7 +15,10 @@ namespace {
 const QLatin1Literal SECTION_END_TOKEN = QLatin1Literal("/");
 const QLatin1Literal ASTERISK = QLatin1Literal("*");
 const QLatin1Literal SPEC_GRID = QLatin1String("SPECGRID");
-const QLatin1Literal LITHOLOGY_TYPE = QLatin1String("LITHOLOGYTYPE");
+const QLatin1Literal LITHOLOGY = QLatin1String("LITHOLOGY");
+const QLatin1Literal FACIESASSOCIATION = QLatin1String("FACIESASSOCIATION");
+const QLatin1Literal AGE = QLatin1String("AGE");
+const QLatin1Literal ACTNUM = QLatin1String("ACTNUM");
 const QLatin1Literal COORD = QLatin1String("COORD");
 const QLatin1Literal ZCORN = QLatin1String("ZCORN");
 const QLatin1Literal SINGLE_SPACE_SEPARATOR = QLatin1Literal(" ");
@@ -50,6 +53,9 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
     vector<syntheticSeismic::geometry::Coordinate> coordinates;
     vector<double> zValues;
     vector<int> lithologyIds;
+    vector<int> faciesAssociationIds;
+    vector<double> ages;
+    vector<bool> actnums;
 
     QTextStream stream(&file);
     int row = 0;
@@ -249,7 +255,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
             }
         }
-        else if (line.startsWith(LITHOLOGY_TYPE))
+        else if (line.startsWith(LITHOLOGY))
         {
             lithologyIds.reserve(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
 
@@ -287,7 +293,176 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     id = line.toInt(&convertionOk);
                     if (!convertionOk)
                     {
-                        error = QObject::tr("Error when conveting value to int: %1").arg(id);
+                        error = QObject::tr("Error when conveting value to int: %1").arg(line);
+                        return {};
+                    }
+                }
+
+                if (sectionEnded)
+                {
+                    line = SECTION_END_TOKEN;
+                }
+                else
+                {
+                    line = stream.readLine();
+                    ++row;
+
+                }
+            }
+        }
+        else if (line.startsWith(FACIESASSOCIATION))
+        {
+            faciesAssociationIds.reserve(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+
+            line = stream.readLine();
+            ++row;
+            int id = -1;
+            bool sectionEnded = false;
+            QStringList splitedData;
+            while (line != SECTION_END_TOKEN)
+            {
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if (sectionEnded)
+                {
+                    line.replace(SECTION_END_TOKEN, QString());
+                }
+
+                line = line.simplified();
+                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+
+                if (!splitedData.isEmpty())
+                {
+                    for (const QString& str : splitedData)
+                    {
+                        id = str.toInt(&convertionOk);
+                        if (!convertionOk && !str.isEmpty())
+                        {
+                            error = QObject::tr("Error when conveting value to int: %1").arg(str);
+                            return {};
+                        }
+                        faciesAssociationIds.push_back(id);
+                    }
+                }
+                else
+                {
+                    id = line.toInt(&convertionOk);
+                    if (!convertionOk)
+                    {
+                        error = QObject::tr("Error when conveting value to int: %1").arg(line);
+                        return {};
+                    }
+                }
+
+                if (sectionEnded)
+                {
+                    line = SECTION_END_TOKEN;
+                }
+                else
+                {
+                    line = stream.readLine();
+                    ++row;
+
+                }
+            }
+        }
+        else if (line.startsWith(AGE))
+        {
+            ages.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, domain::EclipseGrid::NoDataValue);
+
+            line = stream.readLine();
+            ++row;
+            double age = -1.0;
+            bool sectionEnded = false;
+            size_t indexAge = 0;
+            QStringList splitedData;
+            while (line != SECTION_END_TOKEN)
+            {
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if (sectionEnded)
+                {
+                    line.replace(SECTION_END_TOKEN, QString());
+                }
+
+                line = line.simplified();
+                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+
+                if (!splitedData.isEmpty())
+                {
+                    for (const QString& str : splitedData)
+                    {
+                        age = str.toDouble(&convertionOk);
+                        if (!convertionOk && !str.isEmpty())
+                        {
+                            error = QObject::tr("Error when conveting value to double: %1").arg(str);
+                            return {};
+                        }
+                        ages[indexAge] = age;
+                        ++indexAge;
+                    }
+                }
+                else
+                {
+                    age = line.toDouble(&convertionOk);
+                    if (!convertionOk)
+                    {
+                        error = QObject::tr("Error when conveting value to double: %1").arg(line);
+                        return {};
+                    }
+                }
+
+                if (sectionEnded)
+                {
+                    line = SECTION_END_TOKEN;
+                }
+                else
+                {
+                    line = stream.readLine();
+                    ++row;
+
+                }
+            }
+        }
+        else if (line.startsWith(ACTNUM))
+        {
+            actnums.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, true);
+
+            line = stream.readLine();
+            ++row;
+            bool actnum = true;
+            bool sectionEnded = false;
+            QStringList splitedData;
+            size_t indexActnum = 0;
+            while (line != SECTION_END_TOKEN)
+            {
+                sectionEnded = line.contains(SECTION_END_TOKEN);
+                if (sectionEnded)
+                {
+                    line.replace(SECTION_END_TOKEN, QString());
+                }
+
+                line = line.simplified();
+                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+
+                if (!splitedData.isEmpty())
+                {
+                    for (const QString& str : splitedData)
+                    {
+                        actnum = static_cast<bool>(str.toInt(&convertionOk));
+                        if (!convertionOk && !str.isEmpty())
+                        {
+                            error = QObject::tr("Error when conveting value to int: %1").arg(str);
+                            return {};
+                        }
+                        actnums[indexActnum] = actnum;
+                        ++indexActnum;
+                    }
+                }
+                else
+                {
+                    actnum = static_cast<bool>(line.toInt(&convertionOk));
+                    if (!convertionOk)
+                    {
+                        error = QObject::tr("Error when conveting value to int: %1").arg(line);
                         return {};
                     }
                 }
@@ -306,12 +481,22 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
         }
     }
 
-    return syntheticSeismic::domain::EclipseGrid(numberOfCellsInX,
-                                           numberOfCellsInY,
-                                           numberOfCellsInZ,
-                                           coordinates,
-                                           zValues,
-                                           lithologyIds);
+    lithologyIds.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+    faciesAssociationIds.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+    ages.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, domain::EclipseGrid::NoDataValue);
+    actnums.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, true);
+
+    return domain::EclipseGrid(
+                numberOfCellsInX,
+                numberOfCellsInY,
+                numberOfCellsInZ,
+                coordinates,
+                zValues,
+                lithologyIds,
+                faciesAssociationIds,
+                ages,
+                actnums
+            );
 }
 
 const QString &EclipseGridReader::path() const

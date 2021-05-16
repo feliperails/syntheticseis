@@ -54,9 +54,20 @@
        <string>Main surface</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>Surface by age</string>
+      </property>
+     </column>
      <item>
       <property name="text">
        <string>E:\syntheticSeis\debug\bin</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="text">
+       <string/>
       </property>
       <property name="text">
        <string/>
@@ -74,12 +85,24 @@
        <property name="text">
         <string/>
        </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
        <item>
         <property name="text">
          <string>Z dimension</string>
         </property>
         <property name="text">
          <string>454</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
         </property>
         <property name="text">
          <string/>
@@ -95,6 +118,12 @@
         <property name="text">
          <string/>
         </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
        </item>
        <item>
         <property name="text">
@@ -106,11 +135,23 @@
         <property name="text">
          <string/>
         </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
        </item>
       </item>
       <item>
        <property name="text">
         <string>EclipseGrid.scp</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="text">
+        <string/>
        </property>
        <property name="text">
         <string/>

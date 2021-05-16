@@ -1,9 +1,12 @@
 #include "EclipseGridSurface.h"
 #include "EclipseGrid.h"
 #include "EquationPlane.h"
+#include "ExtractMinimumRectangle2D.h"
 #include "ExtractVolumes.h"
+#include "RotateVolumeCoordinate.h"
 #include "../../geometry/src/Point3D.h"
 #include <algorithm>
+#include <map>
 #include <QDebug>
 
 using namespace syntheticSeismic::geometry;
@@ -11,19 +14,141 @@ using namespace syntheticSeismic::geometry;
 namespace syntheticSeismic {
 namespace domain {
 
-EclipseGridSurface::Result EclipseGridSurface::extractFromMainSurface(
-        const EclipseGrid &eclipseGrid, const size_t numberOfCellsInX, const size_t numberOfCellsInY
+EclipseGridSurface::EclipseGridSurface(
+        const std::shared_ptr<EclipseGrid> &eclipseGrid,
+        const size_t numberOfCellsInX,
+        const size_t numberOfCellsInY
+    ) : m_eclipseGrid(eclipseGrid), m_numberOfCellsInX(numberOfCellsInX), m_numberOfCellsInY(numberOfCellsInY)
+{
+
+}
+
+std::shared_ptr<EclipseGridSurface::Result> EclipseGridSurface::extractMainSurface() const
+{
+    const auto volumesFirstLayer = ExtractVolumes::extractFirstLayerFrom(*m_eclipseGrid);
+    const auto allVolumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesFirstLayer, *m_eclipseGrid);
+
+    size_t mainSurfaceVolumesSize = m_eclipseGrid->numberOfCellsInX() * m_eclipseGrid->numberOfCellsInY();
+
+    const std::vector<std::shared_ptr<Volume>> volumesAux(allVolumes.begin(), allVolumes.begin() + mainSurfaceVolumesSize);
+    std::vector<std::shared_ptr<Volume>> volumes;
+    volumes.reserve(volumesAux.size());
+    for (auto& item : volumesAux)
+    {
+        if (item->actnum)
+        {
+            volumes.push_back(item);
+        }
+    }
+
+    return extractFromVolumes(volumes, 0);
+}
+
+std::vector<std::shared_ptr<EclipseGridSurface::Result>> EclipseGridSurface::extractSurfacesByAge(
+        bool rotateVolumes,
+        int ageMultiplicationFactorToIdentifyAges
     ) const
 {
-    EclipseGridSurface::Result result(
-                GrdSurface<double>(numberOfCellsInX, numberOfCellsInY),
-                GrdSurface<int>(numberOfCellsInX, numberOfCellsInY)
-            );
-    auto &data = result.getSurface().getData();
-    auto &lithologyData = result.getLithologySurface().getData();
+    const auto volumesFirstLayer = ExtractVolumes::extractFirstLayerFrom(*m_eclipseGrid);
+    auto allVolumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesFirstLayer, *m_eclipseGrid);
+    const auto allVolumesSize = allVolumes.size();
+    double angle = 0.0;
+    Point3D referencePoint;
 
-    const auto volumesFirstLayer = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
-    const auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesFirstLayer, eclipseGrid);
+    if (rotateVolumes)
+    {
+        const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
+        const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
+        angle = rotateResult->angle;
+        referencePoint = rotateResult->origin;
+    }
+
+    size_t volumesSizeBySurface = m_eclipseGrid->numberOfCellsInX() * m_eclipseGrid->numberOfCellsInY();
+    std::map<int, std::vector<std::shared_ptr<Volume>>> surfacesByAge;
+    for (const auto &volume : allVolumes)
+    {
+        if (volume->actnum)
+        {
+            const int age = volume->age * std::pow(10.0, ageMultiplicationFactorToIdentifyAges);
+            if (surfacesByAge.find(age) == surfacesByAge.end())
+            {
+                surfacesByAge[age] = std::vector<std::shared_ptr<Volume>>(volumesSizeBySurface);
+            }
+            const size_t indexLinear = volume->positionX + volume->positionY * m_eclipseGrid->numberOfCellsInX();
+            surfacesByAge[age][indexLinear] = volume;
+        }
+    }
+
+    std::vector<int> agesList;
+    for (const auto &item : surfacesByAge)
+    {
+        agesList.push_back(item.first);
+    }
+    std::sort(agesList.begin(), agesList.end());
+    std::map<int, size_t> mapAgesList;
+    for (size_t i = 0; i < agesList.size(); ++i)
+    {
+        mapAgesList[agesList[i]] = i;
+    }
+
+    for (auto &surfaceByAge : surfacesByAge)
+    {
+        for (size_t indexLinear = 0; indexLinear < volumesSizeBySurface; ++indexLinear)
+        {
+            if (surfaceByAge.second[indexLinear] == nullptr)
+            {
+                for (size_t previousAgeIndexAux = mapAgesList[surfaceByAge.first]; previousAgeIndexAux > 0; --previousAgeIndexAux)
+                {
+                    const size_t previousAgeIndex = previousAgeIndexAux;
+
+                    const int previousAge = agesList[previousAgeIndex];
+                    if (surfacesByAge[previousAge][indexLinear] != nullptr)
+                    {
+                        surfaceByAge.second[indexLinear] = surfacesByAge[previousAge][indexLinear];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    std::vector<std::shared_ptr<EclipseGridSurface::Result>> results;
+    results.reserve(surfacesByAge.size());
+    
+    for (const auto& surfaceByAge : surfacesByAge)
+    {
+        const auto result = extractFromVolumes(surfaceByAge.second, surfaceByAge.first);
+        result->getSurface()->setAngle(angle);
+        result->getSurface()->setReferencePoint(referencePoint);
+        
+        result->getLithologySurface()->setAngle(angle);
+        result->getLithologySurface()->setReferencePoint(referencePoint);
+        
+        result->getFaciesAssociationSurface()->setAngle(angle);
+        result->getFaciesAssociationSurface()->setReferencePoint(referencePoint);
+        
+        result->getAgeSurface()->setAngle(angle);
+        result->getAgeSurface()->setReferencePoint(referencePoint);
+
+        results.push_back(result);
+    }
+
+    return results;
+}
+
+std::shared_ptr<EclipseGridSurface::Result> EclipseGridSurface::extractFromVolumes(const std::vector<std::shared_ptr<Volume>> &volumes, double age) const
+{
+    auto result = std::make_shared<EclipseGridSurface::Result>(
+                std::make_shared<GrdSurface<double>>(m_numberOfCellsInX, m_numberOfCellsInY),
+                std::make_shared<GrdSurface<int>>(m_numberOfCellsInX, m_numberOfCellsInY),
+                std::make_shared<GrdSurface<int>>(m_numberOfCellsInX, m_numberOfCellsInY),
+                std::make_shared<GrdSurface<double>>(m_numberOfCellsInX, m_numberOfCellsInY),
+                age
+            );
+    auto &data = result->getSurface()->getData();
+    auto& lithologyData = result->getLithologySurface()->getData();
+    auto& faciesAssociationData = result->getFaciesAssociationSurface()->getData();
+    auto& ageData = result->getAgeSurface()->getData();
 
     const size_t numberOfPointsOfFirstPlane = 4;
     const std::vector<std::vector<size_t>> trianglesPoints = {{0, 1, 2}, {2,3,1}};
@@ -33,11 +158,8 @@ EclipseGridSurface::Result EclipseGridSurface::extractFromMainSurface(
     double grdXMax = -std::numeric_limits<double>::max();
     double grdYMax = -std::numeric_limits<double>::max();
 
-    size_t mainSurfaceVolumesSize = eclipseGrid.numberOfCellsInX() * eclipseGrid.numberOfCellsInY();
-    for (size_t indexVolume = 0; indexVolume < mainSurfaceVolumesSize; ++indexVolume)
+    for (const auto &volume : volumes)
     {
-        const auto &volume = volumes[indexVolume];
-
         for (size_t i = 0; i < numberOfPointsOfFirstPlane; ++i)
         {
             if (grdXMin > volume->points[i].x)
@@ -59,22 +181,33 @@ EclipseGridSurface::Result EclipseGridSurface::extractFromMainSurface(
         }
     }
 
-    result.getSurface().setXMin(grdXMin);
-    result.getSurface().setYMin(grdYMin);
-    result.getSurface().setXMax(grdXMax);
-    result.getSurface().setYMax(grdYMax);
-    result.getLithologySurface().setXMin(grdXMin);
-    result.getLithologySurface().setYMin(grdYMin);
-    result.getLithologySurface().setXMax(grdXMax);
-    result.getLithologySurface().setYMax(grdYMax);
-    double cellSizeX = (grdXMax - grdXMin) / numberOfCellsInX;
-    double cellSizeY = (grdYMax - grdYMin) / numberOfCellsInY;
+    result->getSurface()->setXMin(grdXMin);
+    result->getSurface()->setYMin(grdYMin);
+    result->getSurface()->setXMax(grdXMax);
+    result->getSurface()->setYMax(grdYMax);
+
+    result->getLithologySurface()->setXMin(grdXMin);
+    result->getLithologySurface()->setYMin(grdYMin);
+    result->getLithologySurface()->setXMax(grdXMax);
+    result->getLithologySurface()->setYMax(grdYMax);
+    
+    result->getAgeSurface()->setXMin(grdXMin);
+    result->getAgeSurface()->setYMin(grdYMin);
+    result->getAgeSurface()->setXMax(grdXMax);
+    result->getAgeSurface()->setYMax(grdYMax);
+    
+    result->getFaciesAssociationSurface()->setXMin(grdXMin);
+    result->getFaciesAssociationSurface()->setYMin(grdYMin);
+    result->getFaciesAssociationSurface()->setXMax(grdXMax);
+    result->getFaciesAssociationSurface()->setYMax(grdYMax);
+    
+    const double cellSizeX = (grdXMax - grdXMin) / m_numberOfCellsInX;
+    const double cellSizeY = (grdYMax - grdYMin) / m_numberOfCellsInY;
 
     CgalKernel cgalKernel;
 
-    for (size_t indexVolume = 0; indexVolume < mainSurfaceVolumesSize; ++indexVolume)
+    for (const auto &volume : volumes)
     {
-        const auto &volume = volumes[indexVolume];
         const auto &points = volume->points;
         for (const auto &triangle : trianglesPoints)
         {
@@ -92,15 +225,16 @@ EclipseGridSurface::Result EclipseGridSurface::extractFromMainSurface(
             EquationPlane equationPlane(points[triangle[0]], points[triangle[1]], points[triangle[2]]);
 
             const auto positionStartX = static_cast<size_t>((minX - grdXMin) / cellSizeX);
-            const auto positionEndX = std::min(static_cast<size_t>((maxX - grdXMin) / cellSizeX), numberOfCellsInX - 1);
+            const auto positionEndX = std::min(static_cast<size_t>((maxX - grdXMin) / cellSizeX), m_numberOfCellsInX - 1);
             const auto positionStartY = static_cast<size_t>((minY - grdYMin) / cellSizeY);
-            const auto positionEndY = std::min(static_cast<size_t>((maxY - grdYMin) / cellSizeY), numberOfCellsInY - 1);
+            const auto positionEndY = std::min(static_cast<size_t>((maxY - grdYMin) / cellSizeY), m_numberOfCellsInY - 1);
 
             for (size_t positionX = positionStartX; positionX <= positionEndX; ++positionX)
             {
                 for (size_t positionY = positionStartY; positionY <= positionEndY; ++positionY)
                 {
-                    if (lithologyData[positionX][positionY] != GrdSurface<int>::NoDataValue)
+                    if (lithologyData[positionX][positionY] != GrdSurface<int>::NoDataValue
+                        || faciesAssociationData[positionX][positionY] != GrdSurface<int>::NoDataValue)
                     {
                         continue;
                     }
@@ -112,7 +246,9 @@ EclipseGridSurface::Result EclipseGridSurface::extractFromMainSurface(
                     if (checkInside(cgalPoint, cgalPoints, cgalPoints + 3, cgalKernel))
                     {
                         lithologyData[positionX][positionY] = volume->idLithology;
+                        faciesAssociationData[positionX][positionY] = volume->idFaciesAssociation;
                         data[positionX][positionY] = equationPlane.calculateZByXY(x, y);
+                        ageData[positionX][positionY] = volume->age;
                     }
                 }
             }
@@ -148,20 +284,45 @@ Point3D EclipseGridSurface::crossProduct(const Point3D &p, const Point3D &q, con
             );
 }
 
-EclipseGridSurface::Result::Result(const GrdSurface<double> &surface, const GrdSurface<int> &lithologySurface) :
-    m_surface(surface), m_lithologySurface(lithologySurface)
+EclipseGridSurface::Result::Result(
+        const std::shared_ptr<GrdSurface<double>>& surface,
+        const std::shared_ptr<GrdSurface<int>>& lithologySurface,
+        const std::shared_ptr<GrdSurface<int>>& faciesAssociationSurface,
+        const std::shared_ptr<GrdSurface<double>>& ageSurface,
+        const int age
+    )
+    : m_surface(surface)
+    , m_lithologySurface(lithologySurface)
+    , m_faciesAssociationSurface(faciesAssociationSurface)
+    , m_ageSurface(ageSurface)
+    , m_age(age)
 {
 
 }
 
-GrdSurface<int>& EclipseGridSurface::Result::getLithologySurface()
+std::shared_ptr<GrdSurface<int>> EclipseGridSurface::Result::getLithologySurface()
 {
     return m_lithologySurface;
 }
 
-GrdSurface<double>& EclipseGridSurface::Result::getSurface()
+std::shared_ptr<GrdSurface<int>> EclipseGridSurface::Result::getFaciesAssociationSurface()
+{
+    return m_faciesAssociationSurface;
+}
+
+int EclipseGridSurface::Result::getAge() const
+{
+    return m_age;
+}
+
+std::shared_ptr<GrdSurface<double>> EclipseGridSurface::Result::getSurface()
 {
     return m_surface;
+}
+
+std::shared_ptr<GrdSurface<double>> EclipseGridSurface::Result::getAgeSurface()
+{
+    return m_ageSurface;
 }
 
 } // namespace domain

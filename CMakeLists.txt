@@ -122,6 +122,7 @@ add_library(SyntheticSeismic SHARED
     storage/src/Facade.cpp
     storage/src/RegularGridHdf5Storage.cpp
     storage/src/reader/EclipseGridReader.cpp
+    storage/src/reader/GrdSurfaceReader.cpp
     storage/src/writer/EclipseGridWriter.cpp
     storage/src/writer/SegyWriter.cpp
     storage/src/writer/GrdSurfaceWriter.cpp
@@ -239,9 +240,10 @@ file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/bin/python")
 file(COPY "${CMAKE_SOURCE_DIR}/python/generate_segy.py" DESTINATION "${CMAKE_BINARY_DIR}/bin/python/")
 
 # Arquivo para teste de leitura do EclipseGrid
-file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
-file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
-file(COPY "${CMAKE_SOURCE_DIR}/storage/test/gridMollesImpedance_5_5_5.h5" DESTINATION  "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridTest.grdecl" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/EclipseGridPerformanceTest.grdecl" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/gridMollesImpedance_5_5_5.h5" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+file(COPY "${CMAKE_SOURCE_DIR}/storage/test/grdDsaaTest.grd" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
 
 enable_testing()
 

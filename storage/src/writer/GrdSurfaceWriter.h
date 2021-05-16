@@ -43,6 +43,38 @@ public:
         }
 
         file.close();
+
+        if (!qFuzzyCompare(surface.getAngle(), 0.0))
+        {
+            const auto length = m_path.length();
+            QString pathRotate = m_path;
+
+            if (pathRotate.mid(length - 4) == ".grd")
+            {
+                pathRotate = pathRotate.mid(0, length - 4) + "_info.json";
+            }
+            else
+            {
+                pathRotate += "_info.json";
+            }
+
+            QFile fileRotate(pathRotate);
+            if (!fileRotate.open(QIODevice::WriteOnly | QIODevice::Text))
+            {
+                throw std::exception("Não foi possível gravar o arquivo de superfície de idade!");
+            }
+
+            QTextStream outRotate(&fileRotate);
+            outRotate << "{\"rotate\":"
+                << QString::number(surface.getAngle(), 'f', 10) << ","
+                << "\"referencePoint\":{"
+                << "\"x\":" << QString::number(surface.getReferencePoint().x, 'f', 10) << ","
+                << "\"y\":" << QString::number(surface.getReferencePoint().y, 'f', 10) << ","
+                << "\"z\":" << QString::number(surface.getReferencePoint().z, 'f', 10)
+                << "}}";
+
+            fileRotate.close();
+        }
     }
 private:
     const QString m_path;

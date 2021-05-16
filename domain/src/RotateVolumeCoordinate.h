@@ -13,16 +13,18 @@ public:
     class Result
     {
         public:
-            explicit Result(const geometry::Point3D &origin, const double minimumZ, const double maximumZ)
+            explicit Result(const geometry::Point3D &origin, const double minimumZ, const double maximumZ, const double angle)
                 : origin(origin)
                 , minimumZ(minimumZ)
                 , maximumZ(maximumZ)
+                , angle(angle)
             {
 
             }
             const geometry::Point3D origin;
             const double minimumZ;
             const double maximumZ;
+            const double angle;
     };
 
     static std::shared_ptr<Result> rotateByMinimumRectangle(

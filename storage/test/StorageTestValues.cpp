@@ -63,3 +63,22 @@ RegularGrid<double> StorageTestValues::regularGridImpedanceFiveFiveFive()
 
     return regularGrid;
 }
+
+syntheticSeismic::domain::GrdSurface<double> StorageTestValues::simpleGrdSurface()
+{
+    GrdSurface<double> surface(5, 5);
+    surface.setXMin(1000.0);
+    surface.setXMax(1400.0);
+    surface.setYMin(2000.0);
+    surface.setYMax(3200.0);
+
+    const auto ndv = GrdSurface<double>::NoDataValue;
+    auto &data = surface.getData();
+    data[0] = {1.0, 3.0, 3.0, 5.0, 5.0};
+    data[1] = {2.0, 4.0, 3.0, 5.0, 5.0};
+    data[2] = {ndv, 4.0, 4.0, 6.0, 6.0};
+    data[3] = {ndv, ndv, 4.0, 6.0, 6.0};
+    data[4] = {ndv, ndv, ndv, ndv, 6.0};
+
+    return surface;
+}

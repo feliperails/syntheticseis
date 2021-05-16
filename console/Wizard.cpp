@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QMessageBox>
 #include <QProcess>
 #include <memory>
 #include "domain/src/ConvolutionRegularGridCalculator.h"
@@ -28,7 +29,7 @@
 #include "storage/src/RegularGridHdf5Storage.h"
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/GrdSurfaceWriter.h"
-#include "storage/src/writer/SegyWriter.h"
+#include "storage/src/writer/SEGYWriter.h"
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -262,7 +263,8 @@ bool FileSelectionPage::validatePage()
 namespace {
 const int MESSAGE_COLUMN = 1;
 const int DIMENSIONS_COLUMN = 2;
-const int EXPORT_SURFACE_COLUMN = 3;
+const int EXPORT_MAIN_SURFACE_COLUMN = 3;
+const int EXPORT_SURFACE_BY_AGE_COLUMN = 4;
 const QString ECLIPSE_FILE_IMPORTED = QObject::tr("Imported");
 
 
@@ -351,11 +353,12 @@ void EclipseGridImportPagePrivate::updateWidget()
             }
 
             const QIcon exportIcon = QIcon(QLatin1String(":/export"));
-            const QPixmap pixmap(QLatin1String(":/export"));
+            const QPixmap exportPixmap(QLatin1String(":/export"));
 
+            // BEGIN EXPORT MAIN SURFACE
             QPushButton* exportSurfaceAction = new QPushButton(q);
             exportSurfaceAction->setIcon(exportIcon);
-            exportSurfaceAction->setFixedWidth(pixmap.width());
+            exportSurfaceAction->setFixedWidth(exportPixmap.width());
 
             QObject::connect(exportSurfaceAction, &QPushButton::clicked, q, [eclipseGrid](const bool) {
                 using syntheticSeismic::domain::EclipseGridSurface;
@@ -368,20 +371,107 @@ void EclipseGridImportPagePrivate::updateWidget()
 
                 const auto path = QFileDialog::getSaveFileName(QApplication::activeWindow(), QObject::tr("Export main surface"), "", QObject::tr("GRD(*.grd)"));
 
-                EclipseGridSurface eclipseGridSurface;
-                EclipseGridSurface::Result result = eclipseGridSurface.extractFromMainSurface(*eclipseGrid, dimX, dimY);
+                if (!path.isEmpty())
+                {
+                    EclipseGridSurface eclipseGridSurface(eclipseGrid, dimX, dimY);
+                    auto result = eclipseGridSurface.extractMainSurface();
 
+                    GrdSurfaceWriter<double> grdSurfaceWriter(path);
+                    grdSurfaceWriter.write(*result->getSurface());
 
-                GrdSurfaceWriter<double> grdSurfaceWriter(path);
-                grdSurfaceWriter.write(result.getSurface());
+                    const auto lithologyPath = path.mid(0, path.length() - 4) + "_lithology.grd";
+                    GrdSurfaceWriter<int> grdLithologySurfaceWriter(lithologyPath);
+                    grdLithologySurfaceWriter.write(*result->getLithologySurface());
 
-                const auto lithologyPath = path.mid(0, path.length() - 4) + "_lithology.grd";
-
-                GrdSurfaceWriter<int> grdLithologySurfaceWriter(lithologyPath);
-                grdLithologySurfaceWriter.write(result.getLithologySurface());
+                    const auto faciesAssociationPath = path.mid(0, path.length() - 4) + "_facies_association.grd";
+                    GrdSurfaceWriter<int> grdFaciesAssociationSurfaceWriter(faciesAssociationPath);
+                    grdFaciesAssociationSurfaceWriter.write(*result->getFaciesAssociationSurface());
+                }
             });
 
-            m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_SURFACE_COLUMN, exportSurfaceAction);
+            m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_MAIN_SURFACE_COLUMN, exportSurfaceAction);
+            // END EXPORT MAIN SURFACE
+
+            // BEGIN EXPORT SURFACE BY AGE
+            QPushButton* exportSurfaceByAgeAction = new QPushButton(q);
+            exportSurfaceByAgeAction->setIcon(exportIcon);
+            exportSurfaceByAgeAction->setFixedWidth(exportPixmap.width());
+
+            QObject::connect(exportSurfaceByAgeAction, &QPushButton::clicked, q, [eclipseGrid](const bool) {
+                using syntheticSeismic::domain::EclipseGridSurface;
+                using syntheticSeismic::storage::GrdSurfaceWriter;
+
+                const auto activeWindow = QApplication::activeWindow();
+                const auto title = QObject::tr("Number of surface cells");
+
+                const auto dimX = QInputDialog::getInt(activeWindow,
+                                                       title,
+                                                       QObject::tr("Number of cells in x-axis:"),
+                                                       eclipseGrid->numberOfCellsInX()
+
+                                                       );
+                const auto dimY = QInputDialog::getInt(activeWindow,
+                                                       title,
+                                                       QObject::tr("Number of cells in y-axis:"),
+                                                       eclipseGrid->numberOfCellsInY()
+                                                    );
+
+                const auto rotationSupport = QMessageBox::question(activeWindow,
+                                              title,
+                                              "Rotation support?",
+                                              QMessageBox::Yes|QMessageBox::No
+                                            );
+
+                const auto ageMultiplicationFactorToIdentifyAges = QInputDialog::getInt(
+                            activeWindow,
+                            title,
+                            QObject::tr("Age multiplication factor to identify ages:"),
+                            6
+                        );
+
+                const QString path = QFileDialog::getExistingDirectory(
+                            QApplication::activeWindow(),
+                            QObject::tr("Export surfaces by age"),
+                            "",
+                            QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+                        );
+
+                if (!path.isEmpty())
+                {
+                    EclipseGridSurface eclipseGridSurface(eclipseGrid, dimX, dimY);
+                    auto results = eclipseGridSurface.extractSurfacesByAge(
+                                rotationSupport == QMessageBox::Yes,
+                                ageMultiplicationFactorToIdentifyAges
+                            );
+
+                    #pragma omp parallel for
+                    for (int iAux = 0; iAux < results.size(); ++iAux)
+                    {
+                        const auto i = static_cast<size_t>(iAux);
+                        const auto& result = results[i];
+                        const auto basePath = path + "/" + QString::number(result->getAge(), 'f', ageMultiplicationFactorToIdentifyAges);
+
+                        const auto surfacePath = basePath + ".grd";
+                        GrdSurfaceWriter<double> grdSurfaceWriter(surfacePath);
+                        grdSurfaceWriter.write(*result->getSurface());
+
+                        const auto lithologyPath = basePath + "_lithology.grd";
+                        GrdSurfaceWriter<int> grdLithologySurfaceWriter(lithologyPath);
+                        grdLithologySurfaceWriter.write(*result->getLithologySurface());
+
+                        const auto faciesAssociationPath = basePath + "_faciesAssociation.grd";
+                        GrdSurfaceWriter<int> grdFaciesAssociationSurfaceWriter(faciesAssociationPath);
+                        grdFaciesAssociationSurfaceWriter.write(*result->getFaciesAssociationSurface());
+
+                        const auto agePath = basePath + "_age.grd";
+                        GrdSurfaceWriter<double> grdAgeSurfaceWriter(agePath);
+                        grdAgeSurfaceWriter.write(*result->getAgeSurface());
+                    }
+                }
+            });
+
+            m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_SURFACE_BY_AGE_COLUMN, exportSurfaceByAgeAction);
+            // END EXPORT SURFACE BY AGE
         }
     }
 
@@ -697,7 +787,7 @@ bool SegyCreationPage::validatePage()
                 {
                     for (size_t k = 0; k < regularGrid.getNumberOfCellsInZ(); ++k)
                     {
-                        data[i][j][k] = regularGrid.getData(i, j, k) == nullptr ? -99999 : regularGrid.getData(i, j, k)->idLithology;
+                        data[i][j][k] = regularGrid.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGrid.getData(i, j, k)->idLithology;
                     }
                 }
             }
@@ -710,7 +800,7 @@ bool SegyCreationPage::validatePage()
         }
 
         ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2500, 1));
-        for (const auto item : d->m_lithologies)
+        for (const auto &item : d->m_lithologies)
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
         }

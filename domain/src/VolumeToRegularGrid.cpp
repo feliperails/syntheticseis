@@ -93,6 +93,10 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
     {
         const auto indexVolume = static_cast<size_t>(i);
         auto volume = volumes[indexVolume];
+        if (!volume->actnum)
+        {
+            continue;
+        }
 
         const auto &points = volume->points;
         for (size_t indexTetraedron = 0; indexTetraedron < indexesTetraedronsInHexaedron.size(); ++indexTetraedron)

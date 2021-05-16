@@ -14,11 +14,22 @@ public:
 
     std::array<geometry::Point3D, 8> points;
     int idLithology;
-    size_t indexVolume;
-    Volume(size_t indexVolume = 0)
+    int idFaciesAssociation;
+    double age;
+    bool actnum;
+    const size_t indexVolume;
+    const size_t positionX;
+    const size_t positionY;
+
+    Volume(size_t indexVolume = 0, size_t positionX = 0, size_t positionY = 0)
+        : indexVolume(indexVolume)
+        , actnum(true)
+        , idLithology(0)
+        , idFaciesAssociation(0)
+        , positionX(positionX)
+        , positionY(positionY)
     {
-        this->idLithology = 0;
-        this->indexVolume = indexVolume;
+
     }
 };
 

@@ -15,6 +15,7 @@
 #include <domain/src/VolumeToRegularGrid.h>
 #include <domain/mock/DomainMock.h>
 #include <storage/src/reader/EclipseGridReader.h>
+#include <storage/src/reader/GrdSurfaceReader.h>
 #include <QFile>
 #include <QTextStream>
 #include <iostream>
@@ -71,21 +72,29 @@ TEST(DomainTest, EclipseGridTest)
                                                  Coordinate(1.0, 3.0, 4.0),
                                                  Coordinate(1.0, 1.0, 5.0)};
     const std::vector<double> zValues = {5.0, 6.0, 7.0, 8.0, 9.0};
-    const std::vector<int> lithologyIds = {1, 3, 5, 8, 7};
+    const std::vector<int> lithologyIds = { 1, 3, 5, 8, 7 };
+    const std::vector<int> faciesAssociationIds = { 1, 2, 3, 4, 5 };
+    const std::vector<double> ages = {0.0, 0.0, 0.0, 0.0, 0.0};
+    const std::vector<bool> actnums = {true, true, true, true, true};
 
-    eg = EclipseGrid(numberOfCellsInX,
-                     numberOfCellsInY,
-                     numberOfCellsInZ,
-                     coordinates,
-                     zValues,
-                     lithologyIds);
+    EclipseGrid eg2(numberOfCellsInX,
+                    numberOfCellsInY,
+                    numberOfCellsInZ,
+                    coordinates,
+                    zValues,
+                    lithologyIds,
+                    faciesAssociationIds,
+                    ages,
+                    actnums);
 
-    EXPECT_EQ(eg.numberOfCellsInX(), numberOfCellsInX);
-    EXPECT_EQ(eg.numberOfCellsInY(), numberOfCellsInY);
-    EXPECT_EQ(eg.numberOfCellsInZ(), numberOfCellsInZ);
-    EXPECT_EQ(eg.coordinates(), coordinates);
-    EXPECT_EQ(eg.zCoordinates(), zValues);
-    EXPECT_EQ(eg.lithologyIds(), lithologyIds);
+    EXPECT_EQ(eg2.numberOfCellsInX(), numberOfCellsInX);
+    EXPECT_EQ(eg2.numberOfCellsInY(), numberOfCellsInY);
+    EXPECT_EQ(eg2.numberOfCellsInZ(), numberOfCellsInZ);
+    EXPECT_EQ(eg2.coordinates(), coordinates);
+    EXPECT_EQ(eg2.zCoordinates(), zValues);
+    EXPECT_EQ(eg2.lithologyIds(), lithologyIds);
+    EXPECT_EQ(eg2.faciesAssociationIds(), faciesAssociationIds);
+    EXPECT_EQ(eg2.actnums(), actnums);
 }
 
 TEST(DomainTest, ExtractVolumesCalculateReorderedIndex)
@@ -107,11 +116,11 @@ TEST(DomainTest, ExtractVolumesOfFirstLayerTest)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    const EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
+    const auto eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
 
     const auto volumesOfFirstLayerCompare = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
 
-    const auto volumes = ExtractVolumes::extractFirstLayerFrom(eclipseGrid);
+    const auto volumes = ExtractVolumes::extractFirstLayerFrom(*eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
@@ -131,12 +140,12 @@ TEST(DomainTest, ExtractVolumesTest)
     using namespace syntheticSeismic::domain;
     using namespace syntheticSeismic::geometry;
 
-    EclipseGrid eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
+    const auto eclipseGrid = DomainTestValues::eclipseGridFromSimpleGrid();
 
     const auto volumesCompare = DomainTestValues::volumesFromSimpleGrid();
 
     const auto volumesOfFirstLayer = DomainTestValues::volumesOfFirstLayerFromSimpleGrid();
-    const auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, eclipseGrid);
+    const auto volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *eclipseGrid);
     for (size_t volumeIndex = 0; volumeIndex < volumes.size(); ++volumeIndex)
     {
         for (size_t pointIndex = 0; pointIndex < volumes[volumeIndex]->points.size(); ++pointIndex)
@@ -380,28 +389,36 @@ TEST(DomainTest, EclipseGridSurface)
     auto resultCompare = std::get<0>(compare);
     const double epsilon = std::pow(10, -10);
 
-    EclipseGridSurface eclipseGridSurface;
-    EclipseGridSurface::Result result = eclipseGridSurface.extractFromMainSurface(simpleGrid, 5, 5);
-    EXPECT_LT(std::abs(result.getSurface().getXMin() - resultCompare.getSurface().getXMin()), epsilon);
-    EXPECT_LT(std::abs(result.getSurface().getYMin() - resultCompare.getSurface().getYMin()), epsilon);
-    EXPECT_LT(std::abs(result.getSurface().getXMax() - resultCompare.getSurface().getXMax()), epsilon);
-    EXPECT_LT(std::abs(result.getSurface().getYMax() - resultCompare.getSurface().getYMax()), epsilon);
-    EXPECT_LT(std::abs(result.getSurface().getZMin() - std::get<1>(compare)), epsilon);
-    EXPECT_LT(std::abs(result.getSurface().getZMax() - std::get<2>(compare)), epsilon);
+    EclipseGridSurface eclipseGridSurface(simpleGrid, 5, 5);
+    auto result = eclipseGridSurface.extractMainSurface();
+    EXPECT_LT(std::abs(result->getSurface()->getXMin() - resultCompare.getSurface()->getXMin()), epsilon);
+    EXPECT_LT(std::abs(result->getSurface()->getYMin() - resultCompare.getSurface()->getYMin()), epsilon);
+    EXPECT_LT(std::abs(result->getSurface()->getXMax() - resultCompare.getSurface()->getXMax()), epsilon);
+    EXPECT_LT(std::abs(result->getSurface()->getYMax() - resultCompare.getSurface()->getYMax()), epsilon);
+    EXPECT_LT(std::abs(result->getSurface()->getZMin() - std::get<1>(compare)), epsilon);
+    EXPECT_LT(std::abs(result->getSurface()->getZMax() - std::get<2>(compare)), epsilon);
 
-    EXPECT_LT(std::abs(result.getLithologySurface().getXMin() - resultCompare.getLithologySurface().getXMin()), epsilon);
-    EXPECT_LT(std::abs(result.getLithologySurface().getYMin() - resultCompare.getLithologySurface().getYMin()), epsilon);
-    EXPECT_LT(std::abs(result.getLithologySurface().getXMax() - resultCompare.getLithologySurface().getXMax()), epsilon);
-    EXPECT_LT(std::abs(result.getLithologySurface().getYMax() - resultCompare.getLithologySurface().getYMax()), epsilon);
-    EXPECT_LT(std::abs(result.getLithologySurface().getZMin() - std::get<3>(compare)), epsilon);
-    EXPECT_LT(std::abs(result.getLithologySurface().getZMax() - std::get<4>(compare)), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getXMin() - resultCompare.getLithologySurface()->getXMin()), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getYMin() - resultCompare.getLithologySurface()->getYMin()), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getXMax() - resultCompare.getLithologySurface()->getXMax()), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getYMax() - resultCompare.getLithologySurface()->getYMax()), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getZMin() - std::get<3>(compare)), epsilon);
+    EXPECT_LT(std::abs(result->getLithologySurface()->getZMax() - std::get<4>(compare)), epsilon);
 
-    for (size_t i = 0; i < result.getSurface().getData().size(); ++i)
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getXMin() - resultCompare.getFaciesAssociationSurface()->getXMin()), epsilon);
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getYMin() - resultCompare.getFaciesAssociationSurface()->getYMin()), epsilon);
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getXMax() - resultCompare.getFaciesAssociationSurface()->getXMax()), epsilon);
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getYMax() - resultCompare.getFaciesAssociationSurface()->getYMax()), epsilon);
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getZMin() - std::get<5>(compare)), epsilon);
+    EXPECT_LT(std::abs(result->getFaciesAssociationSurface()->getZMax() - std::get<6>(compare)), epsilon);
+
+    for (size_t i = 0; i < result->getSurface()->getData().size(); ++i)
     {
-        for (size_t j = 0; j < result.getSurface().getData()[0].size(); ++j)
+        for (size_t j = 0; j < result->getSurface()->getData()[0].size(); ++j)
         {
-            EXPECT_LT(std::abs(result.getSurface().getData()[i][j] - resultCompare.getSurface().getData()[i][j]), epsilon);
-            EXPECT_EQ(result.getLithologySurface().getData()[i][j], resultCompare.getLithologySurface().getData()[i][j]);
+            EXPECT_LT(std::abs(result->getSurface()->getData()[i][j] - resultCompare.getSurface()->getData()[i][j]), epsilon);
+            EXPECT_EQ(result->getLithologySurface()->getData()[i][j], resultCompare.getLithologySurface()->getData()[i][j]);
+            EXPECT_EQ(result->getFaciesAssociationSurface()->getData()[i][j], resultCompare.getFaciesAssociationSurface()->getData()[i][j]);
         }
     }
 }

@@ -87,9 +87,13 @@ std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFromVolumesOfFirstLa
     const auto numberOfCellsInY = eclipseGrid.numberOfCellsInY();
     const auto numberOfCellsInZ = eclipseGrid.numberOfCellsInZ();
     std::vector<std::shared_ptr<Volume>> volumes(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
+
+    size_t volumesSizeByPlane = numberOfCellsInX * numberOfCellsInY;
     for (size_t i = 0; i < volumes.size(); ++i)
     {
-        volumes[i] = std::make_shared<Volume>(i);
+        size_t positionX = i % volumesSizeByPlane % numberOfCellsInX;
+        size_t positionY = i % volumesSizeByPlane / numberOfCellsInX;
+        volumes[i] = std::make_shared<Volume>(i, positionX, positionY);
     }
     size_t indexVolume = 0;
     size_t indexZCorn = 0;
@@ -113,6 +117,9 @@ std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFromVolumesOfFirstLa
                     {
                         const size_t indexVolumeLoop = indexVolume + indexVolumeCurrent;
                         volumes[indexVolumeLoop]->idLithology = eclipseGrid.lithologyIds()[indexVolumeLoop];
+                        volumes[indexVolumeLoop]->idFaciesAssociation = eclipseGrid.faciesAssociationIds()[indexVolumeLoop];
+                        volumes[indexVolumeLoop]->actnum = eclipseGrid.actnums()[indexVolumeLoop];
+                        volumes[indexVolumeLoop]->age = eclipseGrid.ages()[indexVolumeLoop];
                         const size_t indexVolumeMainPlanLoop = indexVolumeLine + indexVolumeCurrent;
                         for (size_t k = 0; k < 2; ++k)
                         {

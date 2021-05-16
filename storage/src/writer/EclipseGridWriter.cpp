@@ -15,7 +15,7 @@ namespace {
 const QLatin1Literal SECTION_END_TOKEN = QLatin1Literal("/");
 const QLatin1Literal ASTERISK = QLatin1Literal("*");
 const QLatin1Literal SPEC_GRID = QLatin1String("SPECGRID");
-const QLatin1Literal LITHOLOGY_TYPE = QLatin1String("LITHOLOGYTYPE");
+const QLatin1Literal LITHOLOGY = QLatin1String("LITHOLOGYTYPE");
 const QLatin1Literal COORD = QLatin1String("COORD");
 const QLatin1Literal ZCORN = QLatin1String("ZCORN");
 const QLatin1Literal SINGLE_SPACE_SEPARATOR = QLatin1Literal(" ");
@@ -91,7 +91,7 @@ bool EclipseGridWriter::write(const syntheticSeismic::domain::EclipseGrid& eclip
     }
 
     stream << NEW_LINE;
-    stream << LITHOLOGY_TYPE;
+    stream << LITHOLOGY;
     stream << NEW_LINE;
     for(size_t i = 0, size = lithologyIds.size(); i < size; ++i){
         stream << lithologyIds[i] << SINGLE_SPACE_SEPARATOR;

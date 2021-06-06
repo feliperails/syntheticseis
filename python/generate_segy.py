@@ -19,6 +19,7 @@ segy_output = segyio.open(segy_file_path, "r+")
 
 origin_x = data.attrs['geometryOriginX'][0]
 origin_y = data.attrs['geometryOriginY'][0]
+origin_z = data.attrs['geometryOriginZ'][0]
 inline_end_x = data.attrs['geometryInlineEndX'][0]
 inline_end_y = data.attrs['geometryInlineEndY'][0]
 crossline_end_x = data.attrs['geometryCrosslineEndX'][0]
@@ -39,6 +40,10 @@ for j in range(dim_j):
         trace_no = i * dim_j + j
 
         segy_output.header[trace_no].update({
+            segyio.TraceField.TRACE_SEQUENCE_LINE: trace_no + 1,
+            segyio.TraceField.TRACE_SEQUENCE_FILE: trace_no + 1,
+            segyio.TraceField.CDP: i + 1,
+            segyio.TraceField.SourceSurfaceElevation: origin_z, 
             segyio.TraceField.SourceX: x,
             segyio.TraceField.SourceY: y,
             segyio.TraceField.GroupX: x,

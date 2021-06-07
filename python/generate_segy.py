@@ -19,7 +19,7 @@ segy_output = segyio.open(segy_file_path, "r+")
 
 origin_x = data.attrs['geometryOriginX'][0]
 origin_y = data.attrs['geometryOriginY'][0]
-origin_z = data.attrs['geometryOriginZ'][0]
+origin_z = data.attrs['zBottom'][0]
 inline_end_x = data.attrs['geometryInlineEndX'][0]
 inline_end_y = data.attrs['geometryInlineEndY'][0]
 crossline_end_x = data.attrs['geometryCrosslineEndX'][0]

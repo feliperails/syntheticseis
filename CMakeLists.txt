@@ -86,6 +86,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 FILE(GLOB SyntheticSeis_UI "console/*.ui")
+
 qt5_wrap_ui(
     Plugin_UI_HEADERS
     ${SyntheticSeis_UI}
@@ -94,11 +95,13 @@ qt5_wrap_ui(
 add_library(SyntheticSeismic SHARED
     # geometry
     geometry/src/Coordinate.cpp
+    geometry/src/EnumUnit.cpp
     geometry/src/Point3D.cpp
     geometry/src/Volume.cpp
     geometry/src/Point2D.cpp
 
     # domain
+    domain/src/ConvertRegularGridCalculator.cpp
     domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
     domain/src/EclipseGridSurface.cpp
@@ -155,6 +158,7 @@ add_executable(SyntheticSeismicTest
 add_executable(SyntheticSeismicConsole
     console/main.cpp
     console/Wizard.cpp
+    ${Plugin_UI_HEADERS}
     ${RESOURCES}
 )
 

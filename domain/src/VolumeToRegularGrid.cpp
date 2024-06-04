@@ -81,6 +81,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
     RegularGrid<std::shared_ptr<Volume>> regularGrid(
                 m_numberOfCellsInX, m_numberOfCellsInY, m_numberOfCellsInZ,
                 m_cellSizeInX, m_cellSizeInY, m_cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 minimumRectangle,
                 zBottom,
                 zTop,

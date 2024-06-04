@@ -7,10 +7,7 @@
 namespace syntheticSeismic {
 namespace domain {
 
-ConvolutionRegularGridCalculator::ConvolutionRegularGridCalculator()
-{
-
-}
+ConvolutionRegularGridCalculator::ConvolutionRegularGridCalculator() = default;
 
 std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(RegularGrid<double> &reflectivityRegularGrid, Wavelet &wavelet)
 {
@@ -31,6 +28,7 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
                                reflectivityRegularGrid.getCellSizeInX(),
                                reflectivityRegularGrid.getCellSizeInY(),
                                static_cast<double>(reflectivitySize) / static_cast<double>(numberOfCellsInZ) * reflectivityRegularGrid.getCellSizeInZ(),
+                               EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                                reflectivityRegularGrid.getRectanglePoints(),
                                reflectivityRegularGrid.getZBottom(),
                                reflectivityRegularGrid.getZTop(),
@@ -65,6 +63,9 @@ std::shared_ptr<RegularGrid<double>> ConvolutionRegularGridCalculator::execute(R
                                reflectivityRegularGrid.getCellSizeInX(),
                                reflectivityRegularGrid.getCellSizeInY(),
                                reflectivityRegularGrid.getCellSizeInZ(),
+                               reflectivityRegularGrid.getUnitInX(),
+                               reflectivityRegularGrid.getUnitInY(),
+                               reflectivityRegularGrid.getUnitInZ(),
                                reflectivityRegularGrid.getRectanglePoints(),
                                reflectivityRegularGrid.getZBottom(),
                                reflectivityRegularGrid.getZTop(),

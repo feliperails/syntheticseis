@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include "geometry/src/Point2D.h"
+#include "geometry/src/EnumUnit.h"
 
 namespace syntheticSeismic {
 namespace domain {
@@ -14,6 +15,7 @@ public:
     RegularGrid(
             const size_t numberOfCellsInX, const size_t numberOfCellsInY, const size_t numberOfCellsInZ,
             const double cellSizeInX, const double cellSizeInY, const double cellSizeInZ,
+            const EnumUnit unitInX, const EnumUnit unitInY, const EnumUnit unitInZ,
             const std::array<geometry::Point2D, 4> &rectanglePoints,
             const double zBottom,
             const double zTop,
@@ -29,6 +31,9 @@ public:
             m_cellSizeInX(cellSizeInX),
             m_cellSizeInY(cellSizeInY),
             m_cellSizeInZ(cellSizeInZ),
+            m_unitInX(unitInX),
+            m_unitInY(unitInY),
+            m_unitInZ(unitInZ),
             m_numberOfCellsInX(numberOfCellsInX),
             m_numberOfCellsInY(numberOfCellsInY),
             m_numberOfCellsInZ(numberOfCellsInZ),
@@ -104,6 +109,18 @@ public:
     {
         return m_zTop;
     }
+
+    EnumUnit getUnitInX() const {
+        return m_unitInX;
+    }
+
+    EnumUnit getUnitInY() const {
+        return m_unitInY;
+    }
+
+    EnumUnit getUnitInZ() const {
+        return m_unitInZ;
+    }
 private:
     std::vector<std::vector<std::vector<T>>> m_data;
     const double m_cellSizeInX;
@@ -112,6 +129,9 @@ private:
     const size_t m_numberOfCellsInX;
     const size_t m_numberOfCellsInY;
     const size_t m_numberOfCellsInZ;
+    const EnumUnit m_unitInX;
+    const EnumUnit m_unitInY;
+    const EnumUnit m_unitInZ;
     const std::array<geometry::Point2D, 4> m_rectanglePoints;
     const double m_zBottom;
     const double m_zTop;

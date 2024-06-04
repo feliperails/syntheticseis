@@ -777,6 +777,7 @@ bool SegyCreationPage::validatePage()
             RegularGrid<int> lithologyRegularGrid(
                     regularGrid.getNumberOfCellsInX(), regularGrid.getNumberOfCellsInY(), regularGrid.getNumberOfCellsInZ(),
                     regularGrid.getCellSizeInX(), regularGrid.getCellSizeInY(), regularGrid.getCellSizeInZ(),
+                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                     regularGrid.getRectanglePoints(), regularGrid.getZBottom(), regularGrid.getZTop(),
                     0, 0
                 );

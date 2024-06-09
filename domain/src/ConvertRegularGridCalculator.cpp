@@ -1,4 +1,6 @@
+#include <cmath>
 #include <memory>
+#include <utility>
 #include "ConvertRegularGridCalculator.h"
 #include "RegularGrid.h"
 #include "Lithology.h"
@@ -6,62 +8,72 @@
 namespace syntheticSeismic {
 namespace domain {
     ConvertRegularGridCalculator::ConvertRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology)
-            : m_undefinedLithology(undefinedLithology)
+            : m_undefinedLithology(std::move(undefinedLithology))
     {
 
     }
 
-    void ConvertRegularGridCalculator::addLithology(std::shared_ptr<Lithology> lithology)
+    void ConvertRegularGridCalculator::addLithology(const std::shared_ptr<Lithology>& lithology)
     {
         m_lithologies[lithology->getId()] = lithology;
     }
 
-    std::shared_ptr<RegularGrid<double>> ConvertRegularGridCalculator::fromZInMetersToZInTime(RegularGrid<std::shared_ptr<geometry::Volume>> &regularVolumeGrid)
+    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>> ConvertRegularGridCalculator::fromZInMetersToZInTime(RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid)
     {
-        const auto maxVelocity = computeMaxVelocity(regularVolumeGrid);
+        if (depthGrid.getUnitInZ() != Meters)
+        {
+            throw std::exception("The Z grid unit must be in meters.");
+        }
+        double maxVelocity;
+        double maxElapsedTime;
+        std::tie(maxVelocity, maxElapsedTime) = computeMaxVelocityAndElapsedTime(depthGrid);
 
-        const auto numberOfCellsInX = regularVolumeGrid.getNumberOfCellsInX();
-        const auto numberOfCellsInY = regularVolumeGrid.getNumberOfCellsInY();
-        const auto numberOfCellsInZ = regularVolumeGrid.getNumberOfCellsInZ();
-        const auto numberOfCellsInZInt = static_cast<int>(numberOfCellsInZ);
+        const auto numberOfCellsInX = depthGrid.getNumberOfCellsInX();
+        const auto numberOfCellsInY = depthGrid.getNumberOfCellsInY();
+        const auto numberOfCellsInZ = depthGrid.getNumberOfCellsInZ();
+        const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
 
-        const auto cellSizeInZ = regularVolumeGrid.getCellSizeInZ();
+        const auto cellSizeInZ = depthGrid.getCellSizeInZ();
 
-        const auto timeStep = regularVolumeGrid.getCellSizeInZ() / maxVelocity;
+        const auto timeStep = depthGrid.getCellSizeInZ() / maxVelocity;
 
-        auto regularGrid = std::make_shared<RegularGrid<double>>(
+        const auto timeNumberOfCellsInZ = static_cast<size_t>(std::ceil(maxElapsedTime / timeStep));
+
+        auto timeGrid = std::make_shared<RegularGrid<std::shared_ptr<geometry::Volume>>>(
                 numberOfCellsInX,
                 numberOfCellsInY,
-                numberOfCellsInZ,
-                regularVolumeGrid.getCellSizeInX(),
-                regularVolumeGrid.getCellSizeInY(),
+                timeNumberOfCellsInZ,
+                depthGrid.getCellSizeInX(),
+                depthGrid.getCellSizeInY(),
                 timeStep,
-                regularVolumeGrid.getUnitInX(),
-                regularVolumeGrid.getUnitInY(),
+                depthGrid.getUnitInX(),
+                depthGrid.getUnitInY(),
                 EnumUnit::Seconds,
-                regularVolumeGrid.getRectanglePoints(),
-                regularVolumeGrid.getZBottom(),
-                regularVolumeGrid.getZTop(),
-                m_undefinedLithology->getVelocity() * m_undefinedLithology->getDensity()
+                depthGrid.getRectanglePoints(),
+                depthGrid.getZBottom(),
+                depthGrid.getZTop(),
+                nullptr
         );
-        auto &data = regularGrid->getData();
+        auto &timeData = timeGrid->getData();
 
-        const auto &gridDataVolumes = regularVolumeGrid.getData();
+        const auto &metersData = depthGrid.getData();
 
         #pragma omp parallel for
-        for (size_t x = 0; x < numberOfCellsInX; ++x)
+        for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
+            const auto x = static_cast<size_t>(xInt);
             for (size_t y = 0; y < numberOfCellsInY; ++y)
             {
                 double currentTime = 0;
-                int indexCell = 0;
-                for (int zInt = 0; zInt < numberOfCellsInZInt; ++zInt)
+                size_t indexCell = 0;
+                for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    const auto z = static_cast<size_t>(zInt);
+                    const auto &content = metersData[x][y][z];
+
                     auto velocity = m_undefinedLithology->getVelocity();
-                    if (gridDataVolumes[x][y][z] == nullptr)
+                    if (metersData[x][y][z] != nullptr)
                     {
-                        const auto idLithology = gridDataVolumes[x][y][z]->idLithology;
+                        const auto idLithology = metersData[x][y][z]->idLithology;
                         const auto &lithology = *m_lithologies[idLithology];
                         velocity = lithology.getVelocity();
                     }
@@ -69,78 +81,71 @@ namespace domain {
                     currentTime += cellSizeInZ / velocity;
 
                     const auto numberOfCellsInTimeFromDistance = currentTime / timeStep;
-                    const auto limit = floor(numberOfCellsInTimeFromDistance);
-                    for (auto newZ= indexCell; newZ < limit; ++newZ)
+                    const auto limit = static_cast<size_t>(std::round(numberOfCellsInTimeFromDistance));
+                    for (auto newZ = indexCell; newZ < limit; ++newZ)
                     {
-                        wellInTime(j) = lithology;
-                        wellVelocitiesInTime(j) = velocity;
+                        timeData[x][y][newZ] = content;
                     }
-
-                    const auto idLithology = gridDataVolumes[x][y][z]->idLithology;
-                    if (m_lithologies.find(idLithology) == m_lithologies.end()) {
-                        QString message = "Lithology " + QString::number(gridDataVolumes[x][y][z]->idLithology) +
-                                          " of volume " +
-                                          QString::number(gridDataVolumes[x][y][z]->indexVolume) + " of " +
-                                          QString::number(x) + ", " +
-                                          QString::number(y) + " and " + QString::number(x) +
-                                          " coordinates was not found.";
-                        error = true;
-                        exception = std::exception(message.toStdString().c_str());
-                        continue;
-                    }
-
-
+                    indexCell = limit + 1;
                 }
             }
         }
 
-        return regularGrid;
+        return timeGrid;
     }
 
-    double ConvertRegularGridCalculator::computeMaxVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &grid) {
-        const size_t numberOfCellsInX = grid.getNumberOfCellsInX();
-        const size_t numberOfCellsInY = grid.getNumberOfCellsInY();
-        const size_t numberOfCellsInZ = grid.getNumberOfCellsInZ();
-        const int numberOfCellsInZInt = static_cast<int>(numberOfCellsInZ);
-        const auto &gridDataVolumes= grid.getData();
-        if (grid.getUnitInZ() == Meters)
-        {
-            throw std::exception("The Z grid unit must be in meters.");
-        }
-        double maxVelocity = 0.0;
+    std::pair<double, double> ConvertRegularGridCalculator::computeMaxVelocityAndElapsedTime(RegularGrid <std::shared_ptr<geometry::Volume>> &depthGrid) {
+        const size_t numberOfCellsInX = depthGrid.getNumberOfCellsInX();
+        const size_t numberOfCellsInY = depthGrid.getNumberOfCellsInY();
+        const size_t numberOfCellsInZ = depthGrid.getNumberOfCellsInZ();
+        const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
+        const auto &depthData = depthGrid.getData();
+
+        const auto cellSizeInZ = depthGrid.getCellSizeInZ();
 
         bool error = false;
         std::exception exception;
 
+        std::vector<std::vector<double>> maxVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
+        std::vector<std::vector<double>> elapsedTimes(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
+
         #pragma omp parallel for
-        for (int zInt = 0; zInt < numberOfCellsInZInt; ++zInt)
+        for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
-            const auto z = static_cast<size_t>(zInt);
+            const auto x = static_cast<size_t>(xInt);
             for (size_t y = 0; y < numberOfCellsInY; ++y)
             {
-                for (size_t x = 0; x < numberOfCellsInX; ++x)
+                for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    if (gridDataVolumes[x][y][z] == nullptr)
+                    double velocity;
+                    if (depthData[x][y][z] == nullptr)
                     {
-                        continue;
+                        velocity = m_undefinedLithology->getVelocity();
                     }
-                    const auto idLithology = gridDataVolumes[x][y][z]->idLithology;
+                    else
+                    {
+                        const auto idLithology = depthData[x][y][z]->idLithology;
 
-                    if (m_lithologies.find(idLithology) == m_lithologies.end())
-                    {
-                        QString message = "Lithology " + QString::number(gridDataVolumes[x][y][z]->idLithology) + " of volume " +
-                                          QString::number(gridDataVolumes[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
-                                          QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
-                        error = true;
-                        exception = std::exception(message.toStdString().c_str());
-                        continue;
+                        if (m_lithologies.find(idLithology) == m_lithologies.end())
+                        {
+                            QString message = "Lithology " + QString::number(depthData[x][y][z]->idLithology) + " of volume " +
+                                              QString::number(depthData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
+                                              QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
+                            error = true;
+                            exception = std::exception(message.toStdString().c_str());
+                            continue;
+                        }
+
+                        const auto &lithology = *m_lithologies[idLithology];
+                        velocity = lithology.getVelocity();
                     }
 
-                    const auto &lithology = *m_lithologies[idLithology];
-                    if (maxVelocity < lithology.getVelocity())
+                    if (maxVelocities[x][y] < velocity)
                     {
-                        maxVelocity = lithology.getVelocity();
+                        maxVelocities[x][y] = velocity;
                     }
+
+                    elapsedTimes[x][y] += cellSizeInZ / velocity;
                 }
             }
         }
@@ -149,7 +154,22 @@ namespace domain {
             throw exception;
         }
 
-        return maxVelocity;
+        double maxVelocity = 0.0;
+        double elapsedTime = 0.0;
+        for (size_t x = 0; x < numberOfCellsInX; ++x) {
+            for (size_t y = 0; y < numberOfCellsInY; ++y) {
+                if (maxVelocity < maxVelocities[x][y])
+                {
+                    maxVelocity = maxVelocities[x][y];
+                }
+                if (elapsedTime < elapsedTimes[x][y])
+                {
+                    elapsedTime = elapsedTimes[x][y];
+                }
+            }
+        }
+
+        return std::make_pair(maxVelocity, elapsedTime);
     }
 } // domain
 } // syntheticSeismic

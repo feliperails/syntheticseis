@@ -151,6 +151,8 @@ add_executable(SyntheticSeismicTest
     geometry/test/GeometryTest.cpp
     domain/test/DomainTestValues.cpp
     domain/test/DomainTest.cpp
+    domain/test/ConvertRegularGridCalculatorTest.cpp
+    domain/test/ConvolutionRegularGridCalculatorTest.cpp
     storage/test/StorageTestValues.cpp
     storage/test/StorageTest.cpp
 )

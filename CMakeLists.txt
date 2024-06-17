@@ -26,6 +26,8 @@ find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets)
 find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(Threads REQUIRED)
+find_package(GMP REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIR})
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -119,6 +121,7 @@ generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
     PUBLIC ${HDF5_LIBRARIES}
@@ -127,6 +130,7 @@ target_link_libraries(SyntheticSeismic
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
     PUBLIC ${HDF5_LIBRARIES}
@@ -136,12 +140,13 @@ target_link_libraries(SyntheticSeismicMock
 target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${GTEST_LIBRARIES}
+    PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
 target_link_libraries(SyntheticSeismicConsole
@@ -151,7 +156,7 @@ target_link_libraries(SyntheticSeismicConsole
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${GTEST_LIBRARIES}
+    PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
 if(WIN32)

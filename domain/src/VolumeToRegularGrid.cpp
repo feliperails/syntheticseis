@@ -112,7 +112,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
                         CgalPoint3D(points[indexes[3]].x, points[indexes[3]].y, points[indexes[3]].z)
                     );
 
-            const CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
+            CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
             tree.accelerate_distance_queries();
             const CgalPolyhedronPointInside3D pointInside(tree);
 

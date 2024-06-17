@@ -30,6 +30,7 @@
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/GrdSurfaceWriter.h"
 #include "storage/src/writer/SEGYWriter.h"
+#include "domain/src/ConvertRegularGridCalculator.h"
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -594,9 +595,6 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
 
-    QObject::connect(m_ui->rickerWaveletStepDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
-        Q_EMIT q_ptr->completeChanged();
-    });
     // BEGIN LITHOLOGY SEGY FILE
     QObject::connect(m_ui->lithologyFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&) {
         Q_EMIT q_ptr->completeChanged();
@@ -742,7 +740,6 @@ bool SegyCreationPage::isComplete() const
 
     return !d->m_lithologies.isEmpty()
             && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
-            && !qFuzzyIsNull(d->m_ui->rickerWaveletStepDoubleSpinBox->value())
             && !d->m_ui->amplitudeFileNameLineEdit->text().isEmpty();
 }
 
@@ -756,6 +753,9 @@ bool SegyCreationPage::validatePage()
 
     try
     {
+        const double undefinedImpedance = 2.500;
+        const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
+
         std::vector<std::shared_ptr<Volume>> allVolumes;
         for (const auto& item : d->m_eclipseGrids)
         {
@@ -768,9 +768,13 @@ bool SegyCreationPage::validatePage()
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
         VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
-        RegularGrid<std::shared_ptr<Volume>> regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(
+        auto regularGridInMeters = volumeToRegularGrid.convertVolumesToRegularGrid(
             allVolumes, minimumRectangle, rotateResult->minimumZ, rotateResult->maximumZ
         );
+
+        ConvertRegularGridCalculator convertGrid(undefinedLithology);
+        auto regularGrid = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
+
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())
         {
@@ -800,7 +804,7 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2500, 1));
+        ImpedanceRegularGridCalculator impedanceCalculator(undefinedLithology);
         for (const auto &item : d->m_lithologies)
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
@@ -817,7 +821,6 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        const double undefinedImpedance = 2.500;
         ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
         const auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
         const QString reflectivityPath = d->m_ui->reflectivityFileNameLineEdit->text();
@@ -831,10 +834,9 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        double step = 0.46;
         RickerWaveletCalculator rickerWaveletCalculator;
         rickerWaveletCalculator.setFrequency(25);
-        rickerWaveletCalculator.setStep(step);
+        rickerWaveletCalculator.setStep(regularGrid.getCellSizeInZ());
         const auto wavelet = rickerWaveletCalculator.extract();
 
         ConvolutionRegularGridCalculator convolutionCalculator;

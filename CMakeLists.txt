@@ -20,58 +20,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 
-
-execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure.bat
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-## Download automatically, you can also just copy the conan.cmake file
-#if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake" )
-#    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-#    file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
-#        "${CMAKE_BINARY_DIR}/conan.cmake"
-#        TLS_VERIFY ON)
-#endif()
-#include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/conan.cmake)
-
-# Versão do conan
-conan_check(VERSION 1.25.0 REQUIRED)
-
-conan_cmake_run(ninja/1.10.1
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(zlib/1.2.11
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(boost/1.74.0
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES hdf5/1.8.21
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES gtest/1.8.1
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRED GMock/1.8.0@iblis_ms/stable
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES cgal/5.0
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES pthreads4w/3.0.0
-    BASIC_SETUP
-    BUILD missing)
-
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
@@ -175,14 +123,12 @@ target_link_libraries(SyntheticSeismic
     PUBLIC CGAL::CGAL_Core
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${GTEST_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
 )
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
-    PUBLIC ${CONAN_LIBS}
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC SyntheticSeismic
 )
@@ -196,18 +142,15 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${GTEST_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
 )
 
 target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
     PUBLIC Qt5::Widgets
-    PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
     PUBLIC ${GTEST_LIBRARIES}
 )
 

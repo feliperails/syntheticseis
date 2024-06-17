@@ -18,7 +18,7 @@ namespace domain {
         m_lithologies[lithology->getId()] = lithology;
     }
 
-    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>> ConvertRegularGridCalculator::fromZInMetersToZInTime(RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid)
+    RegularGrid<std::shared_ptr<geometry::Volume>> ConvertRegularGridCalculator::fromZInMetersToZInSeconds(RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid)
     {
         if (depthGrid.getUnitInZ() != Meters)
         {
@@ -39,7 +39,7 @@ namespace domain {
 
         const auto timeNumberOfCellsInZ = static_cast<size_t>(std::ceil(maxElapsedTime / timeStep));
 
-        auto timeGrid = std::make_shared<RegularGrid<std::shared_ptr<geometry::Volume>>>(
+        RegularGrid<std::shared_ptr<geometry::Volume>> timeGrid(
                 numberOfCellsInX,
                 numberOfCellsInY,
                 timeNumberOfCellsInZ,
@@ -54,7 +54,7 @@ namespace domain {
                 depthGrid.getZTop(),
                 nullptr
         );
-        auto &timeData = timeGrid->getData();
+        auto &timeData = timeGrid.getData();
 
         const auto &metersData = depthGrid.getData();
 
@@ -94,14 +94,22 @@ namespace domain {
         return timeGrid;
     }
 
-    std::pair<double, double> ConvertRegularGridCalculator::computeMaxVelocityAndElapsedTime(RegularGrid <std::shared_ptr<geometry::Volume>> &depthGrid) {
-        const size_t numberOfCellsInX = depthGrid.getNumberOfCellsInX();
-        const size_t numberOfCellsInY = depthGrid.getNumberOfCellsInY();
-        const size_t numberOfCellsInZ = depthGrid.getNumberOfCellsInZ();
-        const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
-        const auto &depthData = depthGrid.getData();
+    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>> ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGrid)
+    {
+        // Implementar aqui Carine
 
-        const auto cellSizeInZ = depthGrid.getCellSizeInZ();
+        // return depthGrid;
+        return nullptr;
+    }
+
+    std::pair<double, double> ConvertRegularGridCalculator::computeMaxVelocityAndElapsedTime(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid) {
+        const size_t numberOfCellsInX = metersGrid.getNumberOfCellsInX();
+        const size_t numberOfCellsInY = metersGrid.getNumberOfCellsInY();
+        const size_t numberOfCellsInZ = metersGrid.getNumberOfCellsInZ();
+        const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
+        const auto &metersData = metersGrid.getData();
+
+        const auto cellSizeInZ = metersGrid.getCellSizeInZ();
 
         bool error = false;
         std::exception exception;
@@ -118,18 +126,18 @@ namespace domain {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
                     double velocity;
-                    if (depthData[x][y][z] == nullptr)
+                    if (metersData[x][y][z] == nullptr)
                     {
                         velocity = m_undefinedLithology->getVelocity();
                     }
                     else
                     {
-                        const auto idLithology = depthData[x][y][z]->idLithology;
+                        const auto idLithology = metersData[x][y][z]->idLithology;
 
                         if (m_lithologies.find(idLithology) == m_lithologies.end())
                         {
-                            QString message = "Lithology " + QString::number(depthData[x][y][z]->idLithology) + " of volume " +
-                                              QString::number(depthData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
+                            QString message = "Lithology " + QString::number(metersData[x][y][z]->idLithology) + " of volume " +
+                                              QString::number(metersData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
                                               QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
                             error = true;
                             exception = std::exception(message.toStdString().c_str());

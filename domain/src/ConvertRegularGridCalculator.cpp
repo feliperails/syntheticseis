@@ -94,9 +94,63 @@ namespace domain {
         return timeGrid;
     }
 
-    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>> ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGrid)
+    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>>
+    ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>>
+                                                                &timeGrid)
     {
         // Implementar aqui Carine
+        const size_t numberOfCellsInX = timeGrid.getNumberOfCellsInX();
+        const size_t numberOfCellsInY = timeGrid.getNumberOfCellsInY();
+        const size_t numberOfCellsInZ = timeGrid.getNumberOfCellsInZ();
+        const auto &timeData = timeGrid.getData();
+
+        const auto timeStep = timeGrid.getCellSizeInZ();
+
+        auto &positionData = timeGrid.getData();
+
+        for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
+        {
+            const auto x = static_cast<size_t>(xInt);
+            for (size_t y = 0; y < numberOfCellsInY; ++y)
+            {
+                //double currentTime = 0;
+                //size_t indexCell = 0;
+                double currentPosition = 0.0;
+
+                for (size_t z = 0; z < numberOfCellsInZ; ++z)
+                {
+                    //const auto &content = timeData[x][y][z];
+                    auto velocity = m_undefinedLithology->getVelocity();
+                    if (timeData[x][y][z] != nullptr)
+                    {
+                        const auto idLithology = timeData[x][y][z]->idLithology;
+                        const auto &lithology = *m_lithologies[idLithology];
+                        velocity = lithology.getVelocity();
+                    }
+                    currentPosition += timeStep * velocity;
+
+
+                }
+            }
+        }
+
+        const auto timeNumberOfCellsInZ = static_cast<size_t>(std::ceil(maxElapsedTime / timeStep));
+
+        RegularGrid<std::shared_ptr<geometry::Volume>> depthGrid(
+            numberOfCellsInX,
+            numberOfCellsInY,
+            timeNumberOfCellsInZ,
+            timeGrid.getCellSizeInX(),
+            timeGrid.getCellSizeInY(),
+            timeStep,
+            timeGrid.getUnitInX(),
+            timeGrid.getUnitInY(),
+            EnumUnit::Seconds,
+            timeGrid.getRectanglePoints(),
+            timeGrid.getZBottom(),
+            timeGrid.getZTop(),
+            nullptr
+            );
 
         // return depthGrid;
         return nullptr;

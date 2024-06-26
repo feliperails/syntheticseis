@@ -773,6 +773,10 @@ bool SegyCreationPage::validatePage()
         );
 
         ConvertRegularGridCalculator convertGrid(undefinedLithology);
+        for (const auto &item : d->m_lithologies)
+        {
+            convertGrid.addLithology(std::make_shared<Lithology>(item));
+        }
         auto regularGrid = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();

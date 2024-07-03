@@ -17,12 +17,15 @@ public:
 
     RegularGrid<std::shared_ptr<geometry::Volume>> fromZInMetersToZInSeconds(RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid);
 
-    std::shared_ptr<RegularGrid<std::shared_ptr<geometry::Volume>>> fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGrid);
+    RegularGrid<double> fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
+                                                                             RegularGrid<double> &timeGridTrace);
 private:
     std::map<int, std::shared_ptr<Lithology>> m_lithologies;
     std::shared_ptr<Lithology> m_undefinedLithology;
 
     std::pair<double, double> computeMaxVelocityAndElapsedTime(RegularGrid<std::shared_ptr<geometry::Volume>> &metersGrid);
+
+    double computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid);
 };
 
 } // domain

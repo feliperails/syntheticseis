@@ -105,6 +105,7 @@ add_executable(SyntheticSeismicTest
     domain/test/ConvolutionRegularGridCalculatorTest.cpp
     storage/test/StorageTestValues.cpp
     storage/test/StorageTest.cpp
+    domain/test/ConvertRegularGridToMetersCalculatorTest.cpp
 )
 
 add_executable(SyntheticSeismicConsole

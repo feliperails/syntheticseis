@@ -6,7 +6,7 @@
 using namespace syntheticSeismic::domain;
 using namespace syntheticSeismic::geometry;
 
-TEST(DomainTest, ConvertRegularGrid) {
+TEST(DomainTest, ConvertRegularGridFromZInSecondsToZInMeters) {
     const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
 

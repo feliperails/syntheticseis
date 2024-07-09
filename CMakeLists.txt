@@ -12,6 +12,9 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
 endif()
 
+message("*********************************************************")
+message("${CMAKE_PREFIX_PATH}")
+
 set(SyntheticSeismic_ROOT ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -106,6 +109,7 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTestValues.cpp
     storage/test/StorageTest.cpp
     domain/test/ConvertRegularGridToMetersCalculatorTest.cpp
+
 )
 
 add_executable(SyntheticSeismicConsole
@@ -165,6 +169,11 @@ if(WIN32)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
     set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
+    message("Qt dir: ${Qt5_DIR} \n\n")
+    get_cmake_property(_variableNames VARIABLES)
+    foreach(_variableName ${_variableNames})
+        message("${_variableName}=${${_variableName}}")
+    endforeach()
     MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
     set(_search_paths "${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH}")
     string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
@@ -182,6 +191,12 @@ if(WIN32)
         -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake
     )
+
+    IF(CMAKE_BUILD_TYPE MATCHES Debug)
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    else()
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    endif()
 endif()
 
 install(FILES README.md

@@ -86,7 +86,7 @@ namespace domain {
                     {
                         timeData[x][y][newZ] = content;
                     }
-                    indexCell = limit + 1;
+                    indexCell = limit;
                 }
             }
         }
@@ -260,11 +260,6 @@ namespace domain {
         return std::make_pair(maxVelocity, elapsedTime);
     }
 
-
-
-
-
-
     double ConvertRegularGridCalculator::computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid) {
         const size_t numberOfCellsInX = metersGrid.getNumberOfCellsInX();
         const size_t numberOfCellsInY = metersGrid.getNumberOfCellsInY();
@@ -279,7 +274,7 @@ namespace domain {
 
         std::vector<std::vector<double>> minVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
 
-    #pragma omp parallel for
+        #pragma omp parallel for
         for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);

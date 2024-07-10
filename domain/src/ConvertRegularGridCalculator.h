@@ -11,7 +11,7 @@ namespace domain {
 
 class ConvertRegularGridCalculator {
 public:
-    ConvertRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
+    explicit ConvertRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
 
     void addLithology(const std::shared_ptr<Lithology>& lithology);
 

@@ -1,6 +1,7 @@
 #include <cmath>
 #include <memory>
 #include <utility>
+#include <iostream>
 #include "ConvertRegularGridCalculator.h"
 #include "RegularGrid.h"
 #include "Lithology.h"
@@ -94,10 +95,7 @@ namespace domain {
         return timeGrid;
     }
 
-    RegularGrid<double>
-    ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>>
-                                                                &timeGridLithology,
-                                                            RegularGrid<double> &timeGridTrace)
+    RegularGrid<double> ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology, RegularGrid<double> &timeGridTrace)
     {
         // Implementar aqui Carine
         const size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
@@ -127,7 +125,7 @@ namespace domain {
         auto &depthData = depthGrid.getData();
         double minVelocity = computeMinVelocity(timeGridLithology);
 
-        #pragma omp parallel for
+        // #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -150,6 +148,7 @@ namespace domain {
                     positionFromTime.push_back(currentPosition);
 
                 }
+
                 // Making the seismic trace equally splited in space to store in structure
                 const double finalPosition = currentPosition;
                 const double positionStep = timeStep * minVelocity;
@@ -158,7 +157,10 @@ namespace domain {
                 double seismic;
 
                 double position = 0.0;
+                std::cout << "PRUU error: " << numPositionSteps-1 << std::endl;
+                /*
                 depthData[x][y].resize(numPositionSteps-1);
+
                 for(size_t depth_idx = 0; depth_idx < numPositionSteps-2; depth_idx++)
                 {
                     position = depth_idx * positionStep;
@@ -177,8 +179,10 @@ namespace domain {
                                       (positionFromTime[idxB4+1] - positionFromTime[idxB4]));
                     depthData[x][y][depth_idx] = seismic;
                 }
+                */
             }
         }
+
         return depthGrid;
     }
 

@@ -7,40 +7,6 @@
 using namespace syntheticSeismic::domain;
 using namespace syntheticSeismic::geometry;
 
-void showRegularGrid(RegularGrid<std::shared_ptr<Volume>> &regularGrid)
-{
-    std::cout << "NumberOfCellsInX: " << regularGrid.getNumberOfCellsInX() << std::endl;
-    std::cout << "NumberOfCellsInY: " << regularGrid.getNumberOfCellsInY() << std::endl;
-    std::cout << "NumberOfCellsInZ: " << regularGrid.getNumberOfCellsInZ() << std::endl;
-    std::cout << "UnitInX: " << regularGrid.getUnitInX() << std::endl;
-    std::cout << "UnitInY: " << regularGrid.getUnitInY() << std::endl;
-    std::cout << "UnitInZ: " << regularGrid.getUnitInZ() << std::endl;
-    std::cout << "CellSizeInX: " << regularGrid.getCellSizeInX() << std::endl;
-    std::cout << "CellSizeInY: " << regularGrid.getCellSizeInY() << std::endl;
-    std::cout << "CellSizeInZ: " << regularGrid.getCellSizeInZ() << std::endl;
-
-    const auto &data = regularGrid.getData();
-    for (size_t x = 0; x < regularGrid.getNumberOfCellsInX(); ++x)
-    {
-        for (size_t y = 0; y < regularGrid.getNumberOfCellsInY(); ++y)
-        {
-            std::cout << x << " " << y << ": ";
-            for (size_t z = 0; z < regularGrid.getNumberOfCellsInZ(); ++z)
-            {
-                if (data[x][y][z] == nullptr)
-                {
-                    std::cout << "0 ";
-                }
-                else
-                {
-                    std::cout << data[x][y][z]->indexVolume << " ";
-                }
-            }
-            std::cout << std::endl;
-        }
-    }
-}
-
 TEST(DomainTest, ConvertRegularGridFromZInMetersToZInSecondsUniDimensional) {
     auto regularGrid = ConvertRegularGridTestValues::regularGridLithologyOneDimensionalDepth();
 
@@ -68,6 +34,8 @@ TEST(DomainTest, ConvertRegularGridFromZInMetersToZInSecondsUniDimensional) {
 }
 
 TEST(DomainTest, ConvertRegularGridFromZInMetersToZInSeconds) {
+    const double epsilon = std::pow(10, -3);
+
     const auto volumesResult = DomainTestValues::unrotatedVolumesFromSimpleGridRotated30Degrees();
     auto regularGridCompare = DomainTestValues::regularGridFromSimpleGridRotated30Degrees();
 
@@ -90,4 +58,57 @@ TEST(DomainTest, ConvertRegularGridFromZInMetersToZInSeconds) {
     convertCalculator.addLithology(std::make_shared<Lithology>(17, "conglomerate", 4.500, 1));
     convertCalculator.addLithology(std::make_shared<Lithology>(24, "volcanic", 6.000, 1));
     auto timeRegularGrid = convertCalculator.fromZInMetersToZInSeconds(regularGrid);
+    EXPECT_EQ(timeRegularGrid.getNumberOfCellsInX(), 5);
+    EXPECT_EQ(timeRegularGrid.getNumberOfCellsInY(), 5);
+    EXPECT_EQ(timeRegularGrid.getNumberOfCellsInZ(), 12);
+    EXPECT_EQ(timeRegularGrid.getUnitInX(), EnumUnit::Meters);
+    EXPECT_EQ(timeRegularGrid.getUnitInY(), EnumUnit::Meters);
+    EXPECT_EQ(timeRegularGrid.getUnitInZ(), EnumUnit::Seconds);
+    EXPECT_LT(std::abs(240.0000 - timeRegularGrid.getCellSizeInX()), epsilon);
+    EXPECT_LT(std::abs(160.0000 - timeRegularGrid.getCellSizeInY()), epsilon);
+    EXPECT_LT(std::abs(13.3333 - timeRegularGrid.getCellSizeInZ()), epsilon);
+
+    std::unordered_map<size_t, size_t> lithologiesMap;
+    for (size_t x = 0; x < timeRegularGrid.getNumberOfCellsInX(); ++x)
+    {
+        for (size_t y = 0; y < timeRegularGrid.getNumberOfCellsInY(); ++y)
+        {
+            for (size_t z = 0; z < timeRegularGrid.getNumberOfCellsInZ(); ++z)
+            {
+                const auto volume = timeRegularGrid.getData()[x][y][z];
+                const size_t indexVolume = volume == nullptr ? 0 : volume->indexVolume;
+                if (lithologiesMap.count(indexVolume) > 0) {
+                    lithologiesMap[indexVolume] = lithologiesMap[indexVolume] + 1;
+                } else {
+                    lithologiesMap[indexVolume] = 1;
+                }
+            }
+        }
+    }
+
+    EXPECT_EQ(lithologiesMap[0], 189);
+    EXPECT_EQ(lithologiesMap[1], 2);
+    EXPECT_EQ(lithologiesMap[2], 12);
+    EXPECT_EQ(lithologiesMap[3], 6);
+    EXPECT_EQ(lithologiesMap[4], 10);
+    EXPECT_EQ(lithologiesMap[5], 6);
+    EXPECT_EQ(lithologiesMap[6], 2);
+    EXPECT_EQ(lithologiesMap[7], 2);
+    EXPECT_EQ(lithologiesMap[8], 2);
+    EXPECT_EQ(lithologiesMap[9], 3);
+    EXPECT_EQ(lithologiesMap[10], 10);
+    EXPECT_EQ(lithologiesMap[11], 10);
+    EXPECT_EQ(lithologiesMap[12], 2);
+    EXPECT_EQ(lithologiesMap[14], 3);
+    EXPECT_EQ(lithologiesMap[15], 5);
+    EXPECT_EQ(lithologiesMap[16], 4);
+    EXPECT_EQ(lithologiesMap[17], 8);
+    EXPECT_EQ(lithologiesMap[18], 1);
+    EXPECT_EQ(lithologiesMap[19], 1);
+    EXPECT_EQ(lithologiesMap[20], 10);
+    EXPECT_EQ(lithologiesMap[21], 2);
+    EXPECT_EQ(lithologiesMap[22], 8);
+    EXPECT_EQ(lithologiesMap[23], 2);
+
+    EXPECT_EQ(lithologiesMap.size(), 23);
 }

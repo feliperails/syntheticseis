@@ -75,7 +75,7 @@ void TestMain::runGTest()
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
-    // ::testing::GTEST_FLAG(filter) = "*EclipseGridSurface*";
+    ::testing::GTEST_FLAG(filter) = "*ConvertRegularGridFromZInSecondsToZInMeters*";
     ::testing::UnitTest::GetInstance()->listeners().Append(new GTestExecutionControl());
 
     QCoreApplication app(argc, argv);

@@ -95,14 +95,16 @@ namespace domain {
         return timeGrid;
     }
 
-    RegularGrid<double> ConvertRegularGridCalculator::fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology, RegularGrid<double> &timeGridTrace)
+    RegularGrid<double> ConvertRegularGridCalculator::fromZInSecondsToZInMeters(
+        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
+        RegularGrid<double> &timeGridTrace)
     {
         // Implementar aqui Carine
         const size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
         const size_t numberOfCellsInY = timeGridLithology.getNumberOfCellsInY();
         const size_t numberOfCellsInZ = timeGridLithology.getNumberOfCellsInZ();
-        const auto &timeData = timeGridLithology.getData();
-        const auto &timeTraceData = timeGridTrace.getData();
+        const auto &timeGridLithologyData = timeGridLithology.getData();
+        const auto &timeGridTraceData = timeGridTrace.getData();
 
         const auto timeStep = timeGridLithology.getCellSizeInZ();
 
@@ -138,9 +140,9 @@ namespace domain {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
                     auto velocity = m_undefinedLithology->getVelocity();
-                    if (timeData[x][y][z] != nullptr)
+                    if (timeGridLithologyData[x][y][z] != nullptr)
                     {
-                        const auto idLithology = timeData[x][y][z]->idLithology;
+                        const auto idLithology = timeGridLithologyData[x][y][z]->idLithology;
                         const auto &lithology = *m_lithologies[idLithology];
                         velocity = lithology.getVelocity();
                     }
@@ -157,15 +159,14 @@ namespace domain {
                 double seismic;
 
                 double position = 0.0;
-                std::cout << "PRUU error: " << numPositionSteps-1 << std::endl;
-                /*
-                depthData[x][y].resize(numPositionSteps-1);
+
+                depthData[x][y].resize(numPositionSteps);
 
                 for(size_t depth_idx = 0; depth_idx < numPositionSteps-2; depth_idx++)
                 {
                     position = depth_idx * positionStep;
                     size_t idxB4 = 0;
-                    for(size_t idx = 1; idx < numberOfCellsInZ; idx++)
+                    for(size_t idx = 1; idx < numberOfCellsInZ-1; idx++)
                     {
                         if(positionFromTime[idx] < position)
                         {
@@ -173,13 +174,13 @@ namespace domain {
                         }
 
                     }
-                    seismic = (timeTraceData[x][y][idxB4] * (position - positionFromTime[idxB4]) /
+                    seismic = (timeGridTraceData[x][y][idxB4] * (position - positionFromTime[idxB4]) /
                                       (positionFromTime[idxB4+1] - positionFromTime[idxB4])
-                                      + timeTraceData[x][y][idxB4 + 1] * (positionFromTime[idxB4 + 1] - position) /
+                                      + timeGridTraceData[x][y][idxB4 + 1] * (positionFromTime[idxB4 + 1] - position) /
                                       (positionFromTime[idxB4+1] - positionFromTime[idxB4]));
                     depthData[x][y][depth_idx] = seismic;
                 }
-                */
+
             }
         }
 
@@ -264,19 +265,19 @@ namespace domain {
         return std::make_pair(maxVelocity, elapsedTime);
     }
 
-    double ConvertRegularGridCalculator::computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid) {
-        const size_t numberOfCellsInX = metersGrid.getNumberOfCellsInX();
-        const size_t numberOfCellsInY = metersGrid.getNumberOfCellsInY();
-        const size_t numberOfCellsInZ = metersGrid.getNumberOfCellsInZ();
+    double ConvertRegularGridCalculator::computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &timeGridLithology) {
+        const size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
+        const size_t numberOfCellsInY = timeGridLithology.getNumberOfCellsInY();
+        const size_t numberOfCellsInZ = timeGridLithology.getNumberOfCellsInZ();
         const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
-        const auto &metersData = metersGrid.getData();
+        const auto &timeGridLithologyData = timeGridLithology.getData();
 
         //const auto cellSizeInZ = metersGrid.getCellSizeInZ();
 
         bool error = false;
         std::exception exception;
 
-        std::vector<std::vector<double>> minVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
+        std::vector<std::vector<double>> minVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 3000000.0));
 
         #pragma omp parallel for
         for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
@@ -287,18 +288,18 @@ namespace domain {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
                     double velocity;
-                    if (metersData[x][y][z] == nullptr)
+                    if (timeGridLithologyData[x][y][z] == nullptr)
                     {
                         velocity = m_undefinedLithology->getVelocity();
                     }
                     else
                     {
-                        const auto idLithology = metersData[x][y][z]->idLithology;
+                        const auto idLithology = timeGridLithologyData[x][y][z]->idLithology;
 
                         if (m_lithologies.find(idLithology) == m_lithologies.end())
                         {
-                            QString message = "Lithology " + QString::number(metersData[x][y][z]->idLithology) + " of volume " +
-                                              QString::number(metersData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
+                            QString message = "Lithology " + QString::number(timeGridLithologyData[x][y][z]->idLithology) + " of volume " +
+                                              QString::number(timeGridLithologyData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
                                               QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
                             error = true;
                             exception = std::exception(message.toStdString().c_str());
@@ -321,7 +322,7 @@ namespace domain {
             throw exception;
         }
 
-        double minVelocity = 0.0;
+        double minVelocity = 300000000.0;
         for (size_t x = 0; x < numberOfCellsInX; ++x) {
             for (size_t y = 0; y < numberOfCellsInY; ++y) {
                 if (minVelocity > minVelocities[x][y])
@@ -329,6 +330,10 @@ namespace domain {
                     minVelocity = minVelocities[x][y];
                 }
             }
+        }
+        if(minVelocity < 1)
+        {
+            minVelocity = 1.0;
         }
         return minVelocity;
     }

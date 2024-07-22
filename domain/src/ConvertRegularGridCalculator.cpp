@@ -196,8 +196,8 @@ namespace domain {
 
         const auto cellSizeInZ = metersGrid.getCellSizeInZ();
 
-        bool error = false;
-        std::exception exception;
+        std::shared_ptr<geometry::Volume> errorVolume = nullptr;
+        size_t errorVolumeX, errorVolumeY, errorVolumeZ;
 
         std::vector<std::vector<double>> maxVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
         std::vector<std::vector<double>> elapsedTimes(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
@@ -210,7 +210,7 @@ namespace domain {
             {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    double velocity;
+                    double velocity = 0;
                     if (metersData[x][y][z] == nullptr)
                     {
                         velocity = m_undefinedLithology->getVelocity();
@@ -221,11 +221,10 @@ namespace domain {
 
                         if (m_lithologies.find(idLithology) == m_lithologies.end())
                         {
-                            QString message = "Lithology " + QString::number(metersData[x][y][z]->idLithology) + " of volume " +
-                                              QString::number(metersData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
-                                              QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
-                            error = true;
-                            exception = std::exception(message.toStdString().c_str());
+                            errorVolume = metersData[x][y][z];
+                            errorVolumeX = x;
+                            errorVolumeY = y;
+                            errorVolumeZ = z;
                             continue;
                         }
 
@@ -242,9 +241,12 @@ namespace domain {
                 }
             }
         }
-        if (error)
+        if (errorVolume != nullptr)
         {
-            throw exception;
+            const auto errorMessage = "Lithology " + QString::number(errorVolume->idLithology) + " of volume " +
+                    QString::number(errorVolume->indexVolume) + " of " + QString::number(errorVolumeX) + ", " +
+                    QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found.";
+            throw std::exception(errorMessage.toStdString().c_str());
         }
 
         double maxVelocity = 0.0;

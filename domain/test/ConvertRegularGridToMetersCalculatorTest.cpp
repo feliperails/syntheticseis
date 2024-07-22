@@ -115,7 +115,6 @@ TEST(DomainTest, ConvertRegularGridFromZInSecondsToZInMeters) {
         convertCalculator2.addLithology(lithology);
     }
     auto depthImpedanceRegularGrid = convertCalculator2.fromZInSecondsToZInMeters(timeRegularGrid, timeImpedanceRegularGrid);
-    showRegularGrid(depthImpedanceRegularGrid);
 }
 
 

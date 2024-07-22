@@ -11,6 +11,8 @@ namespace domain {
 
 class ConvertRegularGridCalculator {
 public:
+    bool m_defineMissingLithologyByProximity = true;
+
     explicit ConvertRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
 
     void addLithology(const std::shared_ptr<Lithology>& lithology);
@@ -26,6 +28,18 @@ private:
     std::pair<double, double> computeMaxVelocityAndElapsedTime(RegularGrid<std::shared_ptr<geometry::Volume>> &metersGrid);
 
     double computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid);
+
+    std::pair<double, bool> getVelocity(
+        std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+        size_t x,
+        size_t y,
+        size_t z
+    );
+
+    std::pair<double, bool>
+    getVelocity(const std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data, size_t x,
+                size_t y,
+                size_t z);
 };
 
 } // domain

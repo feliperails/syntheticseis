@@ -1,7 +1,6 @@
 #include <cmath>
 #include <memory>
 #include <utility>
-#include <iostream>
 #include "ConvertRegularGridCalculator.h"
 #include "RegularGrid.h"
 #include "Lithology.h"
@@ -71,15 +70,9 @@ namespace domain {
                 {
                     const auto &content = metersData[x][y][z];
 
-                    auto velocity = m_undefinedLithology->getVelocity();
-                    if (metersData[x][y][z] != nullptr)
-                    {
-                        const auto idLithology = metersData[x][y][z]->idLithology;
-                        const auto &lithology = *m_lithologies[idLithology];
-                        velocity = lithology.getVelocity();
-                    }
+                    const auto velocityResult = getVelocity(metersData, x, y, z);
 
-                    currentTime += cellSizeInZ / velocity;
+                    currentTime += cellSizeInZ / velocityResult.first;
 
                     const auto numberOfCellsInTimeFromDistance = currentTime / timeStep;
                     const auto limit = static_cast<size_t>(std::round(numberOfCellsInTimeFromDistance));
@@ -210,34 +203,23 @@ namespace domain {
             {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    double velocity = 0;
-                    if (metersData[x][y][z] == nullptr)
-                    {
-                        velocity = m_undefinedLithology->getVelocity();
-                    }
-                    else
-                    {
-                        const auto idLithology = metersData[x][y][z]->idLithology;
+                    const auto velocityResult = getVelocity(metersData, x, y, z);
 
-                        if (m_lithologies.find(idLithology) == m_lithologies.end())
-                        {
-                            errorVolume = metersData[x][y][z];
-                            errorVolumeX = x;
-                            errorVolumeY = y;
-                            errorVolumeZ = z;
-                            continue;
-                        }
-
-                        const auto &lithology = *m_lithologies[idLithology];
-                        velocity = lithology.getVelocity();
+                    if (velocityResult.second)
+                    {
+                        errorVolume = metersData[x][y][z];
+                        errorVolumeX = x;
+                        errorVolumeY = y;
+                        errorVolumeZ = z;
+                        continue;
                     }
 
-                    if (maxVelocities[x][y] < velocity)
+                    if (maxVelocities[x][y] < velocityResult.first)
                     {
-                        maxVelocities[x][y] = velocity;
+                        maxVelocities[x][y] = velocityResult.first;
                     }
 
-                    elapsedTimes[x][y] += cellSizeInZ / velocity;
+                    elapsedTimes[x][y] += cellSizeInZ / velocityResult.first;
                 }
             }
         }
@@ -274,10 +256,8 @@ namespace domain {
         const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
         const auto &timeGridLithologyData = timeGridLithology.getData();
 
-        //const auto cellSizeInZ = metersGrid.getCellSizeInZ();
-
-        bool error = false;
-        std::exception exception;
+        std::shared_ptr<geometry::Volume> errorVolume = nullptr;
+        size_t errorVolumeX, errorVolumeY, errorVolumeZ;
 
         std::vector<std::vector<double>> minVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 3000000.0));
 
@@ -289,55 +269,99 @@ namespace domain {
             {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    double velocity;
-                    if (timeGridLithologyData[x][y][z] == nullptr)
-                    {
-                        velocity = m_undefinedLithology->getVelocity();
-                    }
-                    else
-                    {
-                        const auto idLithology = timeGridLithologyData[x][y][z]->idLithology;
+                    const auto velocityResult = getVelocity(timeGridLithologyData, x, y, z);
 
-                        if (m_lithologies.find(idLithology) == m_lithologies.end())
-                        {
-                            QString message = "Lithology " + QString::number(timeGridLithologyData[x][y][z]->idLithology) + " of volume " +
-                                              QString::number(timeGridLithologyData[x][y][z]->indexVolume) + " of " + QString::number(x) + ", " +
-                                              QString::number(y) + " and " + QString::number(x) + " coordinates was not found.";
-                            error = true;
-                            exception = std::exception(message.toStdString().c_str());
-                            continue;
-                        }
-
-                        const auto &lithology = *m_lithologies[idLithology];
-                        velocity = lithology.getVelocity();
+                    if (velocityResult.second)
+                    {
+                        errorVolume = timeGridLithologyData[x][y][z];
+                        errorVolumeX = x;
+                        errorVolumeY = y;
+                        errorVolumeZ = z;
+                        continue;
                     }
 
-                    if (minVelocities[x][y] > velocity)
+                    if (minVelocities[x][y] > velocityResult.first)
                     {
-                        minVelocities[x][y] = velocity;
+                        minVelocities[x][y] = velocityResult.first;
                     }
                 }
             }
         }
-        if (error)
+        if (errorVolume != nullptr)
         {
-            throw exception;
+            const auto errorMessage = "Lithology " + QString::number(errorVolume->idLithology) + " of volume " +
+                                      QString::number(errorVolume->indexVolume) + " of " + QString::number(errorVolumeX) + ", " +
+                                      QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found.";
+            throw std::exception(errorMessage.toStdString().c_str());
         }
 
-        double minVelocity = 300000000.0;
-        for (size_t x = 0; x < numberOfCellsInX; ++x) {
-            for (size_t y = 0; y < numberOfCellsInY; ++y) {
+        auto minVelocity = std::numeric_limits<double>::max();
+        for (size_t x = 0; x < numberOfCellsInX; ++x)
+        {
+            for (size_t y = 0; y < numberOfCellsInY; ++y)
+            {
                 if (minVelocity > minVelocities[x][y])
                 {
                     minVelocity = minVelocities[x][y];
                 }
             }
         }
-        if(minVelocity < 1)
+        if (minVelocity < 1)
         {
             minVelocity = 1.0;
         }
+
         return minVelocity;
+    }
+
+    std::pair<double, bool> ConvertRegularGridCalculator::getVelocity(
+        const std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+        size_t x, size_t y, size_t z
+    )
+    {
+        if (data[x][y][z] == nullptr)
+        {
+            return {m_undefinedLithology->getVelocity(), false};
+        }
+
+        const auto idLithology = data[x][y][z]->idLithology;
+
+        if (m_lithologies.count(idLithology) == 0)
+        {
+            if (m_defineMissingLithologyByProximity)
+            {
+                for (size_t newZAux = z; newZAux > 0; --newZAux)
+                {
+                    size_t newZ = newZAux - 1;
+                    const auto newIdLithology = data[x][y][newZ]->idLithology;
+                    if (m_lithologies.find(newIdLithology) != m_lithologies.end())
+                    {
+                        const auto &newLithology = *m_lithologies[newIdLithology];
+                        data[x][y][z]->idLithology = newIdLithology;
+
+                        return {newLithology.getVelocity(), false};
+                    }
+                }
+
+                const auto numberOfCellsInZ = data[x][y].size();
+                for (size_t newZ = z + 1; newZ < numberOfCellsInZ; ++newZ)
+                {
+                    const auto newIdLithology = data[x][y][newZ]->idLithology;
+                    if (m_lithologies.find(newIdLithology) != m_lithologies.end())
+                    {
+                        const auto &newLithology = *m_lithologies[newIdLithology];
+                        data[x][y][z]->idLithology = newIdLithology;
+
+                        return {newLithology.getVelocity(), false};
+                    }
+                }
+            }
+
+            return {0.0, true};
+        }
+
+
+        return {m_lithologies[idLithology]->getVelocity(), false};
     }
 } // domain
 } // syntheticSeismic

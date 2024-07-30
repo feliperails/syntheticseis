@@ -196,7 +196,7 @@ namespace domain {
         std::vector<std::vector<double>> maxVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
         std::vector<std::vector<double>> elapsedTimes(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
 
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);

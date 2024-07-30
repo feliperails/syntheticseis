@@ -781,6 +781,14 @@ bool SegyCreationPage::validatePage()
         }
         auto regularGrid = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
+        auto waveletStep = regularGrid.getCellSizeInZ() * 1000;
+        std::cout << "Wavelet Step: " << waveletStep << std::endl;
+
+        RickerWaveletCalculator rickerWaveletCalculator;
+        rickerWaveletCalculator.setFrequency(25);
+        rickerWaveletCalculator.setStep(waveletStep);
+        const auto wavelet = rickerWaveletCalculator.extract();
+
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())
         {
@@ -840,11 +848,6 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        RickerWaveletCalculator rickerWaveletCalculator;
-        rickerWaveletCalculator.setFrequency(25);
-        rickerWaveletCalculator.setStep(regularGrid.getCellSizeInZ());
-        const auto wavelet = rickerWaveletCalculator.extract();
-
         ConvolutionRegularGridCalculator convolutionCalculator;
         auto amplitudeRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
         const QString amplitudePath = d->m_ui->amplitudeFileNameLineEdit->text();
@@ -858,7 +861,7 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
     }
-    catch (std::exception e)
+    catch (std::exception &e)
     {
         QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), e.what(), QMessageBox::NoButton);
     }

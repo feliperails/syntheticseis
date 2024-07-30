@@ -30,16 +30,17 @@ private:
     double computeMinVelocity(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid);
 
     std::pair<double, bool> getVelocity(
-        std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+        RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid,
         size_t x,
         size_t y,
         size_t z
     );
 
-    std::pair<double, bool>
-    getVelocity(const std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data, size_t x,
-                size_t y,
-                size_t z);
+    std::pair<double, bool> getNearestVelocity(
+        std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+        int x, int y, int z,
+        int limitX, int limitY, int limitZ
+    );
 };
 
 } // domain

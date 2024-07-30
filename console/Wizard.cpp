@@ -32,6 +32,8 @@
 #include "storage/src/writer/SEGYWriter.h"
 #include "domain/src/ConvertRegularGridCalculator.h"
 
+using namespace syntheticSeismic::storage;
+
 namespace syntheticSeismic {
 namespace widgets {
 
@@ -335,7 +337,7 @@ void EclipseGridImportPagePrivate::updateWidget()
             QFileInfo fileInfo;
             fileInfo.setFile(dir, fileName);
 
-            syntheticSeismic::storage::EclipseGridReader reader(fileInfo.filePath());
+            EclipseGridReader reader(fileInfo.filePath());
             QString error;
             const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
             if (error.isEmpty()) {

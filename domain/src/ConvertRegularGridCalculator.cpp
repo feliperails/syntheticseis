@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cmath>
 #include <memory>
 #include <utility>
@@ -22,7 +23,7 @@ namespace domain {
     {
         if (depthGrid.getUnitInZ() != Meters)
         {
-            throw std::exception("The Z grid unit must be in meters.");
+            throw std::exception("The Z grid unit must be in meters. Code: 0001");
         }
         double maxVelocity;
         double maxElapsedTime;
@@ -70,7 +71,7 @@ namespace domain {
                 {
                     const auto &content = metersData[x][y][z];
 
-                    const auto velocityResult = getVelocity(metersData, x, y, z);
+                    const auto velocityResult = getVelocity(depthGrid, x, y, z);
 
                     currentTime += cellSizeInZ / velocityResult.first;
 
@@ -120,7 +121,7 @@ namespace domain {
         auto &depthData = depthGrid.getData();
         double minVelocity = computeMinVelocity(timeGridLithology);
 
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -189,13 +190,13 @@ namespace domain {
 
         const auto cellSizeInZ = metersGrid.getCellSizeInZ();
 
-        std::shared_ptr<geometry::Volume> errorVolume = nullptr;
+        geometry::Volume *errorVolume = nullptr;
         size_t errorVolumeX, errorVolumeY, errorVolumeZ;
 
         std::vector<std::vector<double>> maxVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
         std::vector<std::vector<double>> elapsedTimes(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 0.0));
 
-        #pragma omp parallel for
+        // #pragma omp parallel for
         for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -203,11 +204,11 @@ namespace domain {
             {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    const auto velocityResult = getVelocity(metersData, x, y, z);
+                    const auto velocityResult = getVelocity(metersGrid, x, y, z);
 
                     if (velocityResult.second)
                     {
-                        errorVolume = metersData[x][y][z];
+                        errorVolume = metersData[x][y][z].get();
                         errorVolumeX = x;
                         errorVolumeY = y;
                         errorVolumeZ = z;
@@ -227,7 +228,7 @@ namespace domain {
         {
             const auto errorMessage = "Lithology " + QString::number(errorVolume->idLithology) + " of volume " +
                     QString::number(errorVolume->indexVolume) + " of " + QString::number(errorVolumeX) + ", " +
-                    QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found.";
+                    QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found. Code: 0002";
             throw std::exception(errorMessage.toStdString().c_str());
         }
 
@@ -256,12 +257,12 @@ namespace domain {
         const int numberOfCellsInXInt = static_cast<int>(numberOfCellsInX);
         const auto &timeGridLithologyData = timeGridLithology.getData();
 
-        std::shared_ptr<geometry::Volume> errorVolume = nullptr;
+        geometry::Volume *errorVolume = nullptr;
         size_t errorVolumeX, errorVolumeY, errorVolumeZ;
 
         std::vector<std::vector<double>> minVelocities(numberOfCellsInX, std::vector<double>(numberOfCellsInY, 3000000.0));
 
-        #pragma omp parallel for
+        // #pragma omp parallel for
         for (int xInt = 0; xInt < numberOfCellsInXInt; ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -269,29 +270,36 @@ namespace domain {
             {
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
                 {
-                    const auto velocityResult = getVelocity(timeGridLithologyData, x, y, z);
+                    const auto velocityResult = getVelocity(timeGridLithology, x, y, z);
 
                     if (velocityResult.second)
                     {
-                        errorVolume = timeGridLithologyData[x][y][z];
+                        errorVolume = timeGridLithologyData[x][y][z].get();
                         errorVolumeX = x;
                         errorVolumeY = y;
                         errorVolumeZ = z;
-                        continue;
+                        break;
                     }
+                    std::cout << "x: " << x << "y: " << y << "z: " << z << ": " << velocityResult.second << std::endl;
 
                     if (minVelocities[x][y] > velocityResult.first)
                     {
                         minVelocities[x][y] = velocityResult.first;
                     }
                 }
+                if (errorVolume != nullptr) {
+                    break;
+                }
+            }
+            if (errorVolume != nullptr) {
+                break;
             }
         }
         if (errorVolume != nullptr)
         {
             const auto errorMessage = "Lithology " + QString::number(errorVolume->idLithology) + " of volume " +
                                       QString::number(errorVolume->indexVolume) + " of " + QString::number(errorVolumeX) + ", " +
-                                      QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found.";
+                                      QString::number(errorVolumeY) + " and " + QString::number(errorVolumeZ) + " coordinates was not found. Code: 0003";
             throw std::exception(errorMessage.toStdString().c_str());
         }
 
@@ -314,11 +322,15 @@ namespace domain {
         return minVelocity;
     }
 
+
+
     std::pair<double, bool> ConvertRegularGridCalculator::getVelocity(
-        const std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+        RegularGrid<std::shared_ptr<geometry::Volume>> &depthGrid,
         size_t x, size_t y, size_t z
     )
     {
+        auto &data = depthGrid.getData();
+
         if (data[x][y][z] == nullptr)
         {
             return {m_undefinedLithology->getVelocity(), false};
@@ -330,31 +342,16 @@ namespace domain {
         {
             if (m_defineMissingLithologyByProximity)
             {
-                for (size_t newZAux = z; newZAux > 0; --newZAux)
-                {
-                    size_t newZ = newZAux - 1;
-                    const auto newIdLithology = data[x][y][newZ]->idLithology;
-                    if (m_lithologies.find(newIdLithology) != m_lithologies.end())
-                    {
-                        const auto &newLithology = *m_lithologies[newIdLithology];
-                        data[x][y][z]->idLithology = newIdLithology;
+                const auto limitX = static_cast<int>(depthGrid.getNumberOfCellsInX() - 1);
+                const auto limitY = static_cast<int>(depthGrid.getNumberOfCellsInY() - 1);
+                const auto limitZ = static_cast<int>(depthGrid.getNumberOfCellsInZ() - 1);
 
-                        return {newLithology.getVelocity(), false};
-                    }
-                }
+                std::cout << "missing lithology: " << idLithology << " for (" << x << ", " << y << ", " << z << ")" << std::endl;
 
-                const auto numberOfCellsInZ = data[x][y].size();
-                for (size_t newZ = z + 1; newZ < numberOfCellsInZ; ++newZ)
-                {
-                    const auto newIdLithology = data[x][y][newZ]->idLithology;
-                    if (m_lithologies.find(newIdLithology) != m_lithologies.end())
-                    {
-                        const auto &newLithology = *m_lithologies[newIdLithology];
-                        data[x][y][z]->idLithology = newIdLithology;
-
-                        return {newLithology.getVelocity(), false};
-                    }
-                }
+                return getNearestVelocity(
+                        data, static_cast<int>(x), static_cast<int>(y), static_cast<int>(z),
+                        limitX, limitY, limitZ
+                    );
             }
 
             return {0.0, true};
@@ -362,6 +359,69 @@ namespace domain {
 
 
         return {m_lithologies[idLithology]->getVelocity(), false};
+    }
+
+    std::pair<double, bool> ConvertRegularGridCalculator::getNearestVelocity(
+            std::vector<std::vector<std::vector<std::shared_ptr<geometry::Volume>>>> &data,
+            int x, int y, int z, int limitX, int limitY, int limitZ
+    )
+    {
+        for (int factor = 1; factor < 100; ++factor)
+        {
+            if (
+                    (x - factor) < 0 && (x + factor) > limitX
+                    && (y - factor) < 0 && (y + factor) > limitY
+                    && (z - factor) < 0 && (z + factor) > limitZ
+                    )
+            {
+                // return {0.0, true};
+                return {m_undefinedLithology->getVelocity(), false};
+            }
+
+            const auto realLeftLimitX = x - factor;
+            const auto realRightLimitX = x + factor;
+            const auto realLeftLimitY = y - factor;
+            const auto realRightLimitY = y + factor;
+            const auto realLeftLimitZ = z - factor;
+            const auto realRightLimitZ = z + factor;
+
+            const auto leftLimitX = std::max(realLeftLimitX, 0);
+            const auto rightLimitX = std::min(realRightLimitX, limitX);
+            const auto leftLimitY = std::max(realLeftLimitY, 0);
+            const auto rightLimitY = std::min(realRightLimitY, limitY);
+            const auto leftLimitZ = std::max(realLeftLimitZ, 0);
+            const auto rightLimitZ = std::min(realRightLimitZ, limitZ);
+            for (int newX = leftLimitX; newX <= rightLimitX; ++newX) {
+                for (int newY = leftLimitY; newY <= rightLimitY; ++newY) {
+                    for (int newZ = leftLimitZ; newZ <= rightLimitZ; ++newZ) {
+                        if (
+                                newX == realLeftLimitX || newX == realRightLimitX
+                                || newY == realLeftLimitY || newY == realRightLimitY
+                                || newZ == realLeftLimitZ || newZ == realRightLimitZ
+                                ) {
+                            if (data[newX][newY][newZ] == nullptr)
+                            {
+                                continue;
+                            }
+
+                            const auto newIdLithology = data[newX][newY][newZ]->idLithology;
+
+                            if (m_lithologies.count(newIdLithology) == 0) {
+                                continue;
+                            }
+
+                            const auto &newLithology = *m_lithologies[newIdLithology];
+                            data[x][y][z]->idLithology = newIdLithology;
+
+                            return {newLithology.getVelocity(), false};
+                        }
+                    }
+                }
+            }
+        }
+
+        // return {0.0, true};
+        return {m_undefinedLithology->getVelocity(), false};
     }
 } // domain
 } // syntheticSeismic

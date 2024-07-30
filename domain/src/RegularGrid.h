@@ -50,47 +50,47 @@ public:
         return m_data;
     }
 
-    const T& getData(size_t x, size_t y, size_t z) const
+    inline const T& getData(size_t x, size_t y, size_t z) const
     {
         return m_data[x][y][z];
     }
 
-    double getCellSizeInX() const
+    inline double getCellSizeInX() const
     {
         return m_cellSizeInX;
     }
 
-    double getCellSizeInY() const
+    inline double getCellSizeInY() const
     {
         return m_cellSizeInY;
     }
 
-    double getCellSizeInZ() const
+    inline double getCellSizeInZ() const
     {
         return m_cellSizeInZ;
     }
 
-    size_t getNumberOfCellsInX() const
+    inline size_t getNumberOfCellsInX() const
     {
         return m_numberOfCellsInX;
     }
 
-    size_t getNumberOfCellsInY() const
+    inline size_t getNumberOfCellsInY() const
     {
         return m_numberOfCellsInY;
     }
 
-    size_t getNumberOfCellsInZ() const
+    inline size_t getNumberOfCellsInZ() const
     {
         return m_numberOfCellsInZ;
     }
 
-    void setData(const std::vector<std::vector<std::vector<T>>> data)
+    inline void setData(const std::vector<std::vector<std::vector<T>>> data)
     {
         m_data = data;
     }
 
-    int getNoDataValue() const
+    inline int getNoDataValue() const
     {
         return m_noDataValue;
     }
@@ -100,25 +100,25 @@ public:
         return m_rectanglePoints;
     }
 
-    double getZBottom() const
+    inline double getZBottom() const
     {
         return m_zBottom;
     }
 
-    double getZTop() const
+    inline double getZTop() const
     {
         return m_zTop;
     }
 
-    EnumUnit getUnitInX() const {
+    inline EnumUnit getUnitInX() const {
         return m_unitInX;
     }
 
-    EnumUnit getUnitInY() const {
+    inline EnumUnit getUnitInY() const {
         return m_unitInY;
     }
 
-    EnumUnit getUnitInZ() const {
+    inline EnumUnit getUnitInZ() const {
         return m_unitInZ;
     }
 private:

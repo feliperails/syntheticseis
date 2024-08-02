@@ -93,7 +93,6 @@ namespace domain {
         RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
         RegularGrid<double> &timeGridTrace)
     {
-        // Implementar aqui Carine
         const size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
         const size_t numberOfCellsInY = timeGridLithology.getNumberOfCellsInY();
         const size_t numberOfCellsInZ = timeGridLithology.getNumberOfCellsInZ();
@@ -121,7 +120,7 @@ namespace domain {
         auto &depthData = depthGrid.getData();
         double minVelocity = computeMinVelocity(timeGridLithology);
 
-        #pragma omp parallel for
+        // #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -151,28 +150,27 @@ namespace domain {
                 const size_t numPositionSteps = static_cast<size_t>(finalPosition/positionStep);
 
                 double seismic;
-
                 double position = 0.0;
 
                 depthData[x][y].resize(numPositionSteps);
 
-                for(size_t depth_idx = 0; depth_idx < numPositionSteps-2; depth_idx++)
+                for(size_t depthIdxInt = 0; depthIdxInt < numPositionSteps-2; depthIdxInt++)
                 {
-                    position = depth_idx * positionStep;
-                    size_t idxB4 = 0;
-                    for(size_t idx = 1; idx < numberOfCellsInZ-1; idx++)
+                    position = depthIdxInt * positionStep;
+                    size_t depthIdxBeforePositionInt = 0;
+                    for(size_t z = 1; z < numberOfCellsInZ-1; z++)
                     {
-                        if(positionFromTime[idx] < position)
+                        if(positionFromTime[z] < position)
                         {
-                            idxB4 = idx;
+                            depthIdxBeforePositionInt = z;
                         }
 
                     }
-                    seismic = (timeGridTraceData[x][y][idxB4] * (position - positionFromTime[idxB4]) /
-                                      (positionFromTime[idxB4+1] - positionFromTime[idxB4])
-                                      + timeGridTraceData[x][y][idxB4 + 1] * (positionFromTime[idxB4 + 1] - position) /
-                                      (positionFromTime[idxB4+1] - positionFromTime[idxB4]));
-                    depthData[x][y][depth_idx] = seismic;
+                    seismic = (timeGridTraceData[x][y][depthIdxBeforePositionInt] * (position - positionFromTime[depthIdxBeforePositionInt]) /
+                                   (positionFromTime[depthIdxBeforePositionInt+1] - positionFromTime[depthIdxBeforePositionInt])
+                               + timeGridTraceData[x][y][depthIdxBeforePositionInt + 1] * (positionFromTime[depthIdxBeforePositionInt + 1] - position) /
+                                     (positionFromTime[depthIdxBeforePositionInt+1] - positionFromTime[depthIdxBeforePositionInt]));
+                    depthData[x][y][depthIdxInt] = seismic;
                 }
 
             }

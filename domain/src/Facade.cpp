@@ -21,17 +21,17 @@ Facade::Facade()
 void Facade::init()
 {
     LithologyDictionary& lithologyDictionary = this->lithologyDictionary();
-    lithologyDictionary.addLithology(1, QLatin1String("Mudstone"), 2800.0, 1.0);
-    lithologyDictionary.addLithology(3, QLatin1String("Siltite"), 3000.0, 1.0);
-    lithologyDictionary.addLithology(5, QLatin1String("Fine-grained sandstone - arn mf"), 3200.0, 1.0);
-    lithologyDictionary.addLithology(7, QLatin1String("Fine-grained sandstone"), 3200.0, 1.0);
-    lithologyDictionary.addLithology(9, QLatin1String("Medium-grained sandstone"), 3500.0, 1.0);
-    lithologyDictionary.addLithology(11, QLatin1String("Coarse-grained sandstone"), 3700.0, 1.0);
-    lithologyDictionary.addLithology(13, QLatin1String("Very coarse-grained"), 4000.0, 1.0);
-    lithologyDictionary.addLithology(15, QLatin1String("Conglomerate"), 4500.0, 1.0);
-    lithologyDictionary.addLithology(17, QLatin1String("cgl sx"), 4500.0, 1.0);
-    lithologyDictionary.addLithology(19, QLatin1String("bl"), 4500.0, 1.0);
-    lithologyDictionary.addLithology(24, QLatin1String("Volcanic"), 6000.0, 1.0);
+    lithologyDictionary.addLithology(1, QLatin1String("Mudstone"), 2800.0, 2600.0);
+    lithologyDictionary.addLithology(3, QLatin1String("Siltite"), 3000.0, 2650.0);
+    lithologyDictionary.addLithology(5, QLatin1String("Fine-grained sandstone - arn mf"), 3200.0, 2760.0);
+    lithologyDictionary.addLithology(7, QLatin1String("Fine-grained sandstone"), 3200.0, 2760.0);
+    lithologyDictionary.addLithology(9, QLatin1String("Medium-grained sandstone"), 3500.0, 2350.0);
+    lithologyDictionary.addLithology(11, QLatin1String("Coarse-grained sandstone"), 3700.0, 1950.0);
+    lithologyDictionary.addLithology(13, QLatin1String("Very coarse-grained"), 4000.0, 1610.0);
+    lithologyDictionary.addLithology(15, QLatin1String("Conglomerate"), 4500.0, 2500.0);
+    lithologyDictionary.addLithology(17, QLatin1String("cgl sx"), 4500.0, 2500.0);
+    lithologyDictionary.addLithology(19, QLatin1String("bl"), 4500.0, 2500.0);
+    lithologyDictionary.addLithology(24, QLatin1String("Volcanic"), 6000.0, 3000.0);
 }
 
 LithologyDictionary& Facade::lithologyDictionary()

@@ -823,7 +823,7 @@ bool SegyCreationPage::validatePage()
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
         }
-        const auto impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
+        auto impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
         const QString impedancePath = d->m_ui->impedanceFileNameLineEdit->text();
         if (!impedancePath.isEmpty())
         {
@@ -836,7 +836,9 @@ bool SegyCreationPage::validatePage()
         }
 
         ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
-        const auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
+        auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
+        impedanceRegularGrid.reset();
+
         const QString reflectivityPath = d->m_ui->reflectivityFileNameLineEdit->text();
         if (!reflectivityPath.isEmpty())
         {
@@ -850,6 +852,8 @@ bool SegyCreationPage::validatePage()
 
         ConvolutionRegularGridCalculator convolutionCalculator;
         auto amplitudeRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
+        reflectivityRegularGrid.reset();
+
         const QString amplitudePath = d->m_ui->amplitudeFileNameLineEdit->text();
         if (!amplitudePath.isEmpty())
         {
@@ -858,6 +862,19 @@ bool SegyCreationPage::validatePage()
             storage.write(*amplitudeRegularGrid);
 
             SegyWriter segyWriter(amplitudePath);
+            segyWriter.writeByHdf5File(hdf5Path);
+        }
+
+        const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
+        if (!depthAmplitudePath.isEmpty())
+        {
+            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInMeters, *amplitudeRegularGrid);
+
+            const QString hdf5Path = depthAmplitudePath + ".h5";
+            RegularGridHdf5Storage<double> storage(hdf5Path, "data");
+            storage.write(depthAmplitudeRegularGrid);
+
+            SegyWriter segyWriter(depthAmplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
     }

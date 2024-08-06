@@ -2,22 +2,23 @@
 #include "Lithology.h"
 #include "geometry/src/Volume.h"
 #include <exception>
+#include <utility>
 
 namespace syntheticSeismic {
 namespace domain {
 
 ImpedanceRegularGridCalculator::ImpedanceRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology)
-    : m_undefinedLithology(undefinedLithology)
+    : m_undefinedLithology(std::move(undefinedLithology))
 {
 
 }
 
-void ImpedanceRegularGridCalculator::addLithology(std::shared_ptr<Lithology> lithology)
+void ImpedanceRegularGridCalculator::addLithology(const std::shared_ptr<Lithology>& lithology)
 {
     m_lithologies[lithology->getId()] = lithology;
 }
 
-std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::execute(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid)
+std::shared_ptr<RegularGrid<double>> ImpedanceRegularGridCalculator::execute(RegularGrid<std::shared_ptr<geometry::Volume>> &regularVolumeGrid)
 {
     const auto numberOfCellsInX = regularVolumeGrid.getNumberOfCellsInX();
     const auto numberOfCellsInY = regularVolumeGrid.getNumberOfCellsInY();

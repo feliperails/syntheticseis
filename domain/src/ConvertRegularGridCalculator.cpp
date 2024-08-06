@@ -278,7 +278,6 @@ namespace domain {
                         errorVolumeZ = z;
                         break;
                     }
-                    std::cout << "x: " << x << "y: " << y << "z: " << z << ": " << velocityResult.second << std::endl;
 
                     if (minVelocities[x][y] > velocityResult.first)
                     {

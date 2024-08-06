@@ -167,6 +167,27 @@
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout_3">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Lithology:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <item>
+        <widget class="QLineEdit" name="lithologyFileNameLineEdit"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="outputLithologyFileNameToolButton">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
      <item row="1" column="0">
       <widget class="QLabel" name="label_6">
        <property name="text">
@@ -215,14 +236,14 @@
        </item>
       </layout>
      </item>
-     <item row="3" column="0">
+     <item row="4" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Seismic:</string>
+        <string>Time seismic:</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
+     <item row="4" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <item>
         <widget class="QLineEdit" name="amplitudeFileNameLineEdit"/>
@@ -236,13 +257,22 @@
        </item>
       </layout>
      </item>
-     <item row="0" column="1">
-      <layout class="QHBoxLayout" name="horizontalLayout_8">
+     <item row="5" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
-        <widget class="QLineEdit" name="lithologyFileNameLineEdit"/>
+        <widget class="QLineEdit" name="depthAmplitudeFileNameLineEdit"/>
        </item>
        <item>
-        <widget class="QPushButton" name="outputLithologyFileNameToolButton">
+        <widget class="QPushButton" name="outputDepthAmplitudeFileNameToolButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::TabFocus</enum>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -250,10 +280,10 @@
        </item>
       </layout>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_7">
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Lithology:</string>
+        <string>Depth seismic:</string>
        </property>
       </widget>
      </item>

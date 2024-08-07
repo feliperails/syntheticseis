@@ -99,7 +99,13 @@ namespace domain {
         const auto &timeGridLithologyData = timeGridLithology.getData();
         const auto &timeGridTraceData = timeGridTrace.getData();
 
-        const auto timeStep = timeGridLithology.getCellSizeInZ();
+        const auto timeStep = timeGridLithology.getCellSizeInZ() / 1000.0;
+
+        double minVelocity = computeMinVelocity(timeGridLithology);
+
+        std::cout << "*************************************************" << std::endl;
+        std::cout << "Time step  " << timeStep << std::endl;
+        std::cout << "*************************************************" << std::endl;
 
         RegularGrid<double> depthGrid(
             numberOfCellsInX,
@@ -118,7 +124,7 @@ namespace domain {
             );
 
         auto &depthData = depthGrid.getData();
-        double minVelocity = computeMinVelocity(timeGridLithology);
+
 
         // #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
@@ -175,7 +181,6 @@ namespace domain {
 
             }
         }
-
         return depthGrid;
     }
 

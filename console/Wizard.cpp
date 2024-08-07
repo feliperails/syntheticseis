@@ -779,9 +779,9 @@ bool SegyCreationPage::validatePage()
         {
             convertGrid.addLithology(std::make_shared<Lithology>(item));
         }
-        auto regularGrid = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
+        auto regularGridInSeconds = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
-        auto waveletStep = regularGrid.getCellSizeInZ() * 1000;
+        auto waveletStep = regularGridInSeconds.getCellSizeInZ() * 1000;
         std::cout << "Wavelet Step: " << waveletStep << std::endl;
 
         RickerWaveletCalculator rickerWaveletCalculator;
@@ -793,20 +793,20 @@ bool SegyCreationPage::validatePage()
         if (!lithologyPath.isEmpty())
         {
             RegularGrid<int> lithologyRegularGrid(
-                    regularGrid.getNumberOfCellsInX(), regularGrid.getNumberOfCellsInY(), regularGrid.getNumberOfCellsInZ(),
-                    regularGrid.getCellSizeInX(), regularGrid.getCellSizeInY(), regularGrid.getCellSizeInZ(),
-                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
-                    regularGrid.getRectanglePoints(), regularGrid.getZBottom(), regularGrid.getZTop(),
+                    regularGridInSeconds.getNumberOfCellsInX(), regularGridInSeconds.getNumberOfCellsInY(), regularGridInSeconds.getNumberOfCellsInZ(),
+                    regularGridInSeconds.getCellSizeInX(), regularGridInSeconds.getCellSizeInY(), regularGridInSeconds.getCellSizeInZ(),
+                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
+                    regularGridInSeconds.getRectanglePoints(), regularGridInSeconds.getZBottom(), regularGridInSeconds.getZTop(),
                     0, 0
                 );
             auto &data = lithologyRegularGrid.getData();
-            for (size_t i = 0; i < regularGrid.getNumberOfCellsInX(); ++i)
+            for (size_t i = 0; i < regularGridInSeconds.getNumberOfCellsInX(); ++i)
             {
-                for (size_t j = 0; j < regularGrid.getNumberOfCellsInY(); ++j)
+                for (size_t j = 0; j < regularGridInSeconds.getNumberOfCellsInY(); ++j)
                 {
-                    for (size_t k = 0; k < regularGrid.getNumberOfCellsInZ(); ++k)
+                    for (size_t k = 0; k < regularGridInSeconds.getNumberOfCellsInZ(); ++k)
                     {
-                        data[i][j][k] = regularGrid.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGrid.getData(i, j, k)->idLithology;
+                        data[i][j][k] = regularGridInSeconds.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGridInSeconds.getData(i, j, k)->idLithology;
                     }
                 }
             }
@@ -823,7 +823,7 @@ bool SegyCreationPage::validatePage()
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
         }
-        auto impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
+        auto impedanceRegularGrid = impedanceCalculator.execute(regularGridInSeconds);
         const QString impedancePath = d->m_ui->impedanceFileNameLineEdit->text();
         if (!impedancePath.isEmpty())
         {
@@ -868,7 +868,7 @@ bool SegyCreationPage::validatePage()
         const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
         if (!depthAmplitudePath.isEmpty())
         {
-            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInMeters, *amplitudeRegularGrid);
+            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInSeconds, *amplitudeRegularGrid);
 
             const QString hdf5Path = depthAmplitudePath + ".h5";
             RegularGridHdf5Storage<double> storage(hdf5Path, "data");

@@ -265,7 +265,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="outputAmplitudeFileNameToolButton">
+        <widget class="QPushButton" name="outputAmplitudeFileNameToolButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>

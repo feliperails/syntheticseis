@@ -638,8 +638,18 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
     QObject::connect(m_ui->outputAmplitudeFileNameToolButton, &QPushButton::clicked, q_ptr, [this](const bool){
-        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
+        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save Time Seismic SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
         m_ui->amplitudeFileNameLineEdit->setText(fileName);
+        Q_EMIT q_ptr->completeChanged();
+    });
+    // END AMPLITUDE SEGY FILE
+    // BEGIN SEISMIC DEPTH AMPLITUDE SEGY FILE
+    QObject::connect(m_ui->depthAmplitudeFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&){
+        Q_EMIT q_ptr->completeChanged();
+    });
+    QObject::connect(m_ui->outputDepthAmplitudeFileNameToolButton, &QPushButton::clicked, q_ptr, [this](const bool){
+        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save Depth Seismic SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
+        m_ui->depthAmplitudeFileNameLineEdit->setText(fileName);
         Q_EMIT q_ptr->completeChanged();
     });
     // END AMPLITUDE SEGY FILE
@@ -870,6 +880,11 @@ bool SegyCreationPage::validatePage()
         {
             auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInSeconds, *amplitudeRegularGrid);
 
+            std::cout << "*************************************************" << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInX() << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInY() << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInZ() << std::endl;
+            std::cout << "*************************************************" << std::endl;
             const QString hdf5Path = depthAmplitudePath + ".h5";
             RegularGridHdf5Storage<double> storage(hdf5Path, "data");
             storage.write(depthAmplitudeRegularGrid);

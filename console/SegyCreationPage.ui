@@ -265,7 +265,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="outputAmplitudeFileNameToolButton">
+        <widget class="QPushButton" name="outputAmplitudeFileNameToolButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -275,7 +275,7 @@
          <property name="minimumSize">
           <size>
            <width>80</width>
-           <height>0</height>
+           <height>24</height>
           </size>
          </property>
          <property name="text">

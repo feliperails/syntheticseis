@@ -30,6 +30,9 @@
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/GrdSurfaceWriter.h"
 #include "storage/src/writer/SEGYWriter.h"
+#include "domain/src/ConvertRegularGridCalculator.h"
+
+using namespace syntheticSeismic::storage;
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -334,7 +337,7 @@ void EclipseGridImportPagePrivate::updateWidget()
             QFileInfo fileInfo;
             fileInfo.setFile(dir, fileName);
 
-            syntheticSeismic::storage::EclipseGridReader reader(fileInfo.filePath());
+            EclipseGridReader reader(fileInfo.filePath());
             QString error;
             const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
             if (error.isEmpty()) {
@@ -594,9 +597,6 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
 
-    QObject::connect(m_ui->rickerWaveletStepDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
-        Q_EMIT q_ptr->completeChanged();
-    });
     // BEGIN LITHOLOGY SEGY FILE
     QObject::connect(m_ui->lithologyFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&) {
         Q_EMIT q_ptr->completeChanged();
@@ -638,8 +638,18 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
     QObject::connect(m_ui->outputAmplitudeFileNameToolButton, &QPushButton::clicked, q_ptr, [this](const bool){
-        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
+        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save Time Seismic SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
         m_ui->amplitudeFileNameLineEdit->setText(fileName);
+        Q_EMIT q_ptr->completeChanged();
+    });
+    // END AMPLITUDE SEGY FILE
+    // BEGIN SEISMIC DEPTH AMPLITUDE SEGY FILE
+    QObject::connect(m_ui->depthAmplitudeFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&){
+        Q_EMIT q_ptr->completeChanged();
+    });
+    QObject::connect(m_ui->outputDepthAmplitudeFileNameToolButton, &QPushButton::clicked, q_ptr, [this](const bool){
+        const QString fileName = QFileDialog::getSaveFileName(q_ptr, QObject::tr("Save Depth Seismic SEG-Y file"), QString(), QLatin1String("SEG-Y (*.segy)"));
+        m_ui->depthAmplitudeFileNameLineEdit->setText(fileName);
         Q_EMIT q_ptr->completeChanged();
     });
     // END AMPLITUDE SEGY FILE
@@ -742,7 +752,6 @@ bool SegyCreationPage::isComplete() const
 
     return !d->m_lithologies.isEmpty()
             && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
-            && !qFuzzyIsNull(d->m_ui->rickerWaveletStepDoubleSpinBox->value())
             && !d->m_ui->amplitudeFileNameLineEdit->text().isEmpty();
 }
 
@@ -756,6 +765,9 @@ bool SegyCreationPage::validatePage()
 
     try
     {
+        const double undefinedImpedance = 2.500;
+        const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
+
         std::vector<std::shared_ptr<Volume>> allVolumes;
         for (const auto& item : d->m_eclipseGrids)
         {
@@ -768,26 +780,43 @@ bool SegyCreationPage::validatePage()
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
         VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
-        RegularGrid<std::shared_ptr<Volume>> regularGrid = volumeToRegularGrid.convertVolumesToRegularGrid(
+        auto regularGridInMeters = volumeToRegularGrid.convertVolumesToRegularGrid(
             allVolumes, minimumRectangle, rotateResult->minimumZ, rotateResult->maximumZ
         );
+
+        ConvertRegularGridCalculator convertGrid(undefinedLithology);
+        for (const auto &item : d->m_lithologies)
+        {
+            convertGrid.addLithology(std::make_shared<Lithology>(item));
+        }
+        auto regularGridInSeconds = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
+
+        auto waveletStep = regularGridInSeconds.getCellSizeInZ() * 1000;
+        std::cout << "Wavelet Step: " << waveletStep << std::endl;
+
+        RickerWaveletCalculator rickerWaveletCalculator;
+        rickerWaveletCalculator.setFrequency(25);
+        rickerWaveletCalculator.setStep(waveletStep);
+        const auto wavelet = rickerWaveletCalculator.extract();
+
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())
         {
             RegularGrid<int> lithologyRegularGrid(
-                    regularGrid.getNumberOfCellsInX(), regularGrid.getNumberOfCellsInY(), regularGrid.getNumberOfCellsInZ(),
-                    regularGrid.getCellSizeInX(), regularGrid.getCellSizeInY(), regularGrid.getCellSizeInZ(),
-                    regularGrid.getRectanglePoints(), regularGrid.getZBottom(), regularGrid.getZTop(),
+                    regularGridInSeconds.getNumberOfCellsInX(), regularGridInSeconds.getNumberOfCellsInY(), regularGridInSeconds.getNumberOfCellsInZ(),
+                    regularGridInSeconds.getCellSizeInX(), regularGridInSeconds.getCellSizeInY(), regularGridInSeconds.getCellSizeInZ(),
+                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
+                    regularGridInSeconds.getRectanglePoints(), regularGridInSeconds.getZBottom(), regularGridInSeconds.getZTop(),
                     0, 0
                 );
             auto &data = lithologyRegularGrid.getData();
-            for (size_t i = 0; i < regularGrid.getNumberOfCellsInX(); ++i)
+            for (size_t i = 0; i < regularGridInSeconds.getNumberOfCellsInX(); ++i)
             {
-                for (size_t j = 0; j < regularGrid.getNumberOfCellsInY(); ++j)
+                for (size_t j = 0; j < regularGridInSeconds.getNumberOfCellsInY(); ++j)
                 {
-                    for (size_t k = 0; k < regularGrid.getNumberOfCellsInZ(); ++k)
+                    for (size_t k = 0; k < regularGridInSeconds.getNumberOfCellsInZ(); ++k)
                     {
-                        data[i][j][k] = regularGrid.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGrid.getData(i, j, k)->idLithology;
+                        data[i][j][k] = regularGridInSeconds.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGridInSeconds.getData(i, j, k)->idLithology;
                     }
                 }
             }
@@ -799,12 +828,12 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        ImpedanceRegularGridCalculator impedanceCalculator(std::make_shared<Lithology>(0, "undefined", 2500, 1));
+        ImpedanceRegularGridCalculator impedanceCalculator(undefinedLithology);
         for (const auto &item : d->m_lithologies)
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
         }
-        const auto impedanceRegularGrid = impedanceCalculator.execute(regularGrid);
+        auto impedanceRegularGrid = impedanceCalculator.execute(regularGridInSeconds);
         const QString impedancePath = d->m_ui->impedanceFileNameLineEdit->text();
         if (!impedancePath.isEmpty())
         {
@@ -816,9 +845,10 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        const double undefinedImpedance = 2.500;
         ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
-        const auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
+        auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
+        impedanceRegularGrid.reset();
+
         const QString reflectivityPath = d->m_ui->reflectivityFileNameLineEdit->text();
         if (!reflectivityPath.isEmpty())
         {
@@ -830,14 +860,10 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
-        double step = 0.46;
-        RickerWaveletCalculator rickerWaveletCalculator;
-        rickerWaveletCalculator.setFrequency(25);
-        rickerWaveletCalculator.setStep(step);
-        const auto wavelet = rickerWaveletCalculator.extract();
-
         ConvolutionRegularGridCalculator convolutionCalculator;
         auto amplitudeRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
+        reflectivityRegularGrid.reset();
+
         const QString amplitudePath = d->m_ui->amplitudeFileNameLineEdit->text();
         if (!amplitudePath.isEmpty())
         {
@@ -848,8 +874,26 @@ bool SegyCreationPage::validatePage()
             SegyWriter segyWriter(amplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
+
+        const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
+        if (!depthAmplitudePath.isEmpty())
+        {
+            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInSeconds, *amplitudeRegularGrid);
+
+            std::cout << "*************************************************" << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInX() << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInY() << std::endl;
+            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInZ() << std::endl;
+            std::cout << "*************************************************" << std::endl;
+            const QString hdf5Path = depthAmplitudePath + ".h5";
+            RegularGridHdf5Storage<double> storage(hdf5Path, "data");
+            storage.write(depthAmplitudeRegularGrid);
+
+            SegyWriter segyWriter(depthAmplitudePath);
+            segyWriter.writeByHdf5File(hdf5Path);
+        }
     }
-    catch (std::exception e)
+    catch (std::exception &e)
     {
         QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), e.what(), QMessageBox::NoButton);
     }

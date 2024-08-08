@@ -182,6 +182,9 @@ public:
         auto regularGrid = std::make_shared<domain::RegularGrid<RasterType>>(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters,
+                EnumUnit::Meters,
+                EnumUnit::Meters,
                 rectanglePoints,
                 zBottom,
                 zTop,

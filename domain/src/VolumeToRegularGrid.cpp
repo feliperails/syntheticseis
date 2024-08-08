@@ -81,6 +81,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
     RegularGrid<std::shared_ptr<Volume>> regularGrid(
                 m_numberOfCellsInX, m_numberOfCellsInY, m_numberOfCellsInZ,
                 m_cellSizeInX, m_cellSizeInY, m_cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 minimumRectangle,
                 zBottom,
                 zTop,
@@ -111,7 +112,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
                         CgalPoint3D(points[indexes[3]].x, points[indexes[3]].y, points[indexes[3]].z)
                     );
 
-            const CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
+            CgalPolyhedronTree3D tree(faces(polyhedron).first, faces(polyhedron).second, polyhedron);
             tree.accelerate_distance_queries();
             const CgalPolyhedronPointInside3D pointInside(tree);
 

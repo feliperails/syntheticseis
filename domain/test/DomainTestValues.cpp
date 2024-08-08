@@ -990,6 +990,7 @@ RegularGrid<size_t> DomainTestValues::regularGridFromSimpleGridRotated30Degrees(
     RegularGrid<size_t> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 rectanglePoints,
                 0.0,
                 0.0,
@@ -1050,6 +1051,7 @@ RegularGrid<double> DomainTestValues::impedanceRegularGridFromSimpleGridRotated3
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 rectanglePoints,
                 0.0,
                 0.0,
@@ -1110,6 +1112,7 @@ RegularGrid<double> DomainTestValues::reflectivityRegularGridFromSimpleGridRotat
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 rectanglePoints,
                 0.0,
                 0.0,
@@ -1458,6 +1461,7 @@ RegularGrid<double> DomainTestValues::regularGridToTestConvolution()
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 rectanglePoints,
                 0.0,
                 0.0,
@@ -1483,6 +1487,7 @@ RegularGrid<double> DomainTestValues::regularGridConvolution()
     RegularGrid<double> regularGrid(
                 numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
                 cellSizeInX, cellSizeInY, cellSizeInZ,
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
                 rectanglePoints,
                 0.0,
                 0.0,
@@ -1501,6 +1506,7 @@ std::tuple<EclipseGridSurface::Result, double, double, double, double, double, d
         std::make_shared<GrdSurface<double>>(5, 5),
         std::make_shared<GrdSurface<int>>(5, 5),
         std::make_shared<GrdSurface<int>>(5, 5),
+        std::make_shared<GrdSurface<double>>(5, 5),
         0
     );
 

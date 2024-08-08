@@ -16,6 +16,7 @@ RegularGrid<double> StorageTestValues::regularGridImpedanceFiveFiveFive()
     RegularGrid<double> regularGrid(
             numberOfCellsInX, numberOfCellsInY, numberOfCellsInZ,
             cellSizeInX, cellSizeInY, cellSizeInZ,
+            EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Meters,
             rectanglePoints,
             0.0,
             0.0,

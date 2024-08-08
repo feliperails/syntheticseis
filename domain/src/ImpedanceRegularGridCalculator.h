@@ -16,10 +16,10 @@ class Lithology;
 class ImpedanceRegularGridCalculator
 {
 public:
-    ImpedanceRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
+    explicit ImpedanceRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
 
-    void addLithology(std::shared_ptr<Lithology> lithology);
-    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<std::shared_ptr<geometry::Volume>> regularVolumeGrid);
+    void addLithology(const std::shared_ptr<Lithology>& lithology);
+    std::shared_ptr<RegularGrid<double>> execute(RegularGrid<std::shared_ptr<geometry::Volume>> &regularVolumeGrid);
 private:
     std::map<int, std::shared_ptr<Lithology>> m_lithologies;
     std::shared_ptr<Lithology> m_undefinedLithology;

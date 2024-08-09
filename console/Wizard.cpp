@@ -880,11 +880,6 @@ bool SegyCreationPage::validatePage()
         {
             auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInSeconds, *amplitudeRegularGrid);
 
-            std::cout << "*************************************************" << std::endl;
-            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInX() << std::endl;
-            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInY() << std::endl;
-            std::cout << depthAmplitudeRegularGrid.getNumberOfCellsInZ() << std::endl;
-            std::cout << "*************************************************" << std::endl;
             const QString hdf5Path = depthAmplitudePath + ".h5";
             RegularGridHdf5Storage<double> storage(hdf5Path, "data");
             storage.write(depthAmplitudeRegularGrid);

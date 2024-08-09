@@ -99,13 +99,11 @@ namespace domain {
         const auto &timeGridLithologyData = timeGridLithology.getData();
         const auto &timeGridTraceData = timeGridTrace.getData();
 
-        const auto timeStep = timeGridLithology.getCellSizeInZ() / 1000.0;
-
+        const auto timeStep = timeGridLithology.getCellSizeInZ();
         double minVelocity = computeMinVelocity(timeGridLithology);
+        const double positionStep = timeStep * minVelocity;
 
-        std::cout << "*************************************************" << std::endl;
         std::cout << "Time step  " << timeStep << std::endl;
-        std::cout << "*************************************************" << std::endl;
 
         RegularGrid<double> depthGrid(
             numberOfCellsInX,
@@ -113,7 +111,7 @@ namespace domain {
             0,
             timeGridLithology.getCellSizeInX(),
             timeGridLithology.getCellSizeInY(),
-            timeStep,
+            positionStep,
             timeGridLithology.getUnitInX(),
             timeGridLithology.getUnitInY(),
             EnumUnit::Meters,
@@ -124,8 +122,7 @@ namespace domain {
             );
 
         auto &depthData = depthGrid.getData();
-
-
+        size_t maxNumPositionSteps = 0;
         // #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
         {
@@ -147,13 +144,15 @@ namespace domain {
                     }
                     currentPosition += timeStep * velocity;
                     positionFromTime.push_back(currentPosition);
-
                 }
 
                 // Making the seismic trace equally splited in space to store in structure
                 const double finalPosition = currentPosition;
-                const double positionStep = timeStep * minVelocity;
                 const size_t numPositionSteps = static_cast<size_t>(finalPosition/positionStep);
+                if(numPositionSteps > maxNumPositionSteps)
+                {
+                    maxNumPositionSteps = numPositionSteps;
+                }
 
                 double seismic;
                 double position = 0.0;
@@ -178,9 +177,25 @@ namespace domain {
                                      (positionFromTime[depthIdxBeforePositionInt+1] - positionFromTime[depthIdxBeforePositionInt]));
                     depthData[x][y][depthIdxInt] = seismic;
                 }
-
             }
         }
+
+        depthGrid.setNumberOfCellsInZ(maxNumPositionSteps);
+        for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
+        {
+            const auto x = static_cast<size_t>(xInt);
+            for (size_t y = 0; y < numberOfCellsInY; ++y)
+            {
+                if(depthData[x][y].size() < maxNumPositionSteps)
+                {
+                    for(size_t z = depthData[x][y].size(); z < maxNumPositionSteps; ++z)
+                    {
+                        depthData[x][y].push_back(0.0);
+                    }
+                }
+            }
+        }
+
         return depthGrid;
     }
 
@@ -283,7 +298,7 @@ namespace domain {
                         errorVolumeZ = z;
                         break;
                     }
-                    std::cout << "x: " << x << "y: " << y << "z: " << z << ": " << velocityResult.second << std::endl;
+                    // std::cout << "x: " << x << "\t y: " << y << "\t z: " << z << " : " << velocityResult.second << std::endl;
 
                     if (minVelocities[x][y] > velocityResult.first)
                     {

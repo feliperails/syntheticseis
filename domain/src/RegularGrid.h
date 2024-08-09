@@ -85,6 +85,11 @@ public:
         return m_numberOfCellsInZ;
     }
 
+    inline void setNumberOfCellsInZ(size_t numberOfCellsInZ)
+    {
+        m_numberOfCellsInZ = numberOfCellsInZ;
+    }
+
     inline void setData(const std::vector<std::vector<std::vector<T>>> data)
     {
         m_data = data;
@@ -128,7 +133,7 @@ private:
     const double m_cellSizeInZ;
     const size_t m_numberOfCellsInX;
     const size_t m_numberOfCellsInY;
-    const size_t m_numberOfCellsInZ;
+    size_t m_numberOfCellsInZ;
     const EnumUnit m_unitInX;
     const EnumUnit m_unitInY;
     const EnumUnit m_unitInZ;

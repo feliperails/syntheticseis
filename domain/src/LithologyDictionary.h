@@ -25,6 +25,8 @@ public:
 
     bool changeData(const int lithologyId, const Lithology& newLithologyData);
 
+    void delLithology(const int id, const QString& name, const double velocity, const double density);
+
 private:
     QVector<Lithology> m_lithologies;
     Lithology m_invalidLithology;

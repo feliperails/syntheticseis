@@ -715,6 +715,18 @@ void SegyCreationPagePrivate::updateWidget()
 
         QObject::connect(removeButton, &QPushButton::clicked, [this, row](const bool){
             removeRow(row);
+            // removing lithology from lithologies
+            int count = -1, remove = 0;
+            for(const Lithology& litho : qAsConst(m_lithologies)){
+                count++;
+                if(litho.getId() == m_lithologies.at(row).getId() ||
+                    litho.getName() == m_lithologies.at(row).getName()){
+                    remove = 1;
+                    break;
+                }
+            }
+            std::cout << count << std::endl;
+            if(remove == 1) m_lithologies.remove(count);
         });
     }
 
@@ -737,6 +749,7 @@ void SegyCreationPagePrivate::removeRow(const int row)
 
     if (row < m_ui->velocityTableWidget->rowCount()) {
         m_ui->velocityTableWidget->removeRow(row);
+
     }
 }
 

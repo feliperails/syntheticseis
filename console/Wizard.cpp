@@ -561,6 +561,7 @@ class SegyCreationPagePrivate
     void updateWidget();
     void showWidgetToAddLithology();
     void removeRow(const int row);
+    int getRowVelocityTableWidget(QWidget* widget);
 
     Q_DECLARE_PUBLIC(SegyCreationPage)
     SegyCreationPage* q_ptr;
@@ -675,6 +676,22 @@ void SegyCreationPagePrivate::showWidgetToAddLithology()
     });
 }
 
+int SegyCreationPagePrivate::getRowVelocityTableWidget(QWidget* widget)
+{
+    for (int row = 0; row < m_ui->velocityTableWidget->rowCount(); ++row)
+    {
+        for (int col = 0; col < m_ui->velocityTableWidget->columnCount(); ++col)
+        {
+            if (m_ui->velocityTableWidget->cellWidget(row, col) == widget)
+            {
+                return row;
+            }
+        }
+    }
+
+    return -1;
+}
+
 void SegyCreationPagePrivate::updateWidget()
 {
     Q_Q(SegyCreationPage);
@@ -688,6 +705,8 @@ void SegyCreationPagePrivate::updateWidget()
         }
     }
 
+    QSignalBlocker signalBlocker(m_ui->velocityTableWidget);
+
     while(m_ui->velocityTableWidget->rowCount() != 0) {
         m_ui->velocityTableWidget->removeRow(0);
     }
@@ -698,10 +717,29 @@ void SegyCreationPagePrivate::updateWidget()
     for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row) {
 
         QTableWidgetItem* id = new QTableWidgetItem(QString::number(m_lithologies.at(row).getId()));
-        QTableWidgetItem* name = new QTableWidgetItem(m_lithologies.at(row).getName());
+        id->setFlags(id->flags() & ~Qt::ItemIsEditable);
+        QTableWidgetItem* name = new QTableWidgetItem();
+        name->setFlags(name->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* velocity = new QTableWidgetItem(QString::number(m_lithologies.at(row).getVelocity()));
+        velocity->setFlags(velocity->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* density = new QTableWidgetItem(QString::number(m_lithologies.at(row).getDensity()));
+        density->setFlags(density->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* removeAction = new QTableWidgetItem(REMOVE_ACTION_MESSAGE);
+        removeAction->setFlags(density->flags() & ~Qt::ItemIsEditable);
+
+        QSpinBox* idEditor = new QSpinBox(q_ptr);
+        idEditor->setMaximum(INT_MAX);
+        idEditor->setValue(m_lithologies[row].getId());
+        QLineEdit* nameEditor = new QLineEdit(q_ptr);
+        nameEditor->setText(m_lithologies[row].getName());
+        QDoubleSpinBox* velocityEditor = new QDoubleSpinBox(q_ptr);
+        velocityEditor->setMaximum(DBL_MAX);
+        velocityEditor->setValue(m_lithologies[row].getVelocity());
+        QDoubleSpinBox* densityEditor = new QDoubleSpinBox(q_ptr);
+        densityEditor->setMaximum(DBL_MAX);
+        densityEditor->setValue(m_lithologies[row].getDensity());
+        QPushButton* removeButton = new QPushButton(q_ptr);
+        removeButton->setIcon(QIcon(QLatin1String(":/remove")));
 
         m_ui->velocityTableWidget->setItem(row, 0, id);
         m_ui->velocityTableWidget->setItem(row, 1, name);
@@ -709,24 +747,57 @@ void SegyCreationPagePrivate::updateWidget()
         m_ui->velocityTableWidget->setItem(row, 3, density);
         m_ui->velocityTableWidget->setItem(row, 4, removeAction);
 
-        QPushButton* removeButton = new QPushButton(q_ptr);
-        removeButton->setIcon(QIcon(QLatin1String(":/remove")));
+        m_ui->velocityTableWidget->setCellWidget(row, 0, idEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 1, nameEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 2, velocityEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 3, densityEditor);
         m_ui->velocityTableWidget->setCellWidget(row, 4, removeButton);
 
-        QObject::connect(removeButton, &QPushButton::clicked, [this, row](const bool){
-            removeRow(row);
-            // removing lithology from lithologies
-            int count = -1, remove = 0;
-            for(const Lithology& litho : qAsConst(m_lithologies)){
-                count++;
-                if(litho.getId() == m_lithologies.at(row).getId() ||
-                    litho.getName() == m_lithologies.at(row).getName()){
-                    remove = 1;
-                    break;
-                }
+        QObject::connect(idEditor, QOverload<int>::of(&QSpinBox::valueChanged), [this, idEditor](const int& value) {
+            const int& row = getRowVelocityTableWidget(idEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setId(value);
             }
-            std::cout << count << std::endl;
-            if(remove == 1) m_lithologies.remove(count);
+        });
+
+        QObject::connect(nameEditor, &QLineEdit::textChanged, [this, nameEditor](const QString& value) {
+            const int& row = getRowVelocityTableWidget(nameEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setName(value);
+            }
+        });
+
+        QObject::connect(velocityEditor, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this, velocityEditor](const double& value) {
+            const int& row = getRowVelocityTableWidget(velocityEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setVelocity(value);
+            }
+        });
+
+        QObject::connect(densityEditor, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this, densityEditor](const double& value) {
+            const int& row = getRowVelocityTableWidget(densityEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setDensity(value);
+            }
+        });
+
+        QObject::connect(removeButton, &QPushButton::clicked, [this, removeButton](const bool) {
+            const int& row = getRowVelocityTableWidget(removeButton);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                // removing lithology from lithologies
+                removeRow(row);
+                m_lithologies.remove(row);
+            }
         });
     }
 
@@ -749,7 +820,6 @@ void SegyCreationPagePrivate::removeRow(const int row)
 
     if (row < m_ui->velocityTableWidget->rowCount()) {
         m_ui->velocityTableWidget->removeRow(row);
-
     }
 }
 
@@ -765,7 +835,8 @@ bool SegyCreationPage::isComplete() const
 
     return !d->m_lithologies.isEmpty()
             && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
-            && !d->m_ui->amplitudeFileNameLineEdit->text().isEmpty();
+            && (!d->m_ui->amplitudeFileNameLineEdit->text().isEmpty() ||
+               !d->m_ui->depthAmplitudeFileNameLineEdit->text().isEmpty());
 }
 
 bool SegyCreationPage::validatePage()

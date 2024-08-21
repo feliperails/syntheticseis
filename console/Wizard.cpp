@@ -6,6 +6,8 @@
 #include "ui_EclipseGridImportPage.h"
 
 #include <QDebug>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrent>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
@@ -284,11 +286,15 @@ class EclipseGridImportPagePrivate
 {
     explicit EclipseGridImportPagePrivate(EclipseGridImportPage* q);
     void updateWidget();
+    void importEclipseFiles();
+    void importEclipseFile(const QPair<QFileInfo, int>&);
 
     Q_DECLARE_PUBLIC(EclipseGridImportPage)
     EclipseGridImportPage* q_ptr;
     std::unique_ptr<Ui::EclipseGridImportPage> m_ui;
+    QHash<QString, QVector<QString> > m_eclipseGridsErros;
     QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_eclipseGrids;
+    QMutex m_mutexEclipseGrids;
     bool m_eclipseFilesImported;
 };
 
@@ -311,13 +317,15 @@ EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage
 
 void EclipseGridImportPagePrivate::updateWidget()
 {
+    importEclipseFiles();
+
     Q_Q(EclipseGridImportPage);
 
     m_ui->fileTreeWidget->clear();
 
     QList<QString> dirs = m_eclipseGrids.keys();
     std::sort(dirs.begin(), dirs.end());
-    m_eclipseFilesImported = true;
+    //m_eclipseFilesImported = true;
 
     for (int i = 0, countI = dirs.size(); i < countI; ++i) {
 
@@ -334,14 +342,15 @@ void EclipseGridImportPagePrivate::updateWidget()
             QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem({fileName});
             topLevelItem->addChild(treeWidgetItem);
 
-            QFileInfo fileInfo;
-            fileInfo.setFile(dir, fileName);
+//            QFileInfo fileInfo;
+//            fileInfo.setFile(dir, fileName);
 
-            EclipseGridReader reader(fileInfo.filePath());
-            QString error;
-            const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
+            //EclipseGridReader reader(fileInfo.filePath());
+            const QString& error = m_eclipseGridsErros[dir][j];
+            const std::shared_ptr<EclipseGrid>& eclipseGrid = m_eclipseGrids[dir][j].second;
+            //const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
             if (error.isEmpty()) {
-                m_eclipseGrids[dir][j].second = eclipseGrid;
+                //m_eclipseGrids[dir][j].second = eclipseGrid;
                 treeWidgetItem->setText(MESSAGE_COLUMN, ECLIPSE_FILE_IMPORTED);
 
                 const QString text = QLatin1String("X: ") + QString::number(eclipseGrid->numberOfCellsInX()) +
@@ -483,6 +492,72 @@ void EclipseGridImportPagePrivate::updateWidget()
     Q_EMIT q->completeChanged();
 }
 
+void EclipseGridImportPagePrivate::importEclipseFile(const QPair<QFileInfo, int>& fileInfoAndIndex)
+{
+    const QFileInfo& fileInfo = fileInfoAndIndex.first;
+    const int& j = fileInfoAndIndex.second;
+    const QString& dir = fileInfo.dir().path();
+
+    QString error;
+    EclipseGridReader reader(fileInfo.filePath());
+    const std::shared_ptr<EclipseGrid>& eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
+
+    m_mutexEclipseGrids.lock();
+
+        m_eclipseGrids[dir][j].second = eclipseGrid;
+
+        if (!error.isEmpty())
+        {
+            m_eclipseGridsErros[dir][j] = error;
+            m_eclipseFilesImported = false;
+        }
+
+    m_mutexEclipseGrids.unlock();
+}
+
+void EclipseGridImportPagePrivate::importEclipseFiles()
+{
+    QList<QString> dirs = m_eclipseGrids.keys();
+    std::sort(dirs.begin(), dirs.end());
+    m_eclipseFilesImported = true;
+
+    QVector<QPair<QFileInfo, int>> fileInfosForImport;
+
+    for (int i = 0, countI = dirs.size(); i < countI; ++i) {
+
+        const QString& dir = dirs.at(i);
+
+        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_eclipseGrids.value(dir);
+
+        for (int j = 0, countJ = baseFileNames.size(); j < countJ; ++j) {
+            const QString& fileName = baseFileNames.at(j).first;
+
+            QFileInfo fileInfo;
+            fileInfo.setFile(dir, fileName);
+
+            fileInfosForImport.push_back(QPair<QFileInfo, int>(fileInfo, j));
+        }
+    }
+
+    QProgressDialog dialog("Importing...", nullptr, 0, 100);
+    dialog.setWindowTitle("Importing Files");
+    dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowCloseButtonHint);
+
+    QFutureWatcher<void> futureWatcher;
+    QObject::connect(&futureWatcher, &QFutureWatcher<void>::finished, &dialog, &QProgressDialog::reset);
+    QObject::connect(&dialog, &QProgressDialog::canceled, &futureWatcher, &QFutureWatcher<void>::cancel);
+    QObject::connect(&futureWatcher,  &QFutureWatcher<void>::progressRangeChanged, &dialog, &QProgressDialog::setRange);
+    QObject::connect(&futureWatcher, &QFutureWatcher<void>::progressValueChanged,  &dialog, &QProgressDialog::setValue);
+
+    futureWatcher.setFuture(QtConcurrent::map(fileInfosForImport,
+                                              [this](const QPair<QFileInfo, int>& fileInfoAndIndex) {
+                                                  importEclipseFile(fileInfoAndIndex);
+                                              }));
+
+    dialog.exec();
+    futureWatcher.waitForFinished();
+}
+
 /*------------------------------------------------------------------------------------------------------------------------*/
 
 EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
@@ -528,12 +603,14 @@ void EclipseGridImportPage::initializePage()
 {
     Q_D(EclipseGridImportPage);
     d->m_eclipseGrids.clear();
+    d->m_eclipseGridsErros.clear();
     const QHash<QString, QSet<QString>> fileNames = field(INPUT_FILES_FIELD).value<QHash<QString, QSet<QString>>>();
 
     const QList<QString> dirs = fileNames.keys();
     for (const QString& dir : dirs) {
         const QSet<QString> files = fileNames.value(dir);
         for (const QString& file : files) {
+            d->m_eclipseGridsErros[dir].push_back("");
             d->m_eclipseGrids[dir].push_back(QPair<QString, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>>(file, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>()));
         }
     }
@@ -913,10 +990,6 @@ void SegyCreationPage::process()
         }
 
         emit progressUpdated(5);
-        if (m_progressDialog->wasCanceled())
-        {
-            emit processFinished();
-        }
 
         const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
@@ -927,10 +1000,6 @@ void SegyCreationPage::process()
             );
 
         emit progressUpdated(25);
-        if (m_progressDialog->wasCanceled())
-        {
-            emit processFinished();
-        }
 
         ConvertRegularGridCalculator convertGrid(undefinedLithology);
         for (const auto &item : d->m_lithologies)

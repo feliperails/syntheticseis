@@ -823,10 +823,62 @@ void SegyCreationPagePrivate::removeRow(const int row)
     }
 }
 
+Worker::Worker(SegyCreationPage* segyCreationPage) : m_segyCreationPage(segyCreationPage)
+{
+    connect(m_segyCreationPage, &SegyCreationPage::progressUpdated, this, &Worker::progressUpdated);
+    connect(m_segyCreationPage, &SegyCreationPage::processFinished, this, &Worker::finished);
+}
+
+void Worker::run()
+{
+    m_segyCreationPage->process();
+}
+
 SegyCreationPage::SegyCreationPage(QWidget* parent)
     : QWizardPage(parent),
-      d_ptr(new SegyCreationPagePrivate(this))
+        m_processThread(nullptr),
+        m_progressDialog(nullptr),
+        m_processWorker(nullptr),
+        d_ptr(new SegyCreationPagePrivate(this))
 {
+}
+
+SegyCreationPage::~SegyCreationPage()
+{
+}
+
+void SegyCreationPage::initProcessThread()
+{
+    m_processThread = new QThread();
+    m_processWorker = new Worker(this);
+    m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+    m_progressDialog->setWindowTitle("Processing");
+    m_progressDialog->setWindowModality(Qt::WindowModal);
+    m_progressDialog->setMinimumDuration(0);
+    m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+    connect(m_processWorker, &Worker::progressUpdated, m_progressDialog, &QProgressDialog::setValue);
+    connect(m_processWorker, &Worker::finished, m_progressDialog, &QProgressDialog::reset);
+    connect(m_processWorker, &Worker::finished, m_processThread, &QThread::quit);
+    connect(m_progressDialog, &QProgressDialog::canceled, m_processThread, &QThread::quit);
+    connect(m_processThread, &QThread::finished, m_processWorker, &QObject::deleteLater);
+    connect(m_processThread, &QThread::finished, m_processThread, &QThread::deleteLater);
+    connect(m_processThread, &QThread::finished, m_progressDialog, &QProgressDialog::deleteLater);
+    connect(m_processThread, &QThread::finished, this, &SegyCreationPage::showProcessMessage);
+
+    m_processWorker->moveToThread(m_processThread);
+}
+
+void SegyCreationPage::showProcessMessage()
+{
+    if (m_processMessage.first == QMessageBox::Warning)
+    {
+        QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), m_processMessage.second, QMessageBox::NoButton);
+    }
+    else if (m_processMessage.first == QMessageBox::Information)
+    {
+        QMessageBox::information(QApplication::activeWindow(), tr("SyntheticSeis - Success"), m_processMessage.second, QMessageBox::NoButton);
+    }
 }
 
 bool SegyCreationPage::isComplete() const
@@ -839,7 +891,7 @@ bool SegyCreationPage::isComplete() const
                !d->m_ui->depthAmplitudeFileNameLineEdit->text().isEmpty());
 }
 
-bool SegyCreationPage::validatePage()
+void SegyCreationPage::process()
 {
     Q_D(SegyCreationPage);
 
@@ -860,13 +912,25 @@ bool SegyCreationPage::validatePage()
             allVolumes.insert(allVolumes.end(), volumes.begin(), volumes.end());
         }
 
+        emit progressUpdated(5);
+        if (m_progressDialog->wasCanceled())
+        {
+            emit processFinished();
+        }
+
         const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
         VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
         auto regularGridInMeters = volumeToRegularGrid.convertVolumesToRegularGrid(
             allVolumes, minimumRectangle, rotateResult->minimumZ, rotateResult->maximumZ
-        );
+            );
+
+        emit progressUpdated(25);
+        if (m_progressDialog->wasCanceled())
+        {
+            emit processFinished();
+        }
 
         ConvertRegularGridCalculator convertGrid(undefinedLithology);
         for (const auto &item : d->m_lithologies)
@@ -883,15 +947,17 @@ bool SegyCreationPage::validatePage()
         rickerWaveletCalculator.setStep(waveletStep);
         const auto wavelet = rickerWaveletCalculator.extract();
 
+        emit progressUpdated(40);
+
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())
         {
             RegularGrid<int> lithologyRegularGrid(
-                    regularGridInSeconds.getNumberOfCellsInX(), regularGridInSeconds.getNumberOfCellsInY(), regularGridInSeconds.getNumberOfCellsInZ(),
-                    regularGridInSeconds.getCellSizeInX(), regularGridInSeconds.getCellSizeInY(), regularGridInSeconds.getCellSizeInZ(),
-                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
-                    regularGridInSeconds.getRectanglePoints(), regularGridInSeconds.getZBottom(), regularGridInSeconds.getZTop(),
-                    0, 0
+                regularGridInSeconds.getNumberOfCellsInX(), regularGridInSeconds.getNumberOfCellsInY(), regularGridInSeconds.getNumberOfCellsInZ(),
+                regularGridInSeconds.getCellSizeInX(), regularGridInSeconds.getCellSizeInY(), regularGridInSeconds.getCellSizeInZ(),
+                EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
+                regularGridInSeconds.getRectanglePoints(), regularGridInSeconds.getZBottom(), regularGridInSeconds.getZTop(),
+                0, 0
                 );
             auto &data = lithologyRegularGrid.getData();
             for (size_t i = 0; i < regularGridInSeconds.getNumberOfCellsInX(); ++i)
@@ -912,6 +978,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(50);
+
         ImpedanceRegularGridCalculator impedanceCalculator(undefinedLithology);
         for (const auto &item : d->m_lithologies)
         {
@@ -929,6 +997,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(60);
+
         ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
         auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
         impedanceRegularGrid.reset();
@@ -943,6 +1013,8 @@ bool SegyCreationPage::validatePage()
             SegyWriter segyWriter(reflectivityPath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
+
+        emit progressUpdated(75);
 
         ConvolutionRegularGridCalculator convolutionCalculator;
         auto amplitudeRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
@@ -959,6 +1031,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(90);
+
         const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
         if (!depthAmplitudePath.isEmpty())
         {
@@ -971,13 +1045,33 @@ bool SegyCreationPage::validatePage()
             SegyWriter segyWriter(depthAmplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
+
+        m_processMessage.first = QMessageBox::Information;
+        m_processMessage.second = "Process completed successfully.";
+
+        emit progressUpdated(100);
     }
     catch (std::exception &e)
     {
-        QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), e.what(), QMessageBox::NoButton);
+        m_processMessage.first = QMessageBox::Warning;
+        m_processMessage.second = e.what();
+
+        emit progressUpdated(100);
     }
 
-    return true;
+    emit processFinished();
+}
+
+bool SegyCreationPage::validatePage()
+{
+    initProcessThread();
+    m_progressDialog->show();
+
+    connect(m_processThread, &QThread::started, m_processWorker, &Worker::run);
+    m_processThread->start();
+
+    // Returns false to not close the dialog
+    return false;
 }
 
 void SegyCreationPage::initializePage()

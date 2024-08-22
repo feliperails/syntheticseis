@@ -346,7 +346,7 @@ void EclipseGridImportPagePrivate::updateWidget()
 
                 const QString text = QLatin1String("X: ") + QString::number(eclipseGrid->numberOfCellsInX()) +
                         QLatin1String(", Y: ") + QString::number(eclipseGrid->numberOfCellsInY()) +
-                        QLatin1String(", Z: ") + QString::number(eclipseGrid->numberOfCellsInY());
+                        QLatin1String(", Z: ") + QString::number(eclipseGrid->numberOfCellsInZ());
 
                 treeWidgetItem->setText(DIMENSIONS_COLUMN, text);
             } else {
@@ -391,7 +391,9 @@ void EclipseGridImportPagePrivate::updateWidget()
                     grdFaciesAssociationSurfaceWriter.write(*result->getFaciesAssociationSurface());
                 }
             });
-
+            m_ui->regularGridXDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInX());
+            m_ui->regularGridYDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInY());
+            m_ui->regularGridZDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInZ());
             m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_MAIN_SURFACE_COLUMN, exportSurfaceAction);
             // END EXPORT MAIN SURFACE
 
@@ -804,7 +806,11 @@ bool SegyCreationPage::validatePage()
         }
         auto regularGridInSeconds = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
-        auto waveletStep = regularGridInSeconds.getCellSizeInZ() * 1000;
+        // filling lithologies
+        const auto fillLithology = std::make_shared<Lithology>(-1, "undefined", 2500, 1);
+        auto filledRegularGridInSeconds = convertGrid.fillLithologyTimeGrid(regularGridInSeconds, fillLithology);
+
+        auto waveletStep = filledRegularGridInSeconds.getCellSizeInZ() * 1000;
         std::cout << "Wavelet Step: " << waveletStep << std::endl;
 
         RickerWaveletCalculator rickerWaveletCalculator;
@@ -816,20 +822,20 @@ bool SegyCreationPage::validatePage()
         if (!lithologyPath.isEmpty())
         {
             RegularGrid<int> lithologyRegularGrid(
-                    regularGridInSeconds.getNumberOfCellsInX(), regularGridInSeconds.getNumberOfCellsInY(), regularGridInSeconds.getNumberOfCellsInZ(),
-                    regularGridInSeconds.getCellSizeInX(), regularGridInSeconds.getCellSizeInY(), regularGridInSeconds.getCellSizeInZ(),
+                    filledRegularGridInSeconds.getNumberOfCellsInX(), filledRegularGridInSeconds.getNumberOfCellsInY(), filledRegularGridInSeconds.getNumberOfCellsInZ(),
+                    filledRegularGridInSeconds.getCellSizeInX(), filledRegularGridInSeconds.getCellSizeInY(), filledRegularGridInSeconds.getCellSizeInZ(),
                     EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
-                    regularGridInSeconds.getRectanglePoints(), regularGridInSeconds.getZBottom(), regularGridInSeconds.getZTop(),
+                    filledRegularGridInSeconds.getRectanglePoints(), filledRegularGridInSeconds.getZBottom(), filledRegularGridInSeconds.getZTop(),
                     0, 0
                 );
             auto &data = lithologyRegularGrid.getData();
-            for (size_t i = 0; i < regularGridInSeconds.getNumberOfCellsInX(); ++i)
+            for (size_t i = 0; i < filledRegularGridInSeconds.getNumberOfCellsInX(); ++i)
             {
-                for (size_t j = 0; j < regularGridInSeconds.getNumberOfCellsInY(); ++j)
+                for (size_t j = 0; j < filledRegularGridInSeconds.getNumberOfCellsInY(); ++j)
                 {
-                    for (size_t k = 0; k < regularGridInSeconds.getNumberOfCellsInZ(); ++k)
+                    for (size_t k = 0; k < filledRegularGridInSeconds.getNumberOfCellsInZ(); ++k)
                     {
-                        data[i][j][k] = regularGridInSeconds.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGridInSeconds.getData(i, j, k)->idLithology;
+                        data[i][j][k] = filledRegularGridInSeconds.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : filledRegularGridInSeconds.getData(i, j, k)->idLithology;
                     }
                 }
             }
@@ -846,7 +852,7 @@ bool SegyCreationPage::validatePage()
         {
             impedanceCalculator.addLithology(std::make_shared<Lithology>(item));
         }
-        auto impedanceRegularGrid = impedanceCalculator.execute(regularGridInSeconds);
+        auto impedanceRegularGrid = impedanceCalculator.execute(filledRegularGridInSeconds);
         const QString impedancePath = d->m_ui->impedanceFileNameLineEdit->text();
         if (!impedancePath.isEmpty())
         {

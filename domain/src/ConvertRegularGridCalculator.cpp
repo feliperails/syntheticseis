@@ -199,6 +199,110 @@ namespace domain {
         return depthGrid;
     }
 
+
+    RegularGrid<std::shared_ptr<geometry::Volume>> ConvertRegularGridCalculator::fillLithologyTimeGrid(
+        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology, const std::shared_ptr<Lithology>& lithologyToFill)
+    {
+        size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
+        size_t numberOfCellsInY = timeGridLithology.getNumberOfCellsInY();
+        size_t numberOfCellsInZ = timeGridLithology.getNumberOfCellsInZ();
+        std::cout << "************************************" << std::endl;
+        std::cout << numberOfCellsInX << std::endl;
+        std::cout << numberOfCellsInY << std::endl;
+        std::cout << numberOfCellsInZ << std::endl;
+        std::cout << "************************************" << std::endl;
+
+        auto timeGridData = timeGridLithology.getData();
+        // if the user defined the lithology value to fill the gaps
+        if (lithologyToFill->getId() != m_undefinedLithology->getId())
+        {
+            std::cout << "filling with fixed lithology" << std::endl;
+            for (size_t x = 0; x < 1; ++x) //numberOfCellsInX; ++x)
+            {
+                for (size_t y = 0; y < 1; ++y) //numberOfCellsInY; ++y)
+                {
+                    for (size_t z = 0; z < numberOfCellsInZ; ++z)
+                    {
+                        if (timeGridData[x][y][z] != nullptr)
+                        {
+                            std::cout << timeGridData[x][y][z] << std::endl;
+                            const auto idLithology = timeGridData[x][y][z]->idLithology;
+                            const auto &lithology = *m_lithologies[idLithology];
+                            if (lithology.getId() == m_undefinedLithology->getId())
+                            {
+                                std::cout << timeGridData[x][y][z]->idLithology << "  " << lithologyToFill->getId() << std::endl;
+                                timeGridData[x][y][z]->idLithology = lithologyToFill->getId();
+                            }
+                        }
+                        else
+                        {
+
+                            timeGridData[x][y][z]->idLithology = lithologyToFill->getId();
+                        }
+                    }
+                }
+            }
+        }
+        /*
+        else
+        {
+            for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
+            {
+                const auto x = static_cast<size_t>(xInt);
+                for (size_t y = 0; y < numberOfCellsInY; ++y)
+                {
+                    // filling bottom part with lithology
+                    std::shared_ptr<Lithology> BottomLithology = nullptr;
+                    auto timeVector = timeGridData[x][y];
+                    for (size_t z = 0; z < numberOfCellsInZ; ++z)
+                    {
+                        const auto idLithology = timeVector[z]->idLithology;
+                        const auto &lithology = *m_lithologies[idLithology];
+                        if (BottomLithology->getId() != m_undefinedLithology->getId())
+                        {
+                            if (lithology.getId() == m_undefinedLithology->getId())
+                            {
+                                timeGridData[x][y][z]->idLithology = BottomLithology->getId();
+                            }
+                            else
+                            {
+                                BottomLithology = m_lithologies[timeGridData[x][y][z]->idLithology];
+                            }
+                        }
+                        else
+                        {
+                            BottomLithology = m_lithologies[timeGridData[x][y][z]->idLithology];
+                        }
+                    }
+                    // filling top part with lithology
+                    std::shared_ptr<Lithology> TopLithology = nullptr;
+                    for (size_t z = numberOfCellsInZ; z > 0; --z)
+                    {
+                        const auto idLithology = timeVector[z]->idLithology;
+                        const auto &lithology = *m_lithologies[idLithology];
+                        if (TopLithology->getId() != m_undefinedLithology->getId())
+                        {
+                            if (lithology.getId() == m_undefinedLithology->getId())
+                            {
+                                timeGridData[x][y][z]->idLithology = TopLithology->getId();
+                            }
+                            else
+                            {
+                                TopLithology = m_lithologies[timeGridData[x][y][z]->idLithology];
+                            }
+                        }
+                        else
+                        {
+                            TopLithology = m_lithologies[timeGridData[x][y][z]->idLithology];
+                        }
+                    }
+                }
+            }
+        }
+        */
+        return timeGridLithology;
+    }
+
     std::pair<double, double> ConvertRegularGridCalculator::computeMaxVelocityAndElapsedTime(RegularGrid <std::shared_ptr<geometry::Volume>> &metersGrid) {
         const size_t numberOfCellsInX = metersGrid.getNumberOfCellsInX();
         const size_t numberOfCellsInY = metersGrid.getNumberOfCellsInY();
@@ -264,7 +368,6 @@ namespace domain {
                 }
             }
         }
-
         return std::make_pair(maxVelocity, elapsedTime);
     }
 

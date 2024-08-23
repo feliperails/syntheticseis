@@ -807,7 +807,7 @@ bool SegyCreationPage::validatePage()
         auto regularGridInSeconds = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
         // filling lithologies
-        const auto fillLithology = std::make_shared<Lithology>(-1, "undefined", 2500, 1);
+        const auto fillLithology = std::make_shared<Lithology>(0, QLatin1String("undefined"), 2500.0, 1000.0);
         auto filledRegularGridInSeconds = convertGrid.fillLithologyTimeGrid(regularGridInSeconds, fillLithology);
 
         auto waveletStep = filledRegularGridInSeconds.getCellSizeInZ() * 1000;
@@ -897,7 +897,7 @@ bool SegyCreationPage::validatePage()
         const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
         if (!depthAmplitudePath.isEmpty())
         {
-            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(regularGridInSeconds, *amplitudeRegularGrid);
+            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(filledRegularGridInSeconds, *amplitudeRegularGrid);
 
             const QString hdf5Path = depthAmplitudePath + ".h5";
             RegularGridHdf5Storage<double> storage(hdf5Path, "data");

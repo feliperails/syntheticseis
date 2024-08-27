@@ -21,9 +21,23 @@ public:
 
     RegularGrid<double> fromZInSecondsToZInMeters(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
                                                                              RegularGrid<double> &timeGridTrace);
+
+    RegularGrid<std::shared_ptr<geometry::Volume>> fillLithologyKeepUndefinedTimeGrid(
+        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology);
+
+    RegularGrid<std::shared_ptr<geometry::Volume>> fillSingleLithologyTimeGrid(
+        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology, const std::shared_ptr<Lithology>& lithologyToFill);
+
+    RegularGrid<std::shared_ptr<geometry::Volume>> fillTopBottomLithologyTimeGrid(
+        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
+        const std::shared_ptr<Lithology>& topLithology,
+        const std::shared_ptr<Lithology>& bottomLithology);
+
     RegularGrid<std::shared_ptr<geometry::Volume>>
                         fillLithologyTimeGrid(RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
                         const std::shared_ptr<Lithology>& lithologyToFill);
+
+
 private:
     std::map<int, std::shared_ptr<Lithology>> m_lithologies;
     std::shared_ptr<Lithology> m_undefinedLithology;

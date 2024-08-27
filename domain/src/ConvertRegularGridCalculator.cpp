@@ -317,6 +317,7 @@ namespace domain {
                 }
             }
         }
+        timeGridLithology.setData(timeGridData);
         return timeGridLithology;
     }
 

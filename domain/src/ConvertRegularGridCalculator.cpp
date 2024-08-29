@@ -263,35 +263,8 @@ namespace domain {
             for (size_t y = 0; y < numberOfCellsInY; ++y)
             {
                 bool startFilling = false;
-                // filling bottom part with lithology
-                for (int z = numberOfCellsInZ - 1; z >= 0; --z)
-                {
-                    if (timeGridData[x][y][z] != nullptr)
-                    {
-                        const auto idLithology = timeGridData[x][y][z]->idLithology;
-                        const auto &lithology = *m_lithologies[idLithology];
-                        if (bottomLithology->getId() != m_undefinedLithology->getId())
-                        {
-                            if (lithology.getId() == m_undefinedLithology->getId())
-                            {
-                                timeGridData[x][y][z]->idLithology = bottomLithology->getId();
-                            }
-                        }
-                        startFilling = true;
-                    }
-                    else
-                    {
-                        if(startFilling == true && bottomLithology->getId() != m_undefinedLithology->getId())
-                        {
-                            const std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(bottomLithology->getId(), x, y));
-                            timeGridData[x][y][z] = fillVolume;
-                            timeGridData[x][y][z]->idLithology = bottomLithology->getId();
-                        }
-                    }
-                }
                 // filling top part with lithology
-                startFilling = false;
-                for (int z = 0; z < numberOfCellsInZ; ++z)
+                for (int z = numberOfCellsInZ - 1; z >= 0; --z)
                 {
                     if (timeGridData[x][y][z] != nullptr)
                     {
@@ -313,6 +286,33 @@ namespace domain {
                             const std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(topLithology->getId(), x, y));
                             timeGridData[x][y][z] = fillVolume;
                             timeGridData[x][y][z]->idLithology = topLithology->getId();
+                        }
+                    }
+                }
+                // filling bottom part with lithology
+                startFilling = false;
+                for (int z = 0; z < numberOfCellsInZ; ++z)
+                {
+                    if (timeGridData[x][y][z] != nullptr)
+                    {
+                        const auto idLithology = timeGridData[x][y][z]->idLithology;
+                        const auto &lithology = *m_lithologies[idLithology];
+                        if (bottomLithology->getId() != m_undefinedLithology->getId())
+                        {
+                            if (lithology.getId() == m_undefinedLithology->getId())
+                            {
+                                timeGridData[x][y][z]->idLithology = bottomLithology->getId();
+                            }
+                        }
+                        startFilling = true;
+                    }
+                    else
+                    {
+                        if(startFilling == true && bottomLithology->getId() != m_undefinedLithology->getId())
+                        {
+                            const std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(bottomLithology->getId(), x, y));
+                            timeGridData[x][y][z] = fillVolume;
+                            timeGridData[x][y][z]->idLithology = bottomLithology->getId();
                         }
                     }
                 }

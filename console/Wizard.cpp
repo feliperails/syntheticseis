@@ -835,20 +835,28 @@ bool SegyCreationPage::validatePage()
         if (!lithologyPath.isEmpty())
         {
             RegularGrid<int> lithologyRegularGrid(
-                    filledRegularGridInSeconds.getNumberOfCellsInX(), filledRegularGridInSeconds.getNumberOfCellsInY(), filledRegularGridInSeconds.getNumberOfCellsInZ(),
-                    filledRegularGridInSeconds.getCellSizeInX(), filledRegularGridInSeconds.getCellSizeInY(), filledRegularGridInSeconds.getCellSizeInZ(),
-                    EnumUnit::Meters, EnumUnit::Meters, EnumUnit::Seconds,
-                    filledRegularGridInSeconds.getRectanglePoints(), filledRegularGridInSeconds.getZBottom(), filledRegularGridInSeconds.getZTop(),
+                    regularGridInMeters.getNumberOfCellsInX(),
+                    regularGridInMeters.getNumberOfCellsInY(),
+                    regularGridInMeters.getNumberOfCellsInZ(),
+                    regularGridInMeters.getCellSizeInX(),
+                    regularGridInMeters.getCellSizeInY(),
+                    regularGridInMeters.getCellSizeInZ(),
+                    regularGridInMeters.getUnitInX(),
+                    regularGridInMeters.getUnitInY(),
+                    regularGridInMeters.getUnitInZ(),
+                    regularGridInMeters.getRectanglePoints(),
+                    regularGridInMeters.getZBottom(),
+                    regularGridInMeters.getZTop(),
                     0, 0
                 );
             auto &data = lithologyRegularGrid.getData();
-            for (size_t i = 0; i < filledRegularGridInSeconds.getNumberOfCellsInX(); ++i)
+            for (size_t i = 0; i < regularGridInMeters.getNumberOfCellsInX(); ++i)
             {
-                for (size_t j = 0; j < filledRegularGridInSeconds.getNumberOfCellsInY(); ++j)
+                for (size_t j = 0; j < regularGridInMeters.getNumberOfCellsInY(); ++j)
                 {
-                    for (size_t k = 0; k < filledRegularGridInSeconds.getNumberOfCellsInZ(); ++k)
+                    for (size_t k = 0; k < regularGridInMeters.getNumberOfCellsInZ(); ++k)
                     {
-                        data[i][j][k] = filledRegularGridInSeconds.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : filledRegularGridInSeconds.getData(i, j, k)->idLithology;
+                        data[i][j][k] = regularGridInMeters.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGridInMeters.getData(i, j, k)->idLithology;
                     }
                 }
             }

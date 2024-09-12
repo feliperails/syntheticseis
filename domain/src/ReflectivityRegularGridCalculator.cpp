@@ -49,7 +49,7 @@ std::shared_ptr<RegularGrid<double>> ReflectivityRegularGridCalculator::execute(
                 const auto impedance1 = dataImpedance[x][y][z];
                 if (z == 0)
                 {
-                    data[x][y][z] = (m_undefinedImpedance - impedance1) / (m_undefinedImpedance + impedance1);
+                    data[x][y][z] =  0.0; //(m_undefinedImpedance - impedance1) / (m_undefinedImpedance + impedance1);
                 }
                 else
                 {

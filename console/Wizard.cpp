@@ -827,9 +827,11 @@ bool SegyCreationPage::validatePage()
         std::cout << "Wavelet Step: " << waveletStep << std::endl;
 
         RickerWaveletCalculator rickerWaveletCalculator;
-        rickerWaveletCalculator.setFrequency(25);
+        rickerWaveletCalculator.setFrequency(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value());
         rickerWaveletCalculator.setStep(waveletStep);
         const auto wavelet = rickerWaveletCalculator.extract();
+
+        std::cout << "Frequency: " << rickerWaveletCalculator.getFrequency() << std::endl;
 
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())

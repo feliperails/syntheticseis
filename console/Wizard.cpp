@@ -6,6 +6,8 @@
 #include "ui_EclipseGridImportPage.h"
 
 #include <QDebug>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrent>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QMessageBox>
@@ -284,11 +286,15 @@ class EclipseGridImportPagePrivate
 {
     explicit EclipseGridImportPagePrivate(EclipseGridImportPage* q);
     void updateWidget();
+    void importEclipseFiles();
+    void importEclipseFile(const QPair<QFileInfo, int>&);
 
     Q_DECLARE_PUBLIC(EclipseGridImportPage)
     EclipseGridImportPage* q_ptr;
     std::unique_ptr<Ui::EclipseGridImportPage> m_ui;
+    QHash<QString, QVector<QString> > m_eclipseGridsErros;
     QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_eclipseGrids;
+    QMutex m_mutexEclipseGrids;
     bool m_eclipseFilesImported;
 };
 
@@ -311,13 +317,15 @@ EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage
 
 void EclipseGridImportPagePrivate::updateWidget()
 {
+    importEclipseFiles();
+
     Q_Q(EclipseGridImportPage);
 
     m_ui->fileTreeWidget->clear();
 
     QList<QString> dirs = m_eclipseGrids.keys();
     std::sort(dirs.begin(), dirs.end());
-    m_eclipseFilesImported = true;
+    //m_eclipseFilesImported = true;
 
     for (int i = 0, countI = dirs.size(); i < countI; ++i) {
 
@@ -334,14 +342,15 @@ void EclipseGridImportPagePrivate::updateWidget()
             QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem({fileName});
             topLevelItem->addChild(treeWidgetItem);
 
-            QFileInfo fileInfo;
-            fileInfo.setFile(dir, fileName);
+//            QFileInfo fileInfo;
+//            fileInfo.setFile(dir, fileName);
 
-            EclipseGridReader reader(fileInfo.filePath());
-            QString error;
-            const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
+            //EclipseGridReader reader(fileInfo.filePath());
+            const QString& error = m_eclipseGridsErros[dir][j];
+            const std::shared_ptr<EclipseGrid>& eclipseGrid = m_eclipseGrids[dir][j].second;
+            //const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
             if (error.isEmpty()) {
-                m_eclipseGrids[dir][j].second = eclipseGrid;
+                //m_eclipseGrids[dir][j].second = eclipseGrid;
                 treeWidgetItem->setText(MESSAGE_COLUMN, ECLIPSE_FILE_IMPORTED);
 
                 const QString text = QLatin1String("X: ") + QString::number(eclipseGrid->numberOfCellsInX()) +
@@ -485,6 +494,72 @@ void EclipseGridImportPagePrivate::updateWidget()
     Q_EMIT q->completeChanged();
 }
 
+void EclipseGridImportPagePrivate::importEclipseFile(const QPair<QFileInfo, int>& fileInfoAndIndex)
+{
+    const QFileInfo& fileInfo = fileInfoAndIndex.first;
+    const int& j = fileInfoAndIndex.second;
+    const QString& dir = fileInfo.dir().path();
+
+    QString error;
+    EclipseGridReader reader(fileInfo.filePath());
+    const std::shared_ptr<EclipseGrid>& eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
+
+    m_mutexEclipseGrids.lock();
+
+        m_eclipseGrids[dir][j].second = eclipseGrid;
+
+        if (!error.isEmpty())
+        {
+            m_eclipseGridsErros[dir][j] = error;
+            m_eclipseFilesImported = false;
+        }
+
+    m_mutexEclipseGrids.unlock();
+}
+
+void EclipseGridImportPagePrivate::importEclipseFiles()
+{
+    QList<QString> dirs = m_eclipseGrids.keys();
+    std::sort(dirs.begin(), dirs.end());
+    m_eclipseFilesImported = true;
+
+    QVector<QPair<QFileInfo, int>> fileInfosForImport;
+
+    for (int i = 0, countI = dirs.size(); i < countI; ++i) {
+
+        const QString& dir = dirs.at(i);
+
+        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_eclipseGrids.value(dir);
+
+        for (int j = 0, countJ = baseFileNames.size(); j < countJ; ++j) {
+            const QString& fileName = baseFileNames.at(j).first;
+
+            QFileInfo fileInfo;
+            fileInfo.setFile(dir, fileName);
+
+            fileInfosForImport.push_back(QPair<QFileInfo, int>(fileInfo, j));
+        }
+    }
+
+    QProgressDialog dialog("Importing...", nullptr, 0, 100);
+    dialog.setWindowTitle("Importing Files");
+    dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowCloseButtonHint);
+
+    QFutureWatcher<void> futureWatcher;
+    QObject::connect(&futureWatcher, &QFutureWatcher<void>::finished, &dialog, &QProgressDialog::reset);
+    QObject::connect(&dialog, &QProgressDialog::canceled, &futureWatcher, &QFutureWatcher<void>::cancel);
+    QObject::connect(&futureWatcher,  &QFutureWatcher<void>::progressRangeChanged, &dialog, &QProgressDialog::setRange);
+    QObject::connect(&futureWatcher, &QFutureWatcher<void>::progressValueChanged,  &dialog, &QProgressDialog::setValue);
+
+    futureWatcher.setFuture(QtConcurrent::map(fileInfosForImport,
+                                              [this](const QPair<QFileInfo, int>& fileInfoAndIndex) {
+                                                  importEclipseFile(fileInfoAndIndex);
+                                              }));
+
+    dialog.exec();
+    futureWatcher.waitForFinished();
+}
+
 /*------------------------------------------------------------------------------------------------------------------------*/
 
 EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
@@ -530,12 +605,14 @@ void EclipseGridImportPage::initializePage()
 {
     Q_D(EclipseGridImportPage);
     d->m_eclipseGrids.clear();
+    d->m_eclipseGridsErros.clear();
     const QHash<QString, QSet<QString>> fileNames = field(INPUT_FILES_FIELD).value<QHash<QString, QSet<QString>>>();
 
     const QList<QString> dirs = fileNames.keys();
     for (const QString& dir : dirs) {
         const QSet<QString> files = fileNames.value(dir);
         for (const QString& file : files) {
+            d->m_eclipseGridsErros[dir].push_back("");
             d->m_eclipseGrids[dir].push_back(QPair<QString, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>>(file, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>()));
         }
     }
@@ -563,6 +640,7 @@ class SegyCreationPagePrivate
     void updateWidget();
     void showWidgetToAddLithology();
     void removeRow(const int row);
+    int getRowVelocityTableWidget(QWidget* widget);
 
     Q_DECLARE_PUBLIC(SegyCreationPage)
     SegyCreationPage* q_ptr;
@@ -677,6 +755,22 @@ void SegyCreationPagePrivate::showWidgetToAddLithology()
     });
 }
 
+int SegyCreationPagePrivate::getRowVelocityTableWidget(QWidget* widget)
+{
+    for (int row = 0; row < m_ui->velocityTableWidget->rowCount(); ++row)
+    {
+        for (int col = 0; col < m_ui->velocityTableWidget->columnCount(); ++col)
+        {
+            if (m_ui->velocityTableWidget->cellWidget(row, col) == widget)
+            {
+                return row;
+            }
+        }
+    }
+
+    return -1;
+}
+
 void SegyCreationPagePrivate::updateWidget()
 {
     Q_Q(SegyCreationPage);
@@ -690,6 +784,8 @@ void SegyCreationPagePrivate::updateWidget()
         }
     }
 
+    QSignalBlocker signalBlocker(m_ui->velocityTableWidget);
+
     while(m_ui->velocityTableWidget->rowCount() != 0) {
         m_ui->velocityTableWidget->removeRow(0);
     }
@@ -700,10 +796,29 @@ void SegyCreationPagePrivate::updateWidget()
     for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row) {
 
         QTableWidgetItem* id = new QTableWidgetItem(QString::number(m_lithologies.at(row).getId()));
-        QTableWidgetItem* name = new QTableWidgetItem(m_lithologies.at(row).getName());
+        id->setFlags(id->flags() & ~Qt::ItemIsEditable);
+        QTableWidgetItem* name = new QTableWidgetItem();
+        name->setFlags(name->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* velocity = new QTableWidgetItem(QString::number(m_lithologies.at(row).getVelocity()));
+        velocity->setFlags(velocity->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* density = new QTableWidgetItem(QString::number(m_lithologies.at(row).getDensity()));
+        density->setFlags(density->flags() & ~Qt::ItemIsEditable);
         QTableWidgetItem* removeAction = new QTableWidgetItem(REMOVE_ACTION_MESSAGE);
+        removeAction->setFlags(density->flags() & ~Qt::ItemIsEditable);
+
+        QSpinBox* idEditor = new QSpinBox(q_ptr);
+        idEditor->setMaximum(INT_MAX);
+        idEditor->setValue(m_lithologies[row].getId());
+        QLineEdit* nameEditor = new QLineEdit(q_ptr);
+        nameEditor->setText(m_lithologies[row].getName());
+        QDoubleSpinBox* velocityEditor = new QDoubleSpinBox(q_ptr);
+        velocityEditor->setMaximum(DBL_MAX);
+        velocityEditor->setValue(m_lithologies[row].getVelocity());
+        QDoubleSpinBox* densityEditor = new QDoubleSpinBox(q_ptr);
+        densityEditor->setMaximum(DBL_MAX);
+        densityEditor->setValue(m_lithologies[row].getDensity());
+        QPushButton* removeButton = new QPushButton(q_ptr);
+        removeButton->setIcon(QIcon(QLatin1String(":/remove")));
 
         m_ui->velocityTableWidget->setItem(row, 0, id);
         m_ui->velocityTableWidget->setItem(row, 1, name);
@@ -711,24 +826,57 @@ void SegyCreationPagePrivate::updateWidget()
         m_ui->velocityTableWidget->setItem(row, 3, density);
         m_ui->velocityTableWidget->setItem(row, 4, removeAction);
 
-        QPushButton* removeButton = new QPushButton(q_ptr);
-        removeButton->setIcon(QIcon(QLatin1String(":/remove")));
+        m_ui->velocityTableWidget->setCellWidget(row, 0, idEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 1, nameEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 2, velocityEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 3, densityEditor);
         m_ui->velocityTableWidget->setCellWidget(row, 4, removeButton);
 
-        QObject::connect(removeButton, &QPushButton::clicked, [this, row](const bool){
-            removeRow(row);
-            // removing lithology from lithologies
-            int count = -1, remove = 0;
-            for(const Lithology& litho : qAsConst(m_lithologies)){
-                count++;
-                if(litho.getId() == m_lithologies.at(row).getId() ||
-                    litho.getName() == m_lithologies.at(row).getName()){
-                    remove = 1;
-                    break;
-                }
+        QObject::connect(idEditor, QOverload<int>::of(&QSpinBox::valueChanged), [this, idEditor](const int& value) {
+            const int& row = getRowVelocityTableWidget(idEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setId(value);
             }
-            std::cout << count << std::endl;
-            if(remove == 1) m_lithologies.remove(count);
+        });
+
+        QObject::connect(nameEditor, &QLineEdit::textChanged, [this, nameEditor](const QString& value) {
+            const int& row = getRowVelocityTableWidget(nameEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setName(value);
+            }
+        });
+
+        QObject::connect(velocityEditor, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this, velocityEditor](const double& value) {
+            const int& row = getRowVelocityTableWidget(velocityEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setVelocity(value);
+            }
+        });
+
+        QObject::connect(densityEditor, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this, densityEditor](const double& value) {
+            const int& row = getRowVelocityTableWidget(densityEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setDensity(value);
+            }
+        });
+
+        QObject::connect(removeButton, &QPushButton::clicked, [this, removeButton](const bool) {
+            const int& row = getRowVelocityTableWidget(removeButton);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                // removing lithology from lithologies
+                removeRow(row);
+                m_lithologies.remove(row);
+            }
         });
     }
 
@@ -751,14 +899,65 @@ void SegyCreationPagePrivate::removeRow(const int row)
 
     if (row < m_ui->velocityTableWidget->rowCount()) {
         m_ui->velocityTableWidget->removeRow(row);
-
     }
+}
+
+Worker::Worker(SegyCreationPage* segyCreationPage) : m_segyCreationPage(segyCreationPage)
+{
+    connect(m_segyCreationPage, &SegyCreationPage::progressUpdated, this, &Worker::progressUpdated);
+    connect(m_segyCreationPage, &SegyCreationPage::processFinished, this, &Worker::finished);
+}
+
+void Worker::run()
+{
+    m_segyCreationPage->process();
 }
 
 SegyCreationPage::SegyCreationPage(QWidget* parent)
     : QWizardPage(parent),
-      d_ptr(new SegyCreationPagePrivate(this))
+        m_processThread(nullptr),
+        m_progressDialog(nullptr),
+        m_processWorker(nullptr),
+        d_ptr(new SegyCreationPagePrivate(this))
 {
+}
+
+SegyCreationPage::~SegyCreationPage()
+{
+}
+
+void SegyCreationPage::initProcessThread()
+{
+    m_processThread = new QThread();
+    m_processWorker = new Worker(this);
+    m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+    m_progressDialog->setWindowTitle("Processing");
+    m_progressDialog->setWindowModality(Qt::WindowModal);
+    m_progressDialog->setMinimumDuration(0);
+    m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+    connect(m_processWorker, &Worker::progressUpdated, m_progressDialog, &QProgressDialog::setValue);
+    connect(m_processWorker, &Worker::finished, m_progressDialog, &QProgressDialog::reset);
+    connect(m_processWorker, &Worker::finished, m_processThread, &QThread::quit);
+    connect(m_progressDialog, &QProgressDialog::canceled, m_processThread, &QThread::quit);
+    connect(m_processThread, &QThread::finished, m_processWorker, &QObject::deleteLater);
+    connect(m_processThread, &QThread::finished, m_processThread, &QThread::deleteLater);
+    connect(m_processThread, &QThread::finished, m_progressDialog, &QProgressDialog::deleteLater);
+    connect(m_processThread, &QThread::finished, this, &SegyCreationPage::showProcessMessage);
+
+    m_processWorker->moveToThread(m_processThread);
+}
+
+void SegyCreationPage::showProcessMessage()
+{
+    if (m_processMessage.first == QMessageBox::Warning)
+    {
+        QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), m_processMessage.second, QMessageBox::NoButton);
+    }
+    else if (m_processMessage.first == QMessageBox::Information)
+    {
+        QMessageBox::information(QApplication::activeWindow(), tr("SyntheticSeis - Success"), m_processMessage.second, QMessageBox::NoButton);
+    }
 }
 
 bool SegyCreationPage::isComplete() const
@@ -767,10 +966,11 @@ bool SegyCreationPage::isComplete() const
 
     return !d->m_lithologies.isEmpty()
             && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
-            && !d->m_ui->amplitudeFileNameLineEdit->text().isEmpty();
+            && (!d->m_ui->amplitudeFileNameLineEdit->text().isEmpty() ||
+               !d->m_ui->depthAmplitudeFileNameLineEdit->text().isEmpty());
 }
 
-bool SegyCreationPage::validatePage()
+void SegyCreationPage::process()
 {
     Q_D(SegyCreationPage);
 
@@ -791,13 +991,17 @@ bool SegyCreationPage::validatePage()
             allVolumes.insert(allVolumes.end(), volumes.begin(), volumes.end());
         }
 
+        emit progressUpdated(5);
+
         const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
         VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
         auto regularGridInMeters = volumeToRegularGrid.convertVolumesToRegularGrid(
             allVolumes, minimumRectangle, rotateResult->minimumZ, rotateResult->maximumZ
-        );
+            );
+
+        emit progressUpdated(25);
 
         ConvertRegularGridCalculator convertGrid(undefinedLithology);
         for (const auto &item : d->m_lithologies)
@@ -830,6 +1034,8 @@ bool SegyCreationPage::validatePage()
         rickerWaveletCalculator.setFrequency(25);
         rickerWaveletCalculator.setStep(waveletStep);
         const auto wavelet = rickerWaveletCalculator.extract();
+
+        emit progressUpdated(40);
 
         const QString lithologyPath = d->m_ui->lithologyFileNameLineEdit->text();
         if (!lithologyPath.isEmpty())
@@ -868,6 +1074,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(50);
+
         ImpedanceRegularGridCalculator impedanceCalculator(undefinedLithology);
         for (const auto &item : d->m_lithologies)
         {
@@ -885,6 +1093,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(60);
+
         ReflectivityRegularGridCalculator reflectivityCalculator(undefinedImpedance);
         auto reflectivityRegularGrid = reflectivityCalculator.execute(*impedanceRegularGrid);
         impedanceRegularGrid.reset();
@@ -899,6 +1109,8 @@ bool SegyCreationPage::validatePage()
             SegyWriter segyWriter(reflectivityPath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
+
+        emit progressUpdated(75);
 
         ConvolutionRegularGridCalculator convolutionCalculator;
         auto amplitudeRegularGrid = convolutionCalculator.execute(*reflectivityRegularGrid, *wavelet);
@@ -915,6 +1127,8 @@ bool SegyCreationPage::validatePage()
             segyWriter.writeByHdf5File(hdf5Path);
         }
 
+        emit progressUpdated(90);
+
         const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
         if (!depthAmplitudePath.isEmpty())
         {
@@ -927,13 +1141,33 @@ bool SegyCreationPage::validatePage()
             SegyWriter segyWriter(depthAmplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
         }
+
+        m_processMessage.first = QMessageBox::Information;
+        m_processMessage.second = "Process completed successfully.";
+
+        emit progressUpdated(100);
     }
     catch (std::exception &e)
     {
-        QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), e.what(), QMessageBox::NoButton);
+        m_processMessage.first = QMessageBox::Warning;
+        m_processMessage.second = e.what();
+
+        emit progressUpdated(100);
     }
 
-    return true;
+    emit processFinished();
+}
+
+bool SegyCreationPage::validatePage()
+{
+    initProcessThread();
+    m_progressDialog->show();
+
+    connect(m_processThread, &QThread::started, m_processWorker, &Worker::run);
+    m_processThread->start();
+
+    // Returns false to not close the dialog
+    return false;
 }
 
 void SegyCreationPage::initializePage()
@@ -1046,4 +1280,5 @@ Lithology AddingVelocityWidget::lithology() const
 
 }
 }
+
 

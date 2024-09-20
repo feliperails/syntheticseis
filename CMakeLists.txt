@@ -26,7 +26,7 @@ set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
-find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets)
+find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets Concurrent)
 find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(Threads REQUIRED)
 find_package(GMP REQUIRED)
@@ -158,6 +158,7 @@ target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
     PUBLIC Qt5::Widgets
+    PUBLIC Qt5::Concurrent
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}

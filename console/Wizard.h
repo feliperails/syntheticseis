@@ -93,7 +93,9 @@ public:
     void process();
 
 private:
+    bool validateLithologies();
     void initProcessThread();
+    std::shared_ptr<domain::Lithology> createFillingLithology(const domain::FillingType& fillingType);
 
 private slots:
     void showProcessMessage();

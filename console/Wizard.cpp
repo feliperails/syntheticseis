@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QMessageBox>
 #include <QProcess>
+#include <QComboBox>
 #include <memory>
 #include "domain/src/ConvolutionRegularGridCalculator.h"
 #include "domain/src/EclipseGridSurface.h"
@@ -38,6 +39,17 @@ using namespace syntheticSeismic::storage;
 
 namespace syntheticSeismic {
 namespace widgets {
+
+QString fillingTypeToString(const domain::FillingType& type)
+{
+    switch (type)
+    {
+    case domain::FillingType::None: return "None";
+    case domain::FillingType::Top: return "Top";
+    case domain::FillingType::Bottom: return "Bottom";
+    default: return "Unknown";
+    }
+}
 
 namespace  {
 const QLatin1Literal INPUT_FILES_FIELD ("input_files");
@@ -791,21 +803,9 @@ void SegyCreationPagePrivate::updateWidget()
     }
 
     m_ui->velocityTableWidget->setRowCount(m_lithologies.size());
-    m_ui->velocityTableWidget->setColumnCount(5);
 
-    for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row) {
-
-        QTableWidgetItem* id = new QTableWidgetItem(QString::number(m_lithologies.at(row).getId()));
-        id->setFlags(id->flags() & ~Qt::ItemIsEditable);
-        QTableWidgetItem* name = new QTableWidgetItem();
-        name->setFlags(name->flags() & ~Qt::ItemIsEditable);
-        QTableWidgetItem* velocity = new QTableWidgetItem(QString::number(m_lithologies.at(row).getVelocity()));
-        velocity->setFlags(velocity->flags() & ~Qt::ItemIsEditable);
-        QTableWidgetItem* density = new QTableWidgetItem(QString::number(m_lithologies.at(row).getDensity()));
-        density->setFlags(density->flags() & ~Qt::ItemIsEditable);
-        QTableWidgetItem* removeAction = new QTableWidgetItem(REMOVE_ACTION_MESSAGE);
-        removeAction->setFlags(density->flags() & ~Qt::ItemIsEditable);
-
+    for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row)
+    {
         QSpinBox* idEditor = new QSpinBox(q_ptr);
         idEditor->setMaximum(INT_MAX);
         idEditor->setValue(m_lithologies[row].getId());
@@ -817,20 +817,19 @@ void SegyCreationPagePrivate::updateWidget()
         QDoubleSpinBox* densityEditor = new QDoubleSpinBox(q_ptr);
         densityEditor->setMaximum(DBL_MAX);
         densityEditor->setValue(m_lithologies[row].getDensity());
+        QComboBox* fillingTypeEditor = new QComboBox(q_ptr);
+        fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::None));
+        fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Top));
+        fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Bottom));
         QPushButton* removeButton = new QPushButton(q_ptr);
         removeButton->setIcon(QIcon(QLatin1String(":/remove")));
-
-        m_ui->velocityTableWidget->setItem(row, 0, id);
-        m_ui->velocityTableWidget->setItem(row, 1, name);
-        m_ui->velocityTableWidget->setItem(row, 2, velocity);
-        m_ui->velocityTableWidget->setItem(row, 3, density);
-        m_ui->velocityTableWidget->setItem(row, 4, removeAction);
 
         m_ui->velocityTableWidget->setCellWidget(row, 0, idEditor);
         m_ui->velocityTableWidget->setCellWidget(row, 1, nameEditor);
         m_ui->velocityTableWidget->setCellWidget(row, 2, velocityEditor);
         m_ui->velocityTableWidget->setCellWidget(row, 3, densityEditor);
-        m_ui->velocityTableWidget->setCellWidget(row, 4, removeButton);
+        m_ui->velocityTableWidget->setCellWidget(row, 4, fillingTypeEditor);
+        m_ui->velocityTableWidget->setCellWidget(row, 5, removeButton);
 
         QObject::connect(idEditor, QOverload<int>::of(&QSpinBox::valueChanged), [this, idEditor](const int& value) {
             const int& row = getRowVelocityTableWidget(idEditor);
@@ -865,6 +864,15 @@ void SegyCreationPagePrivate::updateWidget()
             if (m_lithologies.size() > row && row != -1)
             {
                 m_lithologies[row].setDensity(value);
+            }
+        });
+
+        QObject::connect(fillingTypeEditor, QOverload<int>::of(&QComboBox::currentIndexChanged), [this, fillingTypeEditor](const int& value) {
+            const int& row = getRowVelocityTableWidget(fillingTypeEditor);
+
+            if (m_lithologies.size() > row && row != -1)
+            {
+                m_lithologies[row].setFillingType((domain::FillingType)value);
             }
         });
 
@@ -1016,8 +1024,8 @@ void SegyCreationPage::process()
         // RegularGrid<std::shared_ptr<geometry::Volume>> filledRegularGridInSeconds = convertGrid.fillLithologyTimeGrid(regularGridInSeconds, fillLithology);
 
         // filling with two lithologies
-        const auto topLithology    = std::make_shared<Lithology>( 9, QLatin1String("Medium-grained sandstone"), 3500.0, 2350.0);
-        const auto bottomLithology = std::make_shared<Lithology>(24, QLatin1String("Volcanic"),                 4000.0, 3000.0);
+        const auto& topLithology    = createFillingLithology(FillingType::Top);
+        const auto& bottomLithology = createFillingLithology(FillingType::Bottom);
         RegularGrid<std::shared_ptr<geometry::Volume>> filledRegularGridInSeconds = convertGrid.fillTopBottomLithologyTimeGrid(regularGridInSeconds,
                                                                                                   topLithology, bottomLithology);
 
@@ -1158,8 +1166,73 @@ void SegyCreationPage::process()
     emit processFinished();
 }
 
+std::shared_ptr<domain::Lithology> SegyCreationPage::createFillingLithology(const domain::FillingType& fillingType)
+{
+    Q_D(const SegyCreationPage);
+
+    for (const Lithology& lith : d->m_lithologies)
+    {
+        if (fillingType == lith.getFillingType())
+        {
+            return std::make_shared<Lithology>(lith);
+        }
+    }
+
+    return std::make_shared<Lithology>();
+}
+
+bool SegyCreationPage::validateLithologies()
+{
+    Q_D(const SegyCreationPage);
+
+    int countFillingTop = 0;
+    int countFillingBottom = 0;
+
+    for (const Lithology& lith : d->m_lithologies)
+    {
+        const domain::FillingType& fillingType = lith.getFillingType();
+
+        if (fillingType == domain::FillingType::Top)
+        {
+            countFillingTop++;
+        }
+        else if (fillingType == domain::FillingType::Bottom)
+        {
+            countFillingBottom++;
+        }
+    }
+
+    m_processMessage.second.clear();
+
+    if (countFillingTop != 1)
+    {
+        m_processMessage.first = QMessageBox::Information;
+        m_processMessage.second = "There must be exactly 1 'Filling Top'";
+    }
+
+    if (countFillingBottom != 1)
+    {
+        if (!m_processMessage.second.isEmpty())
+        {
+            m_processMessage.second += "\n";
+        }
+
+        m_processMessage.first = QMessageBox::Information;
+        m_processMessage.second += "There must be exactly 1 'Filling Bottom'";
+    }
+
+    return m_processMessage.second.isEmpty();
+}
+
 bool SegyCreationPage::validatePage()
 {
+    if (!validateLithologies())
+    {
+        showProcessMessage();
+
+        return false;
+    }
+
     initProcessThread();
     m_progressDialog->show();
 

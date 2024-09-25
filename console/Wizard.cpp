@@ -44,10 +44,11 @@ QString fillingTypeToString(const domain::FillingType& type)
 {
     switch (type)
     {
-    case domain::FillingType::None: return "None";
-    case domain::FillingType::Top: return "Top";
-    case domain::FillingType::Bottom: return "Bottom";
-    default: return "Unknown";
+        case domain::FillingType::None: return "None";
+        case domain::FillingType::Top: return "Top";
+        case domain::FillingType::Bottom: return "Bottom";
+        case domain::FillingType::Both: return "Both";
+        default: return "Unknown";
     }
 }
 
@@ -821,6 +822,7 @@ void SegyCreationPagePrivate::updateWidget()
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::None));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Top));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Bottom));
+        fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Both));
         QPushButton* removeButton = new QPushButton(q_ptr);
         removeButton->setIcon(QIcon(QLatin1String(":/remove")));
 
@@ -1172,7 +1174,12 @@ std::shared_ptr<domain::Lithology> SegyCreationPage::createFillingLithology(cons
 
     for (const Lithology& lith : d->m_lithologies)
     {
-        if (fillingType == lith.getFillingType())
+        const domain::FillingType& fillingTypeCurr = lith.getFillingType();
+
+        if (fillingTypeCurr == domain::FillingType::None) continue;
+
+        if (fillingTypeCurr == fillingType ||
+            fillingTypeCurr == domain::FillingType::Both)
         {
             return std::make_shared<Lithology>(lith);
         }
@@ -1198,6 +1205,11 @@ bool SegyCreationPage::validateLithologies()
         }
         else if (fillingType == domain::FillingType::Bottom)
         {
+            countFillingBottom++;
+        }
+        else if (fillingType == domain::FillingType::Both)
+        {
+            countFillingTop++;
             countFillingBottom++;
         }
     }

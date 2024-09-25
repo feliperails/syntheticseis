@@ -9,7 +9,8 @@ enum class FillingType
 {
     None,
     Top,
-    Bottom
+    Bottom,
+    Both
 };
 
 class Lithology

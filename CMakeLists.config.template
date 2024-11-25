@@ -1,6 +1,15 @@
-# Defines Qt path
-set(Qt5_DIR C:/Qt/Qt5.12.5/5.12.5/msvc2015_64/lib/cmake/Qt5)
-set(QMAKE_DIR C:/Qt/Qt5.12.5/5.12.5/msvc2015_64/bin/qmake.exe)
+set(CMAKE_TOOLCHAIN_FILE, "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+set(CMAKE_PREFIX_PATH "C:/dev/vcpkg/packages/cgal_x64-windows/share/cgal" ${CMAKE_PREFIX_PATH})
+
+set(BOOST_ROOT "D:/genesis-vs2019/externals/win64-msvc2019/Boost-1.71.0/Release")
+set(BOOST_INCLUDE_DIR "D:/genesis-vs2019/externals/win64-msvc2019/Boost-1.71.0/Release/include")
+set(BOOST_LIBRARIES "D:/genesis-vs2019/externals/win64-msvc2019/Boost-1.71.0/Release/lib")
+
+set(GMP_LIBRARIES "C:/dev/vcpkg/packages/gmp_x64-windows/lib")
+set(GMP_INCLUDE_DIR "C:/dev/vcpkg/packages/gmp_x64-windows/include")
+set(MPFR_INCLUDE_DIR "C:/dev/vcpkg/packages/mpfr_x86-windows/include")
+set(MPFR_LIBRARIES "C:/dev/vcpkg/packages/mpfr_x86-windows/bin")
 
 # -- Define pastas default para geração dos binarios
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -18,3 +27,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 set(CMAKE_PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_PDB_OUTPUT_DIRECTORY_RELEASE ${CMAKE_PDB_OUTPUT_DIRECTORY})
 set(CMAKE_PDB_OUTPUT_DIRECTORY_DEBUG ${CMAKE_PDB_OUTPUT_DIRECTORY})
+
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  set(CMAKE_INSTALL_PREFIX "C:/Git/SyntheticSeis/install/debug")
+else()
+  set(CMAKE_INSTALL_PREFIX "C:/Git/SyntheticSeis/install/release")
+endif()

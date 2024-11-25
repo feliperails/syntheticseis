@@ -12,6 +12,9 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/CMakeLists.config)
     include(${CMAKE_SOURCE_DIR}/CMakeLists.config)
 endif()
 
+message("*********************************************************")
+message("${CMAKE_PREFIX_PATH}")
+
 set(SyntheticSeismic_ROOT ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -20,64 +23,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 
-
-execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/configure.bat
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-## Download automatically, you can also just copy the conan.cmake file
-#if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake" )
-#    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
-#    file(DOWNLOAD "https://github.com/conan-io/cmake-conan/raw/v0.15/conan.cmake"
-#        "${CMAKE_BINARY_DIR}/conan.cmake"
-#        TLS_VERIFY ON)
-#endif()
-#include(${CMAKE_BINARY_DIR}/conan.cmake)
-
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/conan.cmake)
-
-# Versão do conan
-conan_check(VERSION 1.25.0 REQUIRED)
-
-conan_cmake_run(ninja/1.10.1
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(zlib/1.2.11
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(boost/1.74.0
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES hdf5/1.8.21
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES gtest/1.8.1
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRED GMock/1.8.0@iblis_ms/stable
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES cgal/5.0
-    BASIC_SETUP
-    BUILD missing)
-
-conan_cmake_run(REQUIRES pthreads4w/3.0.0
-    BASIC_SETUP
-    BUILD missing)
-
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets)
 find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(Threads REQUIRED)
+find_package(GMP REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIR})
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -86,6 +39,7 @@ include_directories(${HDF5_INCLUDE_DIRS})
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 FILE(GLOB SyntheticSeis_UI "console/*.ui")
+
 qt5_wrap_ui(
     Plugin_UI_HEADERS
     ${SyntheticSeis_UI}
@@ -94,11 +48,13 @@ qt5_wrap_ui(
 add_library(SyntheticSeismic SHARED
     # geometry
     geometry/src/Coordinate.cpp
+    geometry/src/EnumUnit.cpp
     geometry/src/Point3D.cpp
     geometry/src/Volume.cpp
     geometry/src/Point2D.cpp
 
     # domain
+    domain/src/ConvertRegularGridCalculator.cpp
     domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
     domain/src/EclipseGridSurface.cpp
@@ -148,13 +104,18 @@ add_executable(SyntheticSeismicTest
     geometry/test/GeometryTest.cpp
     domain/test/DomainTestValues.cpp
     domain/test/DomainTest.cpp
+    domain/test/ConvertRegularGridCalculatorTest.cpp
+    domain/test/ConvolutionRegularGridCalculatorTest.cpp
     storage/test/StorageTestValues.cpp
     storage/test/StorageTest.cpp
+    domain/test/ConvertRegularGridToMetersCalculatorTest.cpp
+    domain/test/ConvertRegularGridTestValues.cpp
 )
 
 add_executable(SyntheticSeismicConsole
     console/main.cpp
     console/Wizard.cpp
+    ${Plugin_UI_HEADERS}
     ${RESOURCES}
 )
 
@@ -165,18 +126,18 @@ generate_export_header(SyntheticSeismic BASE_NAME SyntheticSeismic)
 target_link_libraries(SyntheticSeismic
     PUBLIC Qt5::Core
     PUBLIC OpenMP::OpenMP_CXX
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC ${GTEST_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
 )
 
 target_link_libraries(SyntheticSeismicMock
     PUBLIC Qt5::Core
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
-    PUBLIC ${CONAN_LIBS}
     PUBLIC ${HDF5_LIBRARIES}
     PUBLIC SyntheticSeismic
 )
@@ -184,25 +145,23 @@ target_link_libraries(SyntheticSeismicMock
 target_link_libraries(SyntheticSeismicTest
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
+    PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${GTEST_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
+    PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
 target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Core
     PUBLIC Qt5::Test
     PUBLIC Qt5::Widgets
-    PUBLIC ${CONAN_LIBS}
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
-    PUBLIC ${CONAN_LIBS}
-    PUBLIC ${GTEST_LIBRARIES}
+    PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
 if(WIN32)
@@ -210,6 +169,11 @@ if(WIN32)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
     set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
+    message("Qt dir: ${Qt5_DIR} \n\n")
+    get_cmake_property(_variableNames VARIABLES)
+    foreach(_variableName ${_variableNames})
+        message("${_variableName}=${${_variableName}}")
+    endforeach()
     MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
     set(_search_paths "${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH}")
     string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
@@ -227,6 +191,12 @@ if(WIN32)
         -DTARGET_LOCAL_DEPS=$<TARGET_FILE:SyntheticSeismicTest>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake
     )
+
+    IF(CMAKE_BUILD_TYPE MATCHES Debug)
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    else()
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    endif()
 endif()
 
 install(FILES README.md

@@ -57,7 +57,7 @@ int LithologyDictionary::addLithology(const int id, const QString& name, const d
         return -1;
     }
 
-    for(const Lithology& litho : m_lithologies){
+    for(const Lithology& litho : qAsConst(m_lithologies)){
         if(litho.getId() == id || litho.getName() == name){
             return -1;
         }
@@ -65,6 +65,19 @@ int LithologyDictionary::addLithology(const int id, const QString& name, const d
 
     m_lithologies.push_back(Lithology(id, name, velocity, density));
     return m_lithologies.size() - 1;
+}
+
+void LithologyDictionary::delLithology(const int id, const QString& name, const double velocity, const double density)
+{
+    int count = 0, remove = 0;
+    for(const Lithology& litho : qAsConst(m_lithologies)){
+        if(litho.getId() == id || litho.getName() == name){
+            remove = 1;
+            break;
+        }
+        count++;
+    }
+    if(remove == 1) m_lithologies.remove(count);
 }
 
 }

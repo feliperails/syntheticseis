@@ -1,4 +1,4 @@
-#include(InvertSeisCPack)
+#include(SyntheticSeisCPack)
 
 set(CPACK_PACKAGE_VENDOR "SyntheticSeismic")
 set(CPACK_PACKAGE_DESCRIPTION "Synthetic seismic storage")

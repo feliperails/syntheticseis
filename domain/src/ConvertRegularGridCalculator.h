@@ -11,7 +11,7 @@ namespace domain {
 
 class ConvertRegularGridCalculator {
 public:
-    bool m_defineMissingLithologyByProximity = true;
+    bool m_defineMissingLithologyByProximity = false;
 
     explicit ConvertRegularGridCalculator(std::shared_ptr<Lithology> undefinedLithology);
 

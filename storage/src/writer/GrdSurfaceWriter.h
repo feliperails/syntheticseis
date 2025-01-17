@@ -17,7 +17,7 @@ public:
 
     }
 
-    bool write(domain::GrdSurface<T> &surface) const
+    void write(domain::GrdSurface<T> &surface) const
     {
         QFile file(m_path);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Text))

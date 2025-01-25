@@ -11,8 +11,8 @@
 ;General
 
   ;Name and file
-  Name "SyntheticSeis 1.0.0"
-  OutFile "SyntheticSeis-1.0.0-release.exe"
+  Name "SyntheticSeis 1.0.4"
+  OutFile "SyntheticSeis-1.0.4-release.exe"
   Unicode True
 
   ;Default installation folder
@@ -35,7 +35,6 @@
 ;Pages
 
   !insertmacro MUI_PAGE_WELCOME
-  !insertmacro MUI_PAGE_LICENSE "SyntheticSeisReadme.txt"
   !insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
@@ -65,6 +64,10 @@ Section "SyntheticSeis" SecSyntheticSeis
   File "..\build\release\bin\SyntheticSeismicConsole.exe"
   File "..\build\release\bin\VCOMP140.DLL"
   File "..\WindowsLibraries\gmp-10.dll"
+  File "..\WindowsLibraries\Qt5Concurrent.dll"
+  File "..\WindowsLibraries\Qt5Gui.dll"
+  File "..\WindowsLibraries\Qt5Widgets.dll"
+  File /nonfatal /a /r "..\WindowsLibraries\platforms"
   File "logo.ico"
   File "SyntheticSeisReadme.txt"
 
@@ -111,7 +114,7 @@ SectionEnd
   LangString DESC_SecSyntheticSeis ${LANG_ENGLISH} "SyntheticSeis 1.0"
 
   ;Language strings - SyntheticSeisPython
-  LangString DESC_SecSyntheticSeisPython ${LANG_ENGLISH} "Python embeddable package (Python 3.12.8 + segyio)"
+  LangString DESC_SecSyntheticSeisPython ${LANG_ENGLISH} "Python embeddable package (Python 3.12.8 + segyio +h5py)"
   
 
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN

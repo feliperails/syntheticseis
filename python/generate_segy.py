@@ -10,7 +10,7 @@ segy_file_path = argv[2]
 hdf5_input = h5py.File(hdf5_file_path, 'r')
 data = hdf5_input['data']
 
-new_data = np.zeros((data.shape[1], data.shape[0], data.shape[2]))
+new_data = np.zeros((data.shape[1], data.shape[0], data.shape[2]), dtype=np.float32)
 
 for i in range(data.shape[0]):
     for j in range(data.shape[1]):
@@ -21,11 +21,23 @@ dimensions = data.shape
 dim_i = dimensions[1]
 dim_j = dimensions[0]
 
-print('cellSizeInZ: ' + str(data.attrs['cellSizeInZ'][0]))
+str_cell_size_z = str(data.attrs['cellSizeInZ'][0])
 
 cellSizeInZ = max(round(data.attrs['cellSizeInZ'][0]), 1)
 segyio.tools.from_array3D(segy_file_path, new_data, dt=cellSizeInZ)
 segy_output = segyio.open(segy_file_path, "r+")
+
+header = "Processed by SyntheticSeis.".ljust(80, " ")
+header += "https://github.com/feliperails/syntheticseis/".ljust(80, " ")
+header += ("Original sample interval: " + str_cell_size_z).ljust(80, " ")
+header += "WARNING: SEG-Y files do not support floating sample intervals.".ljust(80, " ")
+header += "We recommend adjusting the sample interval manually when ".ljust(80, " ")
+header += " importing this file into a visualization program,".ljust(80, " ")
+header += "such as Petrel or Aspen SKUA.".ljust(80, " ")
+
+formatted_text = segyio.tools.wrap(header)
+
+segy_output.text[0] = formatted_text
 
 origin_x = data.attrs['geometryOriginX'][0]
 origin_y = data.attrs['geometryOriginY'][0]

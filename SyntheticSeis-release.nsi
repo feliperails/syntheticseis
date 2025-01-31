@@ -11,8 +11,8 @@
 ;General
 
   ;Name and file
-  Name "SyntheticSeis 1.0.4"
-  OutFile "SyntheticSeis-1.0.4-release.exe"
+  Name "SyntheticSeis 1.0.5"
+  OutFile "SyntheticSeis-1.0.5-release.exe"
   Unicode True
 
   ;Default installation folder

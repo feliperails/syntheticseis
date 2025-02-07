@@ -26,7 +26,7 @@
    <item>
     <widget class="QGroupBox" name="velocityGroupBox">
      <property name="title">
-      <string>Velocity dictionary</string>
+      <string>Impedance dictionary</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -35,6 +35,20 @@
          <widget class="QPushButton" name="addVelocityPushButton">
           <property name="text">
            <string>Add</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="loadDictionaryPushButton">
+          <property name="text">
+           <string>Load dictionary</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="saveDictionaryPushButton">
+          <property name="text">
+           <string>Save dictionary</string>
           </property>
          </widget>
         </item>

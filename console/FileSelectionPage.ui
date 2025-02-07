@@ -38,7 +38,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Siga os passos para criar o volume sísmico sintético à partir de grades estratigráficas.</string>
+      <string>Follow the steps to create a synthetic seismic from stratigraphic grids</string>
      </property>
     </widget>
    </item>

@@ -1,1 +1,1 @@
-SyntheticSeis 1.0
+SyntheticSeismic 1.0.6

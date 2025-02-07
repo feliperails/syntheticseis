@@ -654,6 +654,8 @@ class SegyCreationPagePrivate
     void showWidgetToAddLithology();
     void removeRow(const int row);
     int getRowVelocityTableWidget(QWidget* widget);
+    void loadDictionary(const QString &filePath);
+    void saveDictionary(const QString &filePath);
 
     Q_DECLARE_PUBLIC(SegyCreationPage)
     SegyCreationPage* q_ptr;
@@ -684,6 +686,29 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
 
     QObject::connect(m_ui->addVelocityPushButton, &QPushButton::clicked, q_ptr, [this](const bool){
         showWidgetToAddLithology();
+    });
+
+
+    QObject::connect(m_ui->loadDictionaryPushButton, &QPushButton::clicked, q_ptr, [this](const bool) {
+        const auto title = QObject::tr("Open Dictionary");
+        const auto filter = QLatin1String("SyntheticSeis Dictionary (*.ssjson)");
+
+        const auto filePath = QFileDialog::getOpenFileName(q_ptr, title, "", filter);
+
+        loadDictionary(filePath);
+
+        Q_EMIT q_ptr->completeChanged();
+    });
+
+    QObject::connect(m_ui->saveDictionaryPushButton, &QPushButton::clicked, q_ptr, [this](const bool) {
+        const auto title = QObject::tr("Save Dictionary");
+        const auto filter = QLatin1String("SyntheticSeis Dictionary (*.ssjson)");
+
+        const auto filePath = QFileDialog::getSaveFileName(q_ptr, title, "", filter);
+
+        saveDictionary(filePath);
+
+        Q_EMIT q_ptr->completeChanged();
     });
 
     QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
@@ -823,6 +848,8 @@ void SegyCreationPagePrivate::updateWidget()
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Top));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Bottom));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Both));
+        fillingTypeEditor->setCurrentIndex(static_cast<int>(m_lithologies[row].getFillingType()));
+
         QPushButton* removeButton = new QPushButton(q_ptr);
         removeButton->setIcon(QIcon(QLatin1String(":/remove")));
 
@@ -910,6 +937,75 @@ void SegyCreationPagePrivate::removeRow(const int row)
     if (row < m_ui->velocityTableWidget->rowCount()) {
         m_ui->velocityTableWidget->removeRow(row);
     }
+}
+
+void SegyCreationPagePrivate::loadDictionary(const QString &filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open file:" << file.errorString();
+        return;
+    }
+
+    QByteArray jsonData = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(jsonData);
+    if (!doc.isArray()) {
+        qWarning() << "JSON is not an array!";
+        return;
+    }
+
+    m_lithologies.clear();
+
+    QJsonArray jsonArray = doc.array();
+    for (const QJsonValue &value : jsonArray) {
+        if (!value.isObject()) continue;
+
+        QJsonObject obj = value.toObject();
+
+        const auto fillingType = (domain::FillingType) obj.value("fillingType").toInt();
+
+        Lithology lithology(
+            obj.value("id").toInt(),
+            obj.value("name").toString(),
+            obj.value("velocity").toDouble(),
+            obj.value("density").toDouble(),
+            fillingType
+        );
+        m_lithologies.push_back(lithology);
+    }
+
+    updateWidget();
+}
+
+void SegyCreationPagePrivate::saveDictionary(const QString &filePath)
+{
+    QJsonArray jsonArray;
+
+    for (const auto &lithology : m_lithologies) {
+        QJsonObject jsonObj;
+        jsonObj["id"] = lithology.getId();
+        jsonObj["name"] = lithology.getName();
+        jsonObj["velocity"] = lithology.getVelocity();
+        jsonObj["density"] = lithology.getDensity();
+        jsonObj["fillingType"] = static_cast<int>(lithology.getFillingType());
+
+        jsonArray.append(jsonObj);
+    }
+
+    QJsonDocument doc(jsonArray);
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open file for writing:" << file.errorString();
+        return;
+    }
+
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+
+    qDebug() << "JSON saved successfully to" << filePath;
 }
 
 Worker::Worker(SegyCreationPage* segyCreationPage) : m_segyCreationPage(segyCreationPage)

@@ -148,7 +148,7 @@ namespace domain {
 
                 // Making the seismic trace equally splited in space to store in structure
                 const double finalPosition = currentPosition;
-                const size_t numPositionSteps = static_cast<size_t>(finalPosition/positionStep);
+                const auto numPositionSteps = static_cast<size_t>(finalPosition/positionStep);
                 if(numPositionSteps > maxNumPositionSteps)
                 {
                     maxNumPositionSteps = numPositionSteps;
@@ -161,7 +161,7 @@ namespace domain {
 
                 for(size_t depthIdxInt = 0; depthIdxInt < numPositionSteps-2; depthIdxInt++)
                 {
-                    position = depthIdxInt * positionStep;
+                    position = static_cast<double>(depthIdxInt) * positionStep;
                     size_t depthIdxBeforePositionInt = 0;
                     for(size_t z = 1; z < numberOfCellsInZ-1; z++)
                     {
@@ -199,54 +199,6 @@ namespace domain {
         return depthGrid;
     }
 
-    RegularGrid<std::shared_ptr<geometry::Volume>> ConvertRegularGridCalculator::fillLithologyKeepUndefinedTimeGrid(
-        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology)
-    {
-        return timeGridLithology;
-    }
-
-    RegularGrid<std::shared_ptr<geometry::Volume>> ConvertRegularGridCalculator::fillSingleLithologyTimeGrid(
-        RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology, const std::shared_ptr<Lithology>& lithologyToFill)
-    {
-        size_t numberOfCellsInX = timeGridLithology.getNumberOfCellsInX();
-        size_t numberOfCellsInY = timeGridLithology.getNumberOfCellsInY();
-        size_t numberOfCellsInZ = timeGridLithology.getNumberOfCellsInZ();
-
-        auto timeGridData = timeGridLithology.getData();
-
-        if (lithologyToFill->getId() != m_undefinedLithology->getId())
-        {
-            std::cout << "filling with fixed lithology" << std::endl;
-            for (size_t x = 0; x < numberOfCellsInX; ++x)
-            {
-                for (size_t y = 0; y < numberOfCellsInY; ++y)
-                {
-                    for (size_t z = 0; z < numberOfCellsInZ; ++z)
-                    {
-                        if (timeGridData[x][y][z] != nullptr)
-                        {
-                            //std::cout << timeGridData[x][y][z] << std::endl;
-                            const auto idLithology = timeGridData[x][y][z]->idLithology;
-                            const auto &lithology = *m_lithologies[idLithology];
-                            if (lithology.getId() == m_undefinedLithology->getId())
-                            {
-                                timeGridData[x][y][z]->idLithology = lithologyToFill->getId();
-                            }
-                        }
-                        else
-                        {
-                            std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(lithologyToFill->getId(), x, y));
-                            timeGridData[x][y][z] = fillVolume;
-                            timeGridData[x][y][z]->idLithology = lithologyToFill->getId();
-                        }
-                    }
-                }
-            }
-        }
-        timeGridLithology.setData(timeGridData);
-        return timeGridLithology;
-    }
-
     RegularGrid<std::shared_ptr<geometry::Volume>> ConvertRegularGridCalculator::fillTopBottomLithologyTimeGrid(
         RegularGrid<std::shared_ptr<geometry::Volume>> &timeGridLithology,
         const std::shared_ptr<Lithology>& topLithology,
@@ -281,7 +233,7 @@ namespace domain {
                     }
                     else
                     {
-                        if(startFilling == true && topLithology->getId() != m_undefinedLithology->getId())
+                        if(startFilling && topLithology->getId() != m_undefinedLithology->getId())
                         {
                             const std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(topLithology->getId(), x, y));
                             timeGridData[x][y][z] = fillVolume;
@@ -308,7 +260,7 @@ namespace domain {
                     }
                     else
                     {
-                        if(startFilling == true && bottomLithology->getId() != m_undefinedLithology->getId())
+                        if(startFilling && bottomLithology->getId() != m_undefinedLithology->getId())
                         {
                             const std::shared_ptr<geometry::Volume> fillVolume(new geometry::Volume(bottomLithology->getId(), x, y));
                             timeGridData[x][y][z] = fillVolume;
@@ -553,7 +505,6 @@ namespace domain {
                         errorVolumeZ = z;
                         break;
                     }
-                    // std::cout << "x: " << x << "\t y: " << y << "\t z: " << z << " : " << velocityResult.second << std::endl;
 
                     if (minVelocities[x][y] > velocityResult.first)
                     {
@@ -613,13 +564,13 @@ namespace domain {
 
         if (m_lithologies.count(idLithology) == 0)
         {
+            std::cout << "missing lithology: " << idLithology << " for (" << x << ", " << y << ", " << z << ")" << std::endl;
+
             if (m_defineMissingLithologyByProximity)
             {
                 const auto limitX = static_cast<int>(depthGrid.getNumberOfCellsInX() - 1);
                 const auto limitY = static_cast<int>(depthGrid.getNumberOfCellsInY() - 1);
                 const auto limitZ = static_cast<int>(depthGrid.getNumberOfCellsInZ() - 1);
-
-                std::cout << "missing lithology: " << idLithology << " for (" << x << ", " << y << ", " << z << ")" << std::endl;
 
                 return getNearestVelocity(
                         data, static_cast<int>(x), static_cast<int>(y), static_cast<int>(z),
@@ -627,7 +578,7 @@ namespace domain {
                     );
             }
 
-            return {0.0, true};
+            return {0.0, false};
         }
 
 

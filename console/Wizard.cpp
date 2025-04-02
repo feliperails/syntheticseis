@@ -355,15 +355,9 @@ void EclipseGridImportPagePrivate::updateWidget()
             QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem({fileName});
             topLevelItem->addChild(treeWidgetItem);
 
-//            QFileInfo fileInfo;
-//            fileInfo.setFile(dir, fileName);
-
-            //EclipseGridReader reader(fileInfo.filePath());
             const QString& error = m_eclipseGridsErros[dir][j];
             const std::shared_ptr<EclipseGrid>& eclipseGrid = m_eclipseGrids[dir][j].second;
-            //const std::shared_ptr<EclipseGrid> eclipseGrid = std::make_shared<EclipseGrid>(reader.read(error));
             if (error.isEmpty()) {
-                //m_eclipseGrids[dir][j].second = eclipseGrid;
                 treeWidgetItem->setText(MESSAGE_COLUMN, ECLIPSE_FILE_IMPORTED);
 
                 const QString text = QLatin1String("X: ") + QString::number(eclipseGrid->numberOfCellsInX()) +
@@ -1117,23 +1111,12 @@ void SegyCreationPage::process()
         auto regularGridInSeconds = convertGrid.fromZInMetersToZInSeconds(regularGridInMeters);
 
         std::cout << "cell size z orig: " << regularGridInMeters.getCellSizeInZ() << std::endl;
-        // filling with single lithology
-        // const auto fillLithology = std::make_shared<Lithology>( 0, QLatin1String("undefined"),    2500.0, 1000.0);
-        // RegularGrid<std::shared_ptr<geometry::Volume>> filledRegularGridInSeconds = convertGrid.fillLithologyTimeGrid(regularGridInSeconds, fillLithology);
-
         // filling with two lithologies
-        const auto& topLithology    = createFillingLithology(FillingType::Top);
+        const auto& topLithology = createFillingLithology(FillingType::Top);
         const auto& bottomLithology = createFillingLithology(FillingType::Bottom);
-        RegularGrid<std::shared_ptr<geometry::Volume>> filledRegularGridInSeconds = convertGrid.fillTopBottomLithologyTimeGrid(regularGridInSeconds,
-                                                                                                  topLithology, bottomLithology);
+        auto filledRegularGridInSeconds = convertGrid.fillTopBottomLithologyTimeGrid(regularGridInSeconds, topLithology, bottomLithology);
 
-        // not filling lithologies
-        // RegularGrid<std::shared_ptr<geometry::Volume>> filledRegularGridInSeconds = convertGrid.fillLithologyKeepUndefinedTimeGrid(regularGridInSeconds);
-
-
-
-
-        auto waveletStep = filledRegularGridInSeconds.getCellSizeInZ() * 1000;
+        auto waveletStep = filledRegularGridInSeconds.getCellSizeInZ() * 1000.0;
         std::cout << "Wavelet Step: " << waveletStep << std::endl;
 
         RickerWaveletCalculator rickerWaveletCalculator;

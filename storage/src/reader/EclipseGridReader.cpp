@@ -1,5 +1,6 @@
 #include "EclipseGridReader.h"
 
+#include <QDebug>
 #include <QFile>
 #include <QStringList>
 #include <QTextStream>
@@ -36,6 +37,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
     if (m_path.isEmpty())
     {
         error = QObject::tr("Empty path");
+        qDebug() << error;
         return {};
     }
 
@@ -43,6 +45,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
     if (!file.open(QFile::ReadOnly))
     {
         error = QObject::tr("Error when reading the file: %1").arg(file.errorString());
+        qDebug() << error;
         return {};
     }
 
@@ -79,6 +82,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (line == SECTION_END_TOKEN)
             {
                 error = QObject::tr("Premature end of section:Error when reading the file: %1");
+                qDebug() << error;
                 return {};
             }
 
@@ -88,6 +92,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (list.size() < 3)
             {
                 error = QObject::tr("Premature end of section:Error when reading the file: %1");
+                qDebug() << error;
                 return {};
             }
 
@@ -95,6 +100,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (!convertionOk)
             {
                 error = QObject::tr("Error when retrieving the number of cells on x");
+                qDebug() << error;
                 return {};
             }
 
@@ -102,6 +108,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (!convertionOk)
             {
                 error = QObject::tr("Error when retrieving the number of cells on y");
+                qDebug() << error;
                 return {};
             }
 
@@ -109,6 +116,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (!convertionOk)
             {
                 error = QObject::tr("Error when retrieving the number of cells on z");
+                qDebug() << error;
                 return {};
             }
         }
@@ -157,6 +165,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     if (!convertionOk)
                     {
                         error = QObject::tr("Error when convertion COORD value to double: %1").arg(item);
+                        qDebug() << error;
                         return {};
                     }
                     coords.push_back(value);
@@ -175,6 +184,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             if (coords.size() != numberOfCoordValues)
             {
                 error = QObject::tr("Incorrect number of COORD values. Expected %1, found %2.").arg(coords.size()).arg(numberOfCoordValues);
+                qDebug() << error;
                 return {};
             }
 
@@ -220,6 +230,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                             if (!convertionOk)
                             {
                                 error = QObject::tr("Error when retrieving value quantity: %1").arg(splittedData.at(0));
+                                qDebug() << error;
                                 return {};
                             }
 
@@ -227,6 +238,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                             if (!convertionOk)
                             {
                                 error = QObject::tr("Error when conveting z value to double: %1").arg(splittedData.at(1));
+                                qDebug() << error;
                                 return {};
                             }
 
@@ -238,6 +250,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                             if (!convertionOk)
                             {
                                 error = QObject::tr("Error when conveting z value to double: %1").arg(zValueString);
+                                qDebug() << error;
                                 return {};
                             }
                             zValues.push_back(z);
@@ -283,6 +296,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                         if (!convertionOk && !str.isEmpty())
                         {
                             error = QObject::tr("Error when conveting value to int: %1").arg(str);
+                            qDebug() << error;
                             return {};
                         }
                         lithologyIds.push_back(id);
@@ -294,6 +308,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     if (!convertionOk)
                     {
                         error = QObject::tr("Error when conveting value to int: %1").arg(line);
+                        qDebug() << error;
                         return {};
                     }
                 }
@@ -338,6 +353,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                         if (!convertionOk && !str.isEmpty())
                         {
                             error = QObject::tr("Error when conveting value to int: %1").arg(str);
+                            qDebug() << error;
                             return {};
                         }
                         faciesAssociationIds.push_back(id);
@@ -349,6 +365,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     if (!convertionOk)
                     {
                         error = QObject::tr("Error when conveting value to int: %1").arg(line);
+                        qDebug() << error;
                         return {};
                     }
                 }
@@ -394,6 +411,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                         if (!convertionOk && !str.isEmpty())
                         {
                             error = QObject::tr("Error when conveting value to double: %1").arg(str);
+                            qDebug() << error;
                             return {};
                         }
                         ages[indexAge] = age;
@@ -406,6 +424,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     if (!convertionOk)
                     {
                         error = QObject::tr("Error when conveting value to double: %1").arg(line);
+                        qDebug() << error;
                         return {};
                     }
                 }
@@ -451,6 +470,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                         if (!convertionOk && !str.isEmpty())
                         {
                             error = QObject::tr("Error when conveting value to int: %1").arg(str);
+                            qDebug() << error;
                             return {};
                         }
                         actnums[indexActnum] = actnum;
@@ -463,6 +483,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                     if (!convertionOk)
                     {
                         error = QObject::tr("Error when conveting value to int: %1").arg(line);
+                        qDebug() << error;
                         return {};
                     }
                 }

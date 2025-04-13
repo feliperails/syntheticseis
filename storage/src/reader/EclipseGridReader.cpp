@@ -276,7 +276,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             ++row;
             int id = -1;
             bool sectionEnded = false;
-            QStringList splitedData;
+            QStringList splitData;
             while (line != SECTION_END_TOKEN)
             {
                 sectionEnded = line.contains(SECTION_END_TOKEN);
@@ -286,11 +286,11 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
 
                 line = line.simplified();
-                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+                splitData = line.split(SINGLE_SPACE_SEPARATOR);
 
-                if (!splitedData.isEmpty())
+                if (!splitData.isEmpty())
                 {
-                    for (const QString& str : splitedData)
+                    for (const QString& str : splitData)
                     {
                         id = str.toInt(&convertionOk);
                         if (!convertionOk && !str.isEmpty())
@@ -333,7 +333,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             ++row;
             int id = -1;
             bool sectionEnded = false;
-            QStringList splitedData;
+            QStringList splitData;
             while (line != SECTION_END_TOKEN)
             {
                 sectionEnded = line.contains(SECTION_END_TOKEN);
@@ -343,11 +343,11 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
 
                 line = line.simplified();
-                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+                splitData = line.split(SINGLE_SPACE_SEPARATOR);
 
-                if (!splitedData.isEmpty())
+                if (!splitData.isEmpty())
                 {
-                    for (const QString& str : splitedData)
+                    for (const QString& str : splitData)
                     {
                         id = str.toInt(&convertionOk);
                         if (!convertionOk && !str.isEmpty())
@@ -391,7 +391,7 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
             double age = -1.0;
             bool sectionEnded = false;
             size_t indexAge = 0;
-            QStringList splitedData;
+            QStringList splitData;
             while (line != SECTION_END_TOKEN)
             {
                 sectionEnded = line.contains(SECTION_END_TOKEN);
@@ -401,11 +401,11 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
 
                 line = line.simplified();
-                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+                splitData = line.split(SINGLE_SPACE_SEPARATOR);
 
-                if (!splitedData.isEmpty())
+                if (!splitData.isEmpty())
                 {
-                    for (const QString& str : splitedData)
+                    for (const QString& str : splitData)
                     {
                         age = str.toDouble(&convertionOk);
                         if (!convertionOk && !str.isEmpty())
@@ -443,14 +443,11 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
         }
         else if (line.startsWith(ACTNUM))
         {
-            actnums.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, true);
+            actnums.reserve(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ);
 
             line = stream.readLine();
             ++row;
-            bool actnum = true;
             bool sectionEnded = false;
-            QStringList splitedData;
-            size_t indexActnum = 0;
             while (line != SECTION_END_TOKEN)
             {
                 sectionEnded = line.contains(SECTION_END_TOKEN);
@@ -460,31 +457,20 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
                 }
 
                 line = line.simplified();
-                splitedData = line.split(SINGLE_SPACE_SEPARATOR);
+                QStringList splitData = line.split(SINGLE_SPACE_SEPARATOR);
 
-                if (!splitedData.isEmpty())
+                if (!splitData.isEmpty())
                 {
-                    for (const QString& str : splitedData)
+                    for (const QString& str : splitData)
                     {
-                        actnum = static_cast<bool>(str.toInt(&convertionOk));
+                        bool actNum = static_cast<bool>(str.toInt(&convertionOk));
                         if (!convertionOk && !str.isEmpty())
                         {
                             error = QObject::tr("Error when conveting value to int: %1").arg(str);
                             qDebug() << error;
                             return {};
                         }
-                        actnums[indexActnum] = actnum;
-                        ++indexActnum;
-                    }
-                }
-                else
-                {
-                    actnum = static_cast<bool>(line.toInt(&convertionOk));
-                    if (!convertionOk)
-                    {
-                        error = QObject::tr("Error when conveting value to int: %1").arg(line);
-                        qDebug() << error;
-                        return {};
+                        actnums.push_back(actNum);
                     }
                 }
 
@@ -507,17 +493,17 @@ syntheticSeismic::domain::EclipseGrid EclipseGridReader::read(QString& error) co
     ages.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, domain::EclipseGrid::NoDataValue);
     actnums.resize(numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ, true);
 
-    return domain::EclipseGrid(
-                numberOfCellsInX,
-                numberOfCellsInY,
-                numberOfCellsInZ,
-                coordinates,
-                zValues,
-                lithologyIds,
-                faciesAssociationIds,
-                ages,
-                actnums
-            );
+    return {
+        numberOfCellsInX,
+        numberOfCellsInY,
+        numberOfCellsInZ,
+        coordinates,
+        zValues,
+        lithologyIds,
+        faciesAssociationIds,
+        ages,
+        actnums
+    };
 }
 
 const QString &EclipseGridReader::path() const

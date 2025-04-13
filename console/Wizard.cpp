@@ -338,7 +338,6 @@ void EclipseGridImportPagePrivate::updateWidget()
 
     QList<QString> dirs = m_eclipseGrids.keys();
     std::sort(dirs.begin(), dirs.end());
-    //m_eclipseFilesImported = true;
 
     for (int i = 0, countI = dirs.size(); i < countI; ++i) {
 

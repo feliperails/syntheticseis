@@ -28,13 +28,13 @@ VolumeToRegularGrid::VolumeToRegularGrid(const size_t numberOfCellsInX, const si
 }
 
 RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegularGrid(
-        const std::vector<std::shared_ptr<Volume>> volumes,
+        const std::vector<std::shared_ptr<Volume>> &volumes,
         const std::array<geometry::Point2D, 4> &minimumRectangle,
         const double zBottom,
         const double zTop
     )
 {
-    const std::vector<std::vector<size_t>> indexesTetraedronsInHexaedron = {
+    const std::vector<std::vector<size_t>> indexesTetrahedronsInHexahedron = {
         {2, 0, 1, 5},
         {5, 4, 6, 2},
         {5, 4, 0, 2},
@@ -45,7 +45,7 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
 
     const int volumesSize = static_cast<int>(volumes.size());
 
-    const double maxDouble = std::numeric_limits<double>::max();
+    constexpr double maxDouble = std::numeric_limits<double>::max();
     double maxX = -maxDouble;
     double maxY = -maxDouble;
     double maxZ = -maxDouble;
@@ -93,16 +93,16 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
     for (int i = 0; i < volumesSize; ++i)
     {
         const auto indexVolume = static_cast<size_t>(i);
-        auto volume = volumes[indexVolume];
+        const auto volume = volumes[indexVolume];
         if (!volume->actnum)
         {
             continue;
         }
 
         const auto &points = volume->points;
-        for (size_t indexTetraedron = 0; indexTetraedron < indexesTetraedronsInHexaedron.size(); ++indexTetraedron)
+        for (size_t indexTetrahedron = 0; indexTetrahedron < indexesTetrahedronsInHexahedron.size(); ++indexTetrahedron)
         {
-            const auto &indexes = indexesTetraedronsInHexaedron[indexTetraedron];
+            const auto &indexes = indexesTetrahedronsInHexahedron[indexTetrahedron];
 
             CgalPolyhedron3D polyhedron;
             polyhedron.make_tetrahedron(
@@ -131,11 +131,11 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
                     for (size_t indexZ = std::get<TUPLE_INDEX_Z>(boundaryBoxIndex).first; indexZ <= indexZMax; ++indexZ)
                     {
                         auto breakAll = false;
-                        for (int incrementX = 0; incrementX <= 1; incrementX += 1)
+                        for (int incrementX = 0; incrementX <= 1; ++incrementX)
                         {
-                            for (int incrementY = 0; incrementY <= 1; incrementY += 1)
+                            for (int incrementY = 0; incrementY <= 1; ++incrementY)
                             {
-                                for (int incrementZ = 0; incrementZ <= 1; incrementZ += 1)
+                                for (int incrementZ = 0; incrementZ <= 1; ++incrementZ)
                                 {
 
                                     if (regularGridData[indexX][indexY][indexZ] != nullptr)
@@ -154,9 +154,9 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
                                     }
 
                                     const auto findPoint = CgalPoint3D(
-                                                m_cellSizeInX * (indexX + incrementX / 2.0),
-                                                m_cellSizeInY * (indexY + incrementY / 2.0),
-                                                m_cellSizeInZ * (indexZ + incrementZ / 2.0)
+                                                m_cellSizeInX * (static_cast<double>(indexX) + incrementX / 2.0),
+                                                m_cellSizeInY * (static_cast<double>(indexY) + incrementY / 2.0),
+                                                m_cellSizeInZ * (static_cast<double>(indexZ) + incrementZ / 2.0)
                                             );
 
                                     auto resultPointInside = pointInside(findPoint);

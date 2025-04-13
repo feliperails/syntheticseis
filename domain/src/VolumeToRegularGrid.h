@@ -31,7 +31,7 @@ public:
     VolumeToRegularGrid(const size_t numberOfCellsInX, const size_t numberOfCellsInY, const size_t numberOfCellsInZ);
 
     RegularGrid<std::shared_ptr<geometry::Volume>> convertVolumesToRegularGrid(
-            const std::vector<std::shared_ptr<geometry::Volume>> volumes,
+            const std::vector<std::shared_ptr<geometry::Volume>> &volumes,
             const std::array<geometry::Point2D, 4> &minimumRectangle,
             const double zBottom,
             const double zTop

@@ -128,11 +128,11 @@ std::vector<std::shared_ptr<Volume>> ExtractVolumes::extractFromVolumesOfFirstLa
                             volumes[indexVolumeLoop]->points[indexPointLoop].x =
                                     volumesOfFirstLayer[indexVolumeMainPlanLoop]->points[indexPointDifferenceLoop].x +
                                     coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].x *
-                                    (static_cast<size_t>(indexLayerZ) + frontBack);
+                                    static_cast<double>(static_cast<size_t>(indexLayerZ) + frontBack);
                             volumes[indexVolumeLoop]->points[indexPointLoop].y =
                                     volumesOfFirstLayer[indexVolumeMainPlanLoop]->points[indexPointDifferenceLoop].y +
                                     coordinateDifferenceXY[indexVolumeMainPlanLoop][indexPointDifferenceLoop].y *
-                                    (static_cast<size_t>(indexLayerZ) + frontBack);
+                                    static_cast<double>(static_cast<size_t>(indexLayerZ) + frontBack);
                             volumes[indexVolumeLoop]->points[indexPointLoop].z = eclipseGrid.zCoordinates()[indexZCorn];
 
                             ++indexZCorn;

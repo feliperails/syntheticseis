@@ -1,7 +1,7 @@
 import sys
 import segyio
 import h5py
-import numpy as np
+# import numpy as np
 
 argv = sys.argv
 hdf5_file_path = argv[1]
@@ -10,6 +10,7 @@ segy_file_path = argv[2]
 hdf5_input = h5py.File(hdf5_file_path, 'r')
 data = hdf5_input['data']
 
+'''
 new_data = np.zeros((data.shape[1], data.shape[0], data.shape[2]), dtype=np.float32)
 
 for i in range(data.shape[0]):
@@ -20,6 +21,11 @@ for i in range(data.shape[0]):
 dimensions = data.shape
 dim_i = dimensions[1]
 dim_j = dimensions[0]
+'''
+new_data = data
+dimensions = data.shape
+dim_i = dimensions[0]
+dim_j = dimensions[1]
 
 str_cell_size_z = str(data.attrs['cellSizeInZ'][0])
 

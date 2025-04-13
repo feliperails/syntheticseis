@@ -11,8 +11,8 @@
 ;General
 
   ;Name and file
-  Name "SyntheticSeismic 1.0.6"
-  OutFile "SyntheticSeismic-1.0.6-release.exe"
+  Name "SyntheticSeismic 1.0.10"
+  OutFile "SyntheticSeismic-1.0.10-release.exe"
   Unicode True
 
   ;Default installation folder

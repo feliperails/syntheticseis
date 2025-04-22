@@ -191,7 +191,7 @@
          </sizepolicy>
         </property>
         <property name="decimals">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -211,7 +211,7 @@
       <item row="1" column="1">
        <widget class="QDoubleSpinBox" name="regularGridYDimensionDoubleSpinBox">
         <property name="decimals">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>
@@ -231,7 +231,7 @@
       <item row="2" column="1">
        <widget class="QDoubleSpinBox" name="regularGridZDimensionDoubleSpinBox">
         <property name="decimals">
-         <number>3</number>
+         <number>0</number>
         </property>
         <property name="maximum">
          <double>1000000.000000000000000</double>

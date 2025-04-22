@@ -1,7 +1,6 @@
 import sys
 import segyio
 import h5py
-# import numpy as np
 
 argv = sys.argv
 hdf5_file_path = argv[1]
@@ -10,27 +9,23 @@ segy_file_path = argv[2]
 hdf5_input = h5py.File(hdf5_file_path, 'r')
 data = hdf5_input['data']
 
-'''
-new_data = np.zeros((data.shape[1], data.shape[0], data.shape[2]), dtype=np.float32)
-
-for i in range(data.shape[0]):
-    for j in range(data.shape[1]):
-        for k in range(data.shape[2]):
-            new_data[j][i][k] = data[i][data.shape[1] - 1 - j][k]
-
-dimensions = data.shape
-dim_i = dimensions[1]
-dim_j = dimensions[0]
-'''
-new_data = data
 dimensions = data.shape
 dim_i = dimensions[0]
 dim_j = dimensions[1]
 
-str_cell_size_z = str(data.attrs['cellSizeInZ'][0])
+cellSizeInZ = data.attrs['cellSizeInZ'][0] * 1000
+geometryOriginX = data.attrs['geometryOriginX'][0] * 100
+geometryOriginY = data.attrs['geometryOriginY'][0] * 100
+zBottom = data.attrs['zBottom'][0] * 1000
+geometryInlineEndX = data.attrs['geometryInlineEndX'][0] * 100
+geometryInlineEndY = data.attrs['geometryInlineEndY'][0] * 100
+geometryCrosslineEndX = data.attrs['geometryCrosslineEndX'][0] * 100
+geometryCrosslineEndY = data.attrs['geometryCrosslineEndY'][0] * 100
 
-cellSizeInZ = max(round(data.attrs['cellSizeInZ'][0]), 1)
-segyio.tools.from_array3D(segy_file_path, new_data, dt=cellSizeInZ)
+str_cell_size_z = str(cellSizeInZ)
+
+cellSizeInZ = max(round(cellSizeInZ), 1)
+segyio.tools.from_array3D(segy_file_path, data, dt=cellSizeInZ)
 segy_output = segyio.open(segy_file_path, "r+")
 
 header = "Processed by SyntheticSeis.".ljust(80, " ")
@@ -45,13 +40,13 @@ formatted_text = segyio.tools.wrap(header)
 
 segy_output.text[0] = formatted_text
 
-origin_x = data.attrs['geometryOriginX'][0]
-origin_y = data.attrs['geometryOriginY'][0]
-origin_z = int(data.attrs['zBottom'][0])
-inline_end_x = data.attrs['geometryInlineEndX'][0]
-inline_end_y = data.attrs['geometryInlineEndY'][0]
-crossline_end_x = data.attrs['geometryCrosslineEndX'][0]
-crossline_end_y = data.attrs['geometryCrosslineEndY'][0]
+origin_x = geometryOriginX
+origin_y = geometryOriginY
+origin_z = int(zBottom)
+inline_end_x = geometryInlineEndX
+inline_end_y = geometryInlineEndY
+crossline_end_x = geometryCrosslineEndX
+crossline_end_y = geometryCrosslineEndY
 
 inline_step_x = (inline_end_x - origin_x) / dim_j
 inline_step_y = (inline_end_y - origin_y) / dim_j

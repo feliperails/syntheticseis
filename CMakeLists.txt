@@ -110,6 +110,12 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     domain/test/ConvertRegularGridToMetersCalculatorTest.cpp
     domain/test/ConvertRegularGridTestValues.cpp
+    domain/test/LithologyDictionaryTest.cpp
+    domain/test/ImpedanceCalculatorTest.cpp
+    domain/test/ReflectivityCalculatorTest.cpp
+    domain/test/RickerWaveletCalculatorTest.cpp
+    domain/test/EclipseGridSurfaceTest.cpp
+    domain/test/ExtractMinimumRectangle2DTest.cpp
 )
 
 add_executable(SyntheticSeismicConsole

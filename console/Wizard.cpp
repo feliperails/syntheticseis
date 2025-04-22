@@ -15,6 +15,8 @@
 #include <QProcess>
 #include <QComboBox>
 #include <memory>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
 #include "domain/src/ConvolutionRegularGridCalculator.h"
 #include "domain/src/EclipseGridSurface.h"
 #include "domain/src/ExtractVolumes.h"
@@ -64,7 +66,7 @@ class WizardPrivate
     Wizard* const q_ptr;
 };
 
-WizardPrivate::WizardPrivate(Wizard *q)
+    WizardPrivate::WizardPrivate(Wizard *q)
     : q_ptr(q)
 {
     FileSelectionPage* fileSelectionPage = new FileSelectionPage(q);
@@ -825,25 +827,27 @@ void SegyCreationPagePrivate::updateWidget()
 
     for (int row = 0, rowCount = m_lithologies.size(); row < rowCount; ++row)
     {
-        QSpinBox* idEditor = new QSpinBox(q_ptr);
+        auto idEditor = new QSpinBox(q_ptr);
         idEditor->setMaximum(INT_MAX);
         idEditor->setValue(m_lithologies[row].getId());
-        QLineEdit* nameEditor = new QLineEdit(q_ptr);
+        auto nameEditor = new QLineEdit(q_ptr);
         nameEditor->setText(m_lithologies[row].getName());
-        QDoubleSpinBox* velocityEditor = new QDoubleSpinBox(q_ptr);
+        auto velocityEditor = new QDoubleSpinBox(q_ptr);
         velocityEditor->setMaximum(DBL_MAX);
         velocityEditor->setValue(m_lithologies[row].getVelocity());
-        QDoubleSpinBox* densityEditor = new QDoubleSpinBox(q_ptr);
+        velocityEditor->setDecimals(0);
+        auto densityEditor = new QDoubleSpinBox(q_ptr);
         densityEditor->setMaximum(DBL_MAX);
         densityEditor->setValue(m_lithologies[row].getDensity());
-        QComboBox* fillingTypeEditor = new QComboBox(q_ptr);
+        densityEditor->setDecimals(0);
+        auto fillingTypeEditor = new QComboBox(q_ptr);
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::None));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Top));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Bottom));
         fillingTypeEditor->addItem(fillingTypeToString(domain::FillingType::Both));
         fillingTypeEditor->setCurrentIndex(static_cast<int>(m_lithologies[row].getFillingType()));
 
-        QPushButton* removeButton = new QPushButton(q_ptr);
+        auto removeButton = new QPushButton(q_ptr);
         removeButton->setIcon(QIcon(QLatin1String(":/remove")));
 
         m_ui->velocityTableWidget->setCellWidget(row, 0, idEditor);
@@ -1254,10 +1258,12 @@ std::shared_ptr<domain::Lithology> SegyCreationPage::createFillingLithology(cons
     {
         const domain::FillingType& fillingTypeCurr = lith.getFillingType();
 
-        if (fillingTypeCurr == domain::FillingType::None) continue;
+        if (fillingTypeCurr == domain::FillingType::None)
+        {
+            continue;
+        }
 
-        if (fillingTypeCurr == fillingType ||
-            fillingTypeCurr == domain::FillingType::Both)
+        if (fillingTypeCurr == fillingType || fillingTypeCurr == domain::FillingType::Both)
         {
             return std::make_shared<Lithology>(lith);
         }

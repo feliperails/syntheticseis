@@ -123,7 +123,7 @@ namespace domain {
 
         auto &depthData = depthGrid.getData();
         size_t maxNumPositionSteps = 0;
-        // #pragma omp parallel for
+        #pragma omp parallel for
         for (int xInt = 0; xInt < static_cast<int>(numberOfCellsInX); ++xInt)
         {
             const auto x = static_cast<size_t>(xInt);
@@ -131,6 +131,7 @@ namespace domain {
             {
                 double currentPosition = 0.0;
                 std::vector<double> positionFromTime(0);
+                positionFromTime.reserve(numberOfCellsInZ);
 
                 // Calculating position for each time slot
                 for (size_t z = 0; z < numberOfCellsInZ; ++z)
@@ -146,9 +147,9 @@ namespace domain {
                     positionFromTime.push_back(currentPosition);
                 }
 
-                // Making the seismic trace equally splited in space to store in structure
+                // Making the seismic trace equally split in space to store in structure
                 const double finalPosition = currentPosition;
-                const auto numPositionSteps = static_cast<size_t>(finalPosition/positionStep);
+                const auto numPositionSteps = static_cast<size_t>(finalPosition / positionStep);
                 if(numPositionSteps > maxNumPositionSteps)
                 {
                     maxNumPositionSteps = numPositionSteps;
@@ -159,9 +160,9 @@ namespace domain {
 
                 depthData[x][y].resize(numPositionSteps);
 
-                for(size_t depthIdxInt = 0; depthIdxInt < numPositionSteps-2; depthIdxInt++)
+                for(size_t depthIndex = 0; depthIndex < numPositionSteps - 2; ++depthIndex)
                 {
-                    position = static_cast<double>(depthIdxInt) * positionStep;
+                    position = static_cast<double>(depthIndex) * positionStep;
                     size_t depthIdxBeforePositionInt = 0;
                     for(size_t z = 1; z < numberOfCellsInZ-1; z++)
                     {
@@ -175,7 +176,7 @@ namespace domain {
                                    (positionFromTime[depthIdxBeforePositionInt+1] - positionFromTime[depthIdxBeforePositionInt])
                                + timeGridTraceData[x][y][depthIdxBeforePositionInt + 1] * (positionFromTime[depthIdxBeforePositionInt + 1] - position) /
                                      (positionFromTime[depthIdxBeforePositionInt+1] - positionFromTime[depthIdxBeforePositionInt]));
-                    depthData[x][y][depthIdxInt] = seismic;
+                    depthData[x][y][depthIndex] = seismic;
                 }
             }
         }

@@ -110,6 +110,12 @@ add_executable(SyntheticSeismicTest
     storage/test/StorageTest.cpp
     domain/test/ConvertRegularGridToMetersCalculatorTest.cpp
     domain/test/ConvertRegularGridTestValues.cpp
+    domain/test/LithologyDictionaryTest.cpp
+    domain/test/ImpedanceCalculatorTest.cpp
+    domain/test/ReflectivityCalculatorTest.cpp
+    domain/test/RickerWaveletCalculatorTest.cpp
+    domain/test/EclipseGridSurfaceTest.cpp
+    domain/test/ExtractMinimumRectangle2DTest.cpp
 )
 
 add_executable(SyntheticSeismicConsole
@@ -117,6 +123,10 @@ add_executable(SyntheticSeismicConsole
     console/Wizard.cpp
     ${Plugin_UI_HEADERS}
     ${RESOURCES}
+        console/FileSelectionPage.cpp
+        console/FileSelectionPage.h
+        console/SegyCreationPage.cpp
+        console/SegyCreationPage.h
 )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)

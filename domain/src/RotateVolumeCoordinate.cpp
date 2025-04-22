@@ -83,7 +83,10 @@ std::pair<double, double> RotateVolumeCoordinate::calculateMinimumAndMaximumZ(co
     return {minimumZ, maximumZ};
 }
 
-std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateByMinimumRectangle(std::vector<std::shared_ptr<Volume>> &volumes, const std::array<Point2D, 4> &minimumRectanglePoints)
+std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateByMinimumRectangle(
+        std::vector<std::shared_ptr<Volume>> &volumes,
+        const std::array<Point2D, 4> &minimumRectanglePoints
+    )
 {
     const auto minimumAndMaximumZ = calculateMinimumAndMaximumZ(volumes);
 
@@ -93,8 +96,16 @@ std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateBy
                 referencePointAndAngleInRadians.first.y,
                 minimumAndMaximumZ.first
             );
+    const auto angle = referencePointAndAngleInRadians.second;
 
-    if (qFuzzyCompare(referencePointAndAngleInRadians.second, 0.0))
+    std::cout << "RotateVolumeCoordinate::rotateByMinimumRectangle reference point: "
+        << "("
+        << referencePointAndAngleInRadians.first.x << ", "
+        << referencePointAndAngleInRadians.first.y << ", "
+        << minimumAndMaximumZ.first << ")"
+        << std::endl;
+    std::cout << "RotateVolumeCoordinate::rotateByMinimumRectangle angle: " << angle << std::endl;
+    if (qFuzzyCompare(angle, 0.0))
     {
         for (auto &volume : volumes)
         {
@@ -108,8 +119,6 @@ std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateBy
     }
     else
     {
-        const auto angle = referencePointAndAngleInRadians.second;
-
         const CgalTransformation transformation(cos(angle),   -sin(angle),  0.0,
                                                 sin(angle),    cos(angle),  0.0,
                                                 0.0,           0.0,         1.0);
@@ -121,7 +130,11 @@ std::shared_ptr<RotateVolumeCoordinate::Result> RotateVolumeCoordinate::rotateBy
         {
             for (auto &point : volumes[static_cast<size_t>(i)]->points)
             {
-                const CgalPoint3D pointCgal(point.x - referencePoint.x, point.y - referencePoint.y, point.z - referencePoint.z);
+                const CgalPoint3D pointCgal(
+                        point.x - referencePoint.x,
+                        point.y - referencePoint.y,
+                        point.z - referencePoint.z
+                    );
                 const auto pointCgalRotated = transformation(pointCgal);
                 point.x = pointCgalRotated.x();
                 point.y = pointCgalRotated.y();

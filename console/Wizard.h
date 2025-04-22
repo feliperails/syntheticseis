@@ -1,5 +1,4 @@
-#ifndef INC_SYNTHETICSEISMIC_WIDGETS_WIZARD_H
-#define INC_SYNTHETICSEISMIC_WIDGETS_WIZARD_H
+#pragma once
 
 #include <QDialog>
 #include <QWizard>
@@ -33,28 +32,6 @@ private:
     WizardPrivate* const d_ptr;
 };
 
-/***************************************************************/
-
-class FileSelectionPagePrivate;
-class FileSelectionPage : public QWizardPage
-{
-    Q_OBJECT
-public:
-    explicit FileSelectionPage(QWidget* parent);
-
-    bool validatePage() override;
-    bool isComplete() const override;
-
-protected:
-    void resizeEvent(QResizeEvent *event);
-
-private:
-    Q_DECLARE_PRIVATE(FileSelectionPage)
-    FileSelectionPagePrivate* const d_ptr;
-};
-
-/***************************************************************/
-
 class EclipseGridImportPagePrivate;
 class EclipseGridImportPage : public QWizardPage
 {
@@ -71,62 +48,6 @@ private:
     EclipseGridImportPagePrivate* const d_ptr;
 };
 
-/***************************************************************/
-class Worker;
-class SegyCreationPagePrivate;
-class SegyCreationPage : public QWizardPage
-{
-    Q_OBJECT
-
-signals:
-    void progressUpdated(int value);
-    void processFinished();
-
-public:
-    explicit SegyCreationPage(QWidget* parent);
-    virtual ~SegyCreationPage();
-
-    bool isComplete() const override;
-    bool validatePage() override;
-    void initializePage() override;
-
-    void process();
-
-private:
-    bool validateLithologies();
-    void initProcessThread();
-    std::shared_ptr<domain::Lithology> createFillingLithology(const domain::FillingType& fillingType);
-
-private slots:
-    void showProcessMessage();
-
-private:
-    QThread* m_processThread;
-    QProgressDialog* m_progressDialog;
-    Worker* m_processWorker;
-    QPair<QMessageBox::Icon, QString> m_processMessage;
-
-    Q_DECLARE_PRIVATE(SegyCreationPage)
-    SegyCreationPagePrivate* const d_ptr;
-};
-
-class Worker : public QObject
-{
-    Q_OBJECT
-
-public:
-    Worker(SegyCreationPage* segyCreationPage);
-
-signals:
-    void progressUpdated(int value);
-    void finished();
-
-public slots:
-    void run();
-
-private:
-    SegyCreationPage * m_segyCreationPage;
-};
 
 class AddingVelocityWidgetPrivate;
 class AddingVelocityWidget : public QDialog
@@ -145,6 +66,3 @@ private:
 
 }
 }
-
-
-#endif

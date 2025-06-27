@@ -37,6 +37,8 @@
 #include "storage/src/writer/GrdSurfaceWriter.h"
 #include "storage/src/writer/SEGYWriter.h"
 #include "domain/src/ConvertRegularGridCalculator.h"
+#include "domain/src/CellSizeCalculator.h"
+#include "domain/src/ExtractVolumes.h"
 #include "SegyCreationPage.h"
 
 using syntheticSeismic::domain::Lithology;
@@ -91,15 +93,24 @@ const QString REGULAR_GRID_X_DIMENSION = QLatin1String("regularGridXDimension");
 const QString REGULAR_GRID_Y_DIMENSION = QLatin1String("regularGridYDimension");
 const QString REGULAR_GRID_Z_DIMENSION = QLatin1String("regularGridZDimension");
 
+const QString CELL_SIZE_IN_X = QLatin1String("cellSizeInX");
+const QString CELL_SIZE_IN_Y = QLatin1String("cellSizeInY");
+const QString CELL_SIZE_IN_Z = QLatin1String("cellSizeInZ");
+const QString RICKER_WAVELET_FREQUENCY = QLatin1String("rickerWaveletFrequency");
+
 const QString ECLIPSE_GRIDS = QLatin1String("eclipseGrids");
+const QString ALL_VOLUMES = QLatin1String("allVolumes");
+
 }
 
+using syntheticSeismic::geometry::Volume;
 using syntheticSeismic::domain::EclipseGrid;
 
 class EclipseGridImportPagePrivate
 {
     explicit EclipseGridImportPagePrivate(EclipseGridImportPage* q);
     void updateWidget();
+    void updateCellSize();
     void importEclipseFiles();
     void importEclipseFile(const QPair<QFileInfo, int>&);
 
@@ -107,7 +118,9 @@ class EclipseGridImportPagePrivate
     EclipseGridImportPage* q_ptr;
     std::unique_ptr<Ui::EclipseGridImportPage> m_ui;
     QHash<QString, QVector<QString> > m_eclipseGridsErros;
-    QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_eclipseGrids;
+    QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_hashEclipseGrids;
+    QVector<std::shared_ptr<EclipseGrid>> m_eclipseGrids;
+    std::vector<std::shared_ptr<Volume>> m_allVolumes;
     QMutex m_mutexEclipseGrids;
     bool m_eclipseFilesImported;
 };
@@ -115,7 +128,7 @@ class EclipseGridImportPagePrivate
 EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage *q)
     : q_ptr(q)
     , m_ui(std::make_unique<Ui::EclipseGridImportPage>())
-    , m_eclipseGrids()
+    , m_hashEclipseGrids()
     , m_eclipseFilesImported(false)
 {
     m_ui->setupUi(q);
@@ -124,20 +137,53 @@ EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage
         Q_EMIT q_ptr->completeChanged();
     };
 
+
+
+    QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, emitCompleteChangedFunction);
     QObject::connect(m_ui->regularGridXDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, emitCompleteChangedFunction);
     QObject::connect(m_ui->regularGridYDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, emitCompleteChangedFunction);
     QObject::connect(m_ui->regularGridZDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, emitCompleteChangedFunction);
+
+    const auto updateCellSizeFunction = [this](const double) -> void {
+        this->updateCellSize();
+    };
+
+    QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, updateCellSizeFunction);
+    QObject::connect(m_ui->regularGridXDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, updateCellSizeFunction);
+    QObject::connect(m_ui->regularGridYDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, updateCellSizeFunction);
+    QObject::connect(m_ui->regularGridZDimensionDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, updateCellSizeFunction);
+}
+
+void EclipseGridImportPagePrivate::updateCellSize()
+{
+    if (m_allVolumes.empty()) return;
+
+    domain::CellSizeCalculator cellSizeCalculator(
+            m_ui->regularGridXDimensionDoubleSpinBox->value(),
+            m_ui->regularGridYDimensionDoubleSpinBox->value(),
+            m_ui->regularGridZDimensionDoubleSpinBox->value(),
+            m_ui->rickerWaveletFrequencyDoubleSpinBox->value(),
+            m_allVolumes
+        );
+
+    m_ui->regularGridXCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInX());
+    m_ui->regularGridYCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInY());
+    m_ui->regularGridZCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInZ());
 }
 
 void EclipseGridImportPagePrivate::updateWidget()
 {
+    using namespace syntheticSeismic::domain;
+
     importEclipseFiles();
 
     Q_Q(EclipseGridImportPage);
 
     m_ui->fileTreeWidget->clear();
+    m_eclipseGrids.clear();
+    m_allVolumes.clear();
 
-    QList<QString> dirs = m_eclipseGrids.keys();
+    QList<QString> dirs = m_hashEclipseGrids.keys();
     std::sort(dirs.begin(), dirs.end());
 
     for (int i = 0, countI = dirs.size(); i < countI; ++i) {
@@ -147,16 +193,27 @@ void EclipseGridImportPagePrivate::updateWidget()
 
         m_ui->fileTreeWidget->addTopLevelItem(topLevelItem);
 
-        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_eclipseGrids.value(dir);
+        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_hashEclipseGrids.value(dir);
 
         for (int j = 0, countJ = baseFileNames.size(); j < countJ; ++j) {
-            const QString& fileName = baseFileNames.at(j).first;
+            const QPair<QString, std::shared_ptr<EclipseGrid>>& pair = baseFileNames.at(j);
+
+            const auto eclipsGrid = pair.second;
+            Q_ASSERT(eclipsGrid);
+            if (eclipsGrid) {
+                m_eclipseGrids.push_back(eclipsGrid);
+                const std::vector<std::shared_ptr<Volume>> volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(*eclipsGrid);
+                const std::vector<std::shared_ptr<Volume>> volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *eclipsGrid, true);
+                m_allVolumes.insert(m_allVolumes.end(), volumes.begin(), volumes.end());
+            }
+
+            const QString& fileName = pair.first;
 
             QTreeWidgetItem* treeWidgetItem = new QTreeWidgetItem({fileName});
             topLevelItem->addChild(treeWidgetItem);
 
             const QString& error = m_eclipseGridsErros[dir][j];
-            const std::shared_ptr<EclipseGrid>& eclipseGrid = m_eclipseGrids[dir][j].second;
+            const std::shared_ptr<EclipseGrid>& eclipseGrid = m_hashEclipseGrids[dir][j].second;
             if (error.isEmpty()) {
                 treeWidgetItem->setText(MESSAGE_COLUMN, ECLIPSE_FILE_IMPORTED);
 
@@ -207,10 +264,16 @@ void EclipseGridImportPagePrivate::updateWidget()
                     grdFaciesAssociationSurfaceWriter.write(*result->getFaciesAssociationSurface());
                 }
             });
+
+
             m_ui->regularGridXDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInX());
             m_ui->regularGridYDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInY());
             m_ui->regularGridZDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInZ());
+            m_ui->rickerWaveletFrequencyDoubleSpinBox->setValue(1.0);
             m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_MAIN_SURFACE_COLUMN, exportSurfaceAction);
+
+            updateCellSize();
+
             // END EXPORT MAIN SURFACE
 
             // BEGIN EXPORT SURFACE BY AGE
@@ -294,6 +357,8 @@ void EclipseGridImportPagePrivate::updateWidget()
             m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_SURFACE_BY_AGE_COLUMN, exportSurfaceByAgeAction);
             // END EXPORT SURFACE BY AGE
         }
+
+
     }
 
     m_ui->fileTreeWidget->expandAll();
@@ -313,7 +378,7 @@ void EclipseGridImportPagePrivate::importEclipseFile(const QPair<QFileInfo, int>
 
     m_mutexEclipseGrids.lock();
 
-        m_eclipseGrids[dir][j].second = eclipseGrid;
+        m_hashEclipseGrids[dir][j].second = eclipseGrid;
 
         if (!error.isEmpty())
         {
@@ -326,7 +391,7 @@ void EclipseGridImportPagePrivate::importEclipseFile(const QPair<QFileInfo, int>
 
 void EclipseGridImportPagePrivate::importEclipseFiles()
 {
-    QList<QString> dirs = m_eclipseGrids.keys();
+    QList<QString> dirs = m_hashEclipseGrids.keys();
     std::sort(dirs.begin(), dirs.end());
     m_eclipseFilesImported = true;
 
@@ -336,7 +401,7 @@ void EclipseGridImportPagePrivate::importEclipseFiles()
 
         const QString& dir = dirs.at(i);
 
-        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_eclipseGrids.value(dir);
+        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> baseFileNames = m_hashEclipseGrids.value(dir);
 
         for (int j = 0, countJ = baseFileNames.size(); j < countJ; ++j) {
             const QString& fileName = baseFileNames.at(j).first;
@@ -377,23 +442,38 @@ EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
     registerField(REGULAR_GRID_Y_DIMENSION, d_ptr->m_ui->regularGridYDimensionDoubleSpinBox);
     registerField(REGULAR_GRID_Z_DIMENSION, d_ptr->m_ui->regularGridZDimensionDoubleSpinBox);
 
+
+    registerField(CELL_SIZE_IN_X, d_ptr->m_ui->regularGridXCellSizeDoubleSpinBox);
+    registerField(CELL_SIZE_IN_Y, d_ptr->m_ui->regularGridYCellSizeDoubleSpinBox);
+    registerField(CELL_SIZE_IN_Z, d_ptr->m_ui->regularGridZCellSizeDoubleSpinBox);
+    registerField(RICKER_WAVELET_FREQUENCY, d_ptr->m_ui->rickerWaveletFrequencyDoubleSpinBox);
+
     registerField(ECLIPSE_GRIDS, d_ptr->m_ui->fileTreeWidget);
+    registerField(ALL_VOLUMES, d_ptr->m_ui->fileTreeWidget);
 }
 
 bool EclipseGridImportPage::validatePage()
 {
-    Q_D(EclipseGridImportPage);
+    //Q_D(EclipseGridImportPage);
 
     setField(REGULAR_GRID_X_DIMENSION, d_ptr->m_ui->regularGridXDimensionDoubleSpinBox->value());
     setField(REGULAR_GRID_Y_DIMENSION, d_ptr->m_ui->regularGridYDimensionDoubleSpinBox->value());
     setField(REGULAR_GRID_Z_DIMENSION, d_ptr->m_ui->regularGridZDimensionDoubleSpinBox->value());
 
+    setField(CELL_SIZE_IN_X, d_ptr->m_ui->regularGridXCellSizeDoubleSpinBox->value());
+    setField(CELL_SIZE_IN_Y, d_ptr->m_ui->regularGridYCellSizeDoubleSpinBox->value());
+    setField(CELL_SIZE_IN_Z, d_ptr->m_ui->regularGridZCellSizeDoubleSpinBox->value());
+    setField(RICKER_WAVELET_FREQUENCY, d_ptr->m_ui->rickerWaveletFrequencyDoubleSpinBox->value());
+
+    setField(ECLIPSE_GRIDS, QVariant::fromValue(d_ptr->m_eclipseGrids));
+    setField(ALL_VOLUMES, QVariant::fromValue(d_ptr->m_allVolumes));
+    /*
     QVector<std::shared_ptr<EclipseGrid>> eclipseGrids;
 
-    const QList<QString> dirs = d->m_eclipseGrids.keys();
+    const QList<QString> dirs = d->m_hashEclipseGrids.keys();
     for (const QString& dir : dirs) {
 
-        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> pairs = d->m_eclipseGrids.value(dir);
+        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> pairs = d->m_hashEclipseGrids.value(dir);
         for (const QPair<QString, std::shared_ptr<EclipseGrid>>& pair : pairs) {
             const auto eclipsGrid = pair.second;
             Q_ASSERT(eclipsGrid);
@@ -404,6 +484,7 @@ bool EclipseGridImportPage::validatePage()
     }
 
     setField(ECLIPSE_GRIDS, QVariant::fromValue(eclipseGrids));
+    */
 
     return true;
 }
@@ -411,7 +492,9 @@ bool EclipseGridImportPage::validatePage()
 void EclipseGridImportPage::initializePage()
 {
     Q_D(EclipseGridImportPage);
-    d->m_eclipseGrids.clear();
+    d_ptr->m_allVolumes.clear();
+    d_ptr->m_eclipseGrids.clear();
+    d->m_hashEclipseGrids.clear();
     d->m_eclipseGridsErros.clear();
     const QHash<QString, QSet<QString>> fileNames = field(INPUT_FILES_FIELD).value<QHash<QString, QSet<QString>>>();
 
@@ -420,7 +503,7 @@ void EclipseGridImportPage::initializePage()
         const QSet<QString> files = fileNames.value(dir);
         for (const QString& file : files) {
             d->m_eclipseGridsErros[dir].push_back("");
-            d->m_eclipseGrids[dir].push_back(QPair<QString, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>>(file, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>()));
+            d->m_hashEclipseGrids[dir].push_back(QPair<QString, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>>(file, std::shared_ptr<syntheticSeismic::domain::EclipseGrid>()));
         }
     }
     d->updateWidget();
@@ -431,6 +514,7 @@ bool EclipseGridImportPage::isComplete() const
     Q_D(const EclipseGridImportPage);
     return d->m_ui->fileTreeWidget->topLevelItemCount() != 0
             && d->m_eclipseFilesImported
+            && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
             && !qFuzzyIsNull(d->m_ui->regularGridXDimensionDoubleSpinBox->value())
             && !qFuzzyIsNull(d->m_ui->regularGridYDimensionDoubleSpinBox->value())
             && !qFuzzyIsNull(d->m_ui->regularGridZDimensionDoubleSpinBox->value());
@@ -535,4 +619,6 @@ Lithology AddingVelocityWidget::lithology() const
 }
 }
 
-
+Q_DECLARE_METATYPE(syntheticSeismic::geometry::Volume)
+Q_DECLARE_METATYPE(std::shared_ptr<syntheticSeismic::geometry::Volume>)
+Q_DECLARE_METATYPE(std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>>)

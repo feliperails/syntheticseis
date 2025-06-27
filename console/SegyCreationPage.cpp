@@ -32,7 +32,14 @@ const QString REGULAR_GRID_X_DIMENSION = QLatin1String("regularGridXDimension");
 const QString REGULAR_GRID_Y_DIMENSION = QLatin1String("regularGridYDimension");
 const QString REGULAR_GRID_Z_DIMENSION = QLatin1String("regularGridZDimension");
 
+
+const QString CELL_SIZE_IN_X = QLatin1String("cellSizeInX");
+const QString CELL_SIZE_IN_Y = QLatin1String("cellSizeInY");
+const QString CELL_SIZE_IN_Z = QLatin1String("cellSizeInZ");
+const QString RICKER_WAVELET_FREQUENCY = QLatin1String("rickerWaveletFrequency");
+
 const QString ECLIPSE_GRIDS = QLatin1String("eclipseGrids");
+const QString ALL_VOLUMES = QLatin1String("allVolumes");
 }
 
 namespace syntheticSeismic {
@@ -67,6 +74,10 @@ class SegyCreationPagePrivate
     size_t m_numberOfCellsInX;
     size_t m_numberOfCellsInY;
     size_t m_numberOfCellsInZ;
+    double m_cellSizeInX;
+    double m_cellSizeInY;
+    double m_cellSizeInZ;
+    double m_rickerWaveletFrequency;
 };
 
 SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
@@ -77,6 +88,10 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         , m_numberOfCellsInX(0)
         , m_numberOfCellsInY(0)
         , m_numberOfCellsInZ(0)
+        , m_cellSizeInX(0.0)
+        , m_cellSizeInY(0.0)
+        , m_cellSizeInZ(0.0)
+        , m_rickerWaveletFrequency(0.0)
 {
     m_ui->setupUi(q);
     m_lithologies = syntheticSeismic::domain::Facade::lithologyDictionary().lithologies();
@@ -113,9 +128,9 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
 
-    QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
-        Q_EMIT q_ptr->completeChanged();
-    });
+    //QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
+    //    Q_EMIT q_ptr->completeChanged();
+    //});
 
     // BEGIN LITHOLOGY SEGY FILE
     QObject::connect(m_ui->lithologyFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&) {
@@ -475,7 +490,7 @@ bool SegyCreationPage::isComplete() const
     Q_D(const SegyCreationPage);
 
     return !d->m_lithologies.isEmpty()
-           && !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
+           //&& !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
            && (!d->m_ui->amplitudeFileNameLineEdit->text().isEmpty() ||
                !d->m_ui->depthAmplitudeFileNameLineEdit->text().isEmpty());
 }
@@ -493,20 +508,21 @@ void SegyCreationPage::process()
         const double undefinedImpedance = 2.500;
         const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
 
-        std::vector<std::shared_ptr<Volume>> allVolumes;
-        for (const auto& item : d->m_eclipseGrids)
+        std::vector<std::shared_ptr<Volume>> allVolumes = field(ALL_VOLUMES).value<std::vector<std::shared_ptr<Volume>>>();
+        /*for (const auto& item : d->m_eclipseGrids)
         {
             const std::vector<std::shared_ptr<Volume>> volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(*item);
             const std::vector<std::shared_ptr<Volume>> volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *item, true);
             allVolumes.insert(allVolumes.end(), volumes.begin(), volumes.end());
-        }
+        }*/
 
         emit progressUpdated(5);
 
         const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
-        VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ);
+        VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ, d->m_cellSizeInX, d->m_cellSizeInY, d->m_cellSizeInZ);
+
         auto regularGridInMeters = volumeToRegularGrid.convertVolumesToRegularGrid(
                 allVolumes, minimumRectangle, rotateResult->minimumZ, rotateResult->maximumZ
         );
@@ -530,7 +546,7 @@ void SegyCreationPage::process()
         std::cout << "Wavelet Step: " << waveletStep << std::endl;
 
         RickerWaveletCalculator rickerWaveletCalculator;
-        rickerWaveletCalculator.setFrequency(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value());
+        rickerWaveletCalculator.setFrequency(d->m_rickerWaveletFrequency);
         rickerWaveletCalculator.setStep(waveletStep);
         const auto wavelet = rickerWaveletCalculator.extract();
 
@@ -754,7 +770,15 @@ void SegyCreationPage::initializePage()
     d->m_numberOfCellsInX = field(REGULAR_GRID_X_DIMENSION).value<size_t>();
     d->m_numberOfCellsInY = field(REGULAR_GRID_Y_DIMENSION).value<size_t>();
     d->m_numberOfCellsInZ = field(REGULAR_GRID_Z_DIMENSION).value<size_t>();
+    d->m_cellSizeInX = field(CELL_SIZE_IN_X).value<double>();
+    d->m_cellSizeInY = field(CELL_SIZE_IN_Y).value<double>();
+    d->m_cellSizeInZ = field(CELL_SIZE_IN_Z).value<double>();
+    d->m_rickerWaveletFrequency = field(RICKER_WAVELET_FREQUENCY).value<double>();
 }
 
 } // widgets
 } // syntheticSeismic
+
+Q_DECLARE_METATYPE(syntheticSeismic::geometry::Volume)
+Q_DECLARE_METATYPE(std::shared_ptr<syntheticSeismic::geometry::Volume>)
+Q_DECLARE_METATYPE(std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>>)

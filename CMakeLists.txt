@@ -54,6 +54,8 @@ add_library(SyntheticSeismic SHARED
     geometry/src/Point2D.cpp
 
     # domain
+    domain/src/CellSizeCalculator.h
+    domain/src/CellSizeCalculator.cpp
     domain/src/ConvertRegularGridCalculator.cpp
     domain/src/ConvolutionRegularGridCalculator.cpp
     domain/src/DomainConstant.cpp
@@ -203,11 +205,19 @@ if(WIN32)
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake
     )
 
-    IF(CMAKE_BUILD_TYPE MATCHES Debug)
-        file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    if(CMAKE_BUILD_TYPE MATCHES Debug)
+        file(COPY "${Qt5_DIR}/../../../bin/platforms"
+             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
     else()
-        file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(COPY "${Qt5_DIR}/../../../bin/platforms"
+             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
     endif()
+
+    #IF(CMAKE_BUILD_TYPE MATCHES Debug)
+    #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    #else()
+    #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    #endif()
 endif()
 
 install(FILES README.md

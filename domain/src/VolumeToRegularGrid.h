@@ -29,6 +29,7 @@ public:
     typedef CGAL::Side_of_triangle_mesh<CgalPolyhedron3D, CgalKernel> CgalPolyhedronPointInside3D;
 
     VolumeToRegularGrid(const size_t numberOfCellsInX, const size_t numberOfCellsInY, const size_t numberOfCellsInZ);
+    VolumeToRegularGrid(const size_t& numberOfCellsInX, const size_t& numberOfCellsInY, const size_t& numberOfCellsInZ, const double& cellSizeInX, const double& cellSizeInY, const double& cellSizeInZ);
 
     RegularGrid<std::shared_ptr<geometry::Volume>> convertVolumesToRegularGrid(
             const std::vector<std::shared_ptr<geometry::Volume>> &volumes,
@@ -47,6 +48,7 @@ private:
     double m_cellSizeInX;
     double m_cellSizeInY;
     double m_cellSizeInZ;
+    bool m_calculeCellSize;
     bool m_breakInFirstColision;
 
     BoundaryBoxIndex calculateBoundaryBoxIndex(const std::vector<geometry::Point3D> &points);

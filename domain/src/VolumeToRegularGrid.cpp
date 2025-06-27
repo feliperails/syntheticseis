@@ -22,6 +22,27 @@ VolumeToRegularGrid::VolumeToRegularGrid(const size_t numberOfCellsInX, const si
     m_cellSizeInX(0.0),
     m_cellSizeInY(0.0),
     m_cellSizeInZ(0.0),
+    m_calculeCellSize(true),
+    m_breakInFirstColision(false)
+{
+
+}
+
+VolumeToRegularGrid::VolumeToRegularGrid(
+                            const size_t& numberOfCellsInX,
+                            const size_t& numberOfCellsInY,
+                            const size_t& numberOfCellsInZ,
+                            const double& cellSizeInX,
+                            const double& cellSizeInY,
+                            const double& cellSizeInZ
+                        ) :
+    m_numberOfCellsInX(numberOfCellsInX),
+    m_numberOfCellsInY(numberOfCellsInY),
+    m_numberOfCellsInZ(numberOfCellsInZ),
+    m_cellSizeInX(cellSizeInX),
+    m_cellSizeInY(cellSizeInY),
+    m_cellSizeInZ(cellSizeInZ),
+    m_calculeCellSize(false),
     m_breakInFirstColision(false)
 {
 
@@ -45,38 +66,41 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
 
     const int volumesSize = static_cast<int>(volumes.size());
 
-    constexpr double maxDouble = std::numeric_limits<double>::max();
-    double maxX = -maxDouble;
-    double maxY = -maxDouble;
-    double maxZ = -maxDouble;
-
-    for (int i = 0; i < volumesSize; ++i)
+    if (m_calculeCellSize)
     {
-        const auto indexVolume = static_cast<size_t>(i);
+        constexpr double maxDouble = std::numeric_limits<double>::max();
+        double maxX = -maxDouble;
+        double maxY = -maxDouble;
+        double maxZ = -maxDouble;
 
-        for (size_t j = 0; j < volumes[indexVolume]->points.size(); ++j)
+        for (int i = 0; i < volumesSize; ++i)
         {
-            const auto &point = volumes[indexVolume]->points[j];
-            if (point.x > maxX)
-            {
-                maxX = point.x;
-            }
+            const auto indexVolume = static_cast<size_t>(i);
 
-            if (point.y > maxY)
+            for (size_t j = 0; j < volumes[indexVolume]->points.size(); ++j)
             {
-                maxY = point.y;
-            }
+                const auto &point = volumes[indexVolume]->points[j];
+                if (point.x > maxX)
+                {
+                    maxX = point.x;
+                }
 
-            if (point.z > maxZ)
-            {
-                maxZ = point.z;
+                if (point.y > maxY)
+                {
+                    maxY = point.y;
+                }
+
+                if (point.z > maxZ)
+                {
+                    maxZ = point.z;
+                }
             }
         }
-    }
 
-    m_cellSizeInX = maxX / m_numberOfCellsInX;
-    m_cellSizeInY = maxY / m_numberOfCellsInY;
-    m_cellSizeInZ = maxZ / m_numberOfCellsInZ;
+        m_cellSizeInX = maxX / m_numberOfCellsInX;
+        m_cellSizeInY = maxY / m_numberOfCellsInY;
+        m_cellSizeInZ = maxZ / m_numberOfCellsInZ;
+    }
 
     RegularGrid<std::shared_ptr<Volume>> regularGrid(
                 m_numberOfCellsInX, m_numberOfCellsInY, m_numberOfCellsInZ,

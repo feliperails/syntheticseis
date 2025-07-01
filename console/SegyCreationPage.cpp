@@ -7,7 +7,6 @@
 #include <QJsonObject>
 #include "ui_SegyCreationPage.h"
 #include "SegyCreationPage.h"
-#include "domain/src/ExtractVolumes.h"
 #include "domain/src/LithologyDictionary.h"
 #include "domain/src/EclipseGrid.h"
 #include "domain/src/ExtractMinimumRectangle2D.h"
@@ -570,14 +569,40 @@ void SegyCreationPage::process()
                     regularGridInMeters.getZTop(),
                     0, 0
             );
+
             auto &data = lithologyRegularGrid.getData();
-            for (size_t i = 0; i < regularGridInMeters.getNumberOfCellsInX(); ++i)
+            const bool& flipAxis = d->m_ui->flipAxisCheckBox->isChecked();
+
+            if (flipAxis)
             {
-                for (size_t j = 0; j < regularGridInMeters.getNumberOfCellsInY(); ++j)
+                const size_t& ny = regularGridInMeters.getNumberOfCellsInY();
+
+                for (size_t i = 0; i < regularGridInMeters.getNumberOfCellsInX(); ++i)
                 {
-                    for (size_t k = 0; k < regularGridInMeters.getNumberOfCellsInZ(); ++k)
+                    for (size_t j = 0; j < ny; ++j)
                     {
-                        data[i][j][k] = regularGridInMeters.getData(i, j, k) == nullptr ? EclipseGrid::NoDataValue : regularGridInMeters.getData(i, j, k)->idLithology;
+                        for (size_t k = 0; k < regularGridInMeters.getNumberOfCellsInZ(); ++k)
+                        {
+                            const size_t& flipped_j = ny - 1 - j;
+                            data[i][j][k] = regularGridInMeters.getData(i, flipped_j, k) == nullptr
+                                                ? EclipseGrid::NoDataValue
+                                                : regularGridInMeters.getData(i, flipped_j, k)->idLithology;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (size_t i = 0; i < regularGridInMeters.getNumberOfCellsInX(); ++i)
+                {
+                    for (size_t j = 0; j < regularGridInMeters.getNumberOfCellsInY(); ++j)
+                    {
+                        for (size_t k = 0; k < regularGridInMeters.getNumberOfCellsInZ(); ++k)
+                        {
+                            data[i][j][k] = regularGridInMeters.getData(i, j, k) == nullptr
+                                                ? EclipseGrid::NoDataValue
+                                                : regularGridInMeters.getData(i, j, k)->idLithology;
+                        }
                     }
                 }
             }

@@ -1,4 +1,5 @@
 #include "VolumeToRegularGrid.h"
+#include "domain/src/CellSizeCalculator.h"
 #include <omp.h>
 
 #define PROCESS_VOLUME_CHUNK 100
@@ -68,38 +69,17 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
 
     if (m_calculeCellSize)
     {
-        constexpr double maxDouble = std::numeric_limits<double>::max();
-        double maxX = -maxDouble;
-        double maxY = -maxDouble;
-        double maxZ = -maxDouble;
+        domain::CellSizeCalculator cellSizeCalculator(
+                m_numberOfCellsInX,
+                m_numberOfCellsInY,
+                m_numberOfCellsInZ,
+                1.0,
+                volumes
+            );
 
-        for (int i = 0; i < volumesSize; ++i)
-        {
-            const auto indexVolume = static_cast<size_t>(i);
-
-            for (size_t j = 0; j < volumes[indexVolume]->points.size(); ++j)
-            {
-                const auto &point = volumes[indexVolume]->points[j];
-                if (point.x > maxX)
-                {
-                    maxX = point.x;
-                }
-
-                if (point.y > maxY)
-                {
-                    maxY = point.y;
-                }
-
-                if (point.z > maxZ)
-                {
-                    maxZ = point.z;
-                }
-            }
-        }
-
-        m_cellSizeInX = maxX / m_numberOfCellsInX;
-        m_cellSizeInY = maxY / m_numberOfCellsInY;
-        m_cellSizeInZ = maxZ / m_numberOfCellsInZ;
+        m_cellSizeInX = cellSizeCalculator.getCellSizeInX();
+        m_cellSizeInY = cellSizeCalculator.getCellSizeInY();
+        m_cellSizeInZ = cellSizeCalculator.getCellSizeInZ();
     }
 
     RegularGrid<std::shared_ptr<Volume>> regularGrid(

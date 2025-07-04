@@ -18,31 +18,25 @@
 #include <memory>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
-#include "domain/src/ConvolutionRegularGridCalculator.h"
+#include <array>
 #include "domain/src/EclipseGridSurface.h"
 #include "domain/src/ExtractVolumes.h"
 #include "domain/src/ExtractMinimumRectangle2D.h"
-#include "domain/src/Facade.h"
 #include "domain/src/ImpedanceRegularGridCalculator.h"
 #include "domain/src/Lithology.h"
 #include "domain/src/LithologyDictionary.h"
-#include "domain/src/RegularGrid.h"
 #include "domain/src/ReflectivityRegularGridCalculator.h"
-#include "domain/src/RickerWaveletCalculator.h"
-#include "domain/src/RotateVolumeCoordinate.h"
-#include "domain/src/VolumeToRegularGrid.h"
 #include "geometry/src/Volume.h"
-#include "storage/src/RegularGridHdf5Storage.h"
 #include "storage/src/reader/EclipseGridReader.h"
 #include "storage/src/writer/GrdSurfaceWriter.h"
-#include "storage/src/writer/SEGYWriter.h"
-#include "domain/src/ConvertRegularGridCalculator.h"
 #include "domain/src/CellSizeCalculator.h"
 #include "domain/src/ExtractVolumes.h"
+#include "geometry/src/Point2D.h"
 #include "SegyCreationPage.h"
 
 using syntheticSeismic::domain::Lithology;
 using namespace syntheticSeismic::storage;
+using namespace syntheticSeismic::geometry;
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -100,6 +94,7 @@ const QString RICKER_WAVELET_FREQUENCY = QLatin1String("rickerWaveletFrequency")
 
 const QString ECLIPSE_GRIDS = QLatin1String("eclipseGrids");
 const QString ALL_VOLUMES = QLatin1String("allVolumes");
+const QString MINIMUM_RECTANGLE = QLatin1String("minimumRectangle");
 
 }
 
@@ -121,6 +116,8 @@ class EclipseGridImportPagePrivate
     QHash<QString, QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> > m_hashEclipseGrids;
     QVector<std::shared_ptr<EclipseGrid>> m_eclipseGrids;
     std::vector<std::shared_ptr<Volume>> m_allVolumes;
+    std::array<Point2D, 4> m_minimumRectangle;
+    std::shared_ptr<domain::CellSizeCalculator> m_cellSizeCalculator;
     QMutex m_mutexEclipseGrids;
     bool m_eclipseFilesImported;
 };
@@ -156,19 +153,31 @@ EclipseGridImportPagePrivate::EclipseGridImportPagePrivate(EclipseGridImportPage
 
 void EclipseGridImportPagePrivate::updateCellSize()
 {
-    if (m_allVolumes.empty()) return;
+    if (m_minimumRectangle.empty()) return;
 
-    domain::CellSizeCalculator cellSizeCalculator(
-            m_ui->regularGridXDimensionDoubleSpinBox->value(),
-            m_ui->regularGridYDimensionDoubleSpinBox->value(),
-            m_ui->regularGridZDimensionDoubleSpinBox->value(),
-            m_ui->rickerWaveletFrequencyDoubleSpinBox->value(),
-            m_allVolumes
-        );
 
-    m_ui->regularGridXCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInX());
-    m_ui->regularGridYCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInY());
-    m_ui->regularGridZCellSizeDoubleSpinBox->setValue(cellSizeCalculator.getCellSizeInZ());
+    if (m_cellSizeCalculator.get() == nullptr)
+    {
+        m_cellSizeCalculator = std::make_shared<domain::CellSizeCalculator>(
+                m_ui->regularGridXDimensionDoubleSpinBox->value(),
+                m_ui->regularGridYDimensionDoubleSpinBox->value(),
+                m_ui->regularGridZDimensionDoubleSpinBox->value(),
+                m_ui->rickerWaveletFrequencyDoubleSpinBox->value(),
+                m_minimumRectangle
+            );
+    }
+
+    m_cellSizeCalculator->setNumberOfCellsInX(m_ui->regularGridXDimensionDoubleSpinBox->value());
+    m_cellSizeCalculator->setNumberOfCellsInY(m_ui->regularGridYDimensionDoubleSpinBox->value());
+    m_cellSizeCalculator->setNumberOfCellsInZ(m_ui->regularGridZDimensionDoubleSpinBox->value());
+    m_cellSizeCalculator->setRickerWaveletFrequency(m_ui->rickerWaveletFrequencyDoubleSpinBox->value());
+
+
+    m_cellSizeCalculator->calculate();
+
+    m_ui->regularGridXCellSizeDoubleSpinBox->setValue(m_cellSizeCalculator->getCellSizeInX());
+    m_ui->regularGridYCellSizeDoubleSpinBox->setValue(m_cellSizeCalculator->getCellSizeInY());
+    m_ui->regularGridZCellSizeDoubleSpinBox->setValue(m_cellSizeCalculator->getCellSizeInZ());
 }
 
 void EclipseGridImportPagePrivate::updateWidget()
@@ -264,6 +273,15 @@ void EclipseGridImportPagePrivate::updateWidget()
                     grdFaciesAssociationSurfaceWriter.write(*result->getFaciesAssociationSurface());
                 }
             });
+            // END EXPORT MAIN SURFACE
+
+            m_minimumRectangle = ExtractMinimumRectangle2D::extractFrom(m_allVolumes);
+
+            std::cout << std::endl << std::endl << "minimumRectangle 0 EclipseGridImportPagePrivate::updateWidget(): " << std::endl << std::endl;
+            foreach (auto var, m_minimumRectangle) {
+                std::cout << "var.x: " << var.x << " -- var.y: " << var.y << std::endl;
+
+            }
 
 
             m_ui->regularGridXDimensionDoubleSpinBox->setValue(eclipseGrid->numberOfCellsInX());
@@ -273,8 +291,6 @@ void EclipseGridImportPagePrivate::updateWidget()
             m_ui->fileTreeWidget->setItemWidget(treeWidgetItem, EXPORT_MAIN_SURFACE_COLUMN, exportSurfaceAction);
 
             updateCellSize();
-
-            // END EXPORT MAIN SURFACE
 
             // BEGIN EXPORT SURFACE BY AGE
             QPushButton* exportSurfaceByAgeAction = new QPushButton(q);
@@ -449,13 +465,19 @@ EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
     registerField(RICKER_WAVELET_FREQUENCY, d_ptr->m_ui->rickerWaveletFrequencyDoubleSpinBox);
 
     registerField(ECLIPSE_GRIDS, d_ptr->m_ui->fileTreeWidget);
-    registerField(ALL_VOLUMES, d_ptr->m_ui->fileTreeWidget);
+
+    auto dummyWidgetAllVolumes = new QWidget(this);
+    auto dummyWidgetMinRectangle = new QWidget(this);
+
+    dummyWidgetAllVolumes->hide();
+    dummyWidgetMinRectangle->hide();
+
+    registerField(ALL_VOLUMES, dummyWidgetAllVolumes);
+    registerField(MINIMUM_RECTANGLE, dummyWidgetMinRectangle);
 }
 
 bool EclipseGridImportPage::validatePage()
 {
-    //Q_D(EclipseGridImportPage);
-
     setField(REGULAR_GRID_X_DIMENSION, d_ptr->m_ui->regularGridXDimensionDoubleSpinBox->value());
     setField(REGULAR_GRID_Y_DIMENSION, d_ptr->m_ui->regularGridYDimensionDoubleSpinBox->value());
     setField(REGULAR_GRID_Z_DIMENSION, d_ptr->m_ui->regularGridZDimensionDoubleSpinBox->value());
@@ -467,24 +489,7 @@ bool EclipseGridImportPage::validatePage()
 
     setField(ECLIPSE_GRIDS, QVariant::fromValue(d_ptr->m_eclipseGrids));
     setField(ALL_VOLUMES, QVariant::fromValue(d_ptr->m_allVolumes));
-    /*
-    QVector<std::shared_ptr<EclipseGrid>> eclipseGrids;
-
-    const QList<QString> dirs = d->m_hashEclipseGrids.keys();
-    for (const QString& dir : dirs) {
-
-        const QVector<QPair<QString, std::shared_ptr<EclipseGrid>>> pairs = d->m_hashEclipseGrids.value(dir);
-        for (const QPair<QString, std::shared_ptr<EclipseGrid>>& pair : pairs) {
-            const auto eclipsGrid = pair.second;
-            Q_ASSERT(eclipsGrid);
-            if (eclipsGrid) {
-                eclipseGrids.push_back(eclipsGrid);
-            }
-        }
-    }
-
-    setField(ECLIPSE_GRIDS, QVariant::fromValue(eclipseGrids));
-    */
+    setField(MINIMUM_RECTANGLE, QVariant::fromValue(d_ptr->m_minimumRectangle));
 
     return true;
 }
@@ -493,6 +498,7 @@ void EclipseGridImportPage::initializePage()
 {
     Q_D(EclipseGridImportPage);
     d_ptr->m_allVolumes.clear();
+    d_ptr->m_minimumRectangle = std::array<Point2D, 4>();
     d_ptr->m_eclipseGrids.clear();
     d->m_hashEclipseGrids.clear();
     d->m_eclipseGridsErros.clear();
@@ -622,3 +628,5 @@ Lithology AddingVelocityWidget::lithology() const
 Q_DECLARE_METATYPE(syntheticSeismic::geometry::Volume)
 Q_DECLARE_METATYPE(std::shared_ptr<syntheticSeismic::geometry::Volume>)
 Q_DECLARE_METATYPE(std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>>)
+Q_DECLARE_METATYPE(Point2D)
+Q_DECLARE_METATYPE(MinRectangle2D)

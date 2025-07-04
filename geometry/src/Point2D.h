@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 
 namespace syntheticSeismic {
 namespace geometry {
@@ -18,6 +19,8 @@ public:
 
     }
 };
+
+using MinRectangle2D = std::array<Point2D, 4>;
 
 } // namespace domain
 } // namespace syntheticSeismic

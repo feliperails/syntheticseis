@@ -69,17 +69,38 @@ RegularGrid<std::shared_ptr<Volume>> VolumeToRegularGrid::convertVolumesToRegula
 
     if (m_calculeCellSize)
     {
-        domain::CellSizeCalculator cellSizeCalculator(
-                m_numberOfCellsInX,
-                m_numberOfCellsInY,
-                m_numberOfCellsInZ,
-                1.0,
-                volumes
-            );
+        constexpr double maxDouble = std::numeric_limits<double>::max();
 
-        m_cellSizeInX = cellSizeCalculator.getCellSizeInX();
-        m_cellSizeInY = cellSizeCalculator.getCellSizeInY();
-        m_cellSizeInZ = cellSizeCalculator.getCellSizeInZ();
+        double maxX = -maxDouble;
+        double maxY = -maxDouble;
+        double maxZ = -maxDouble;
+
+        for (size_t i = 0; i < volumes.size(); ++i)
+        {
+            for (size_t j = 0; j < volumes[i]->points.size(); ++j)
+            {
+                const auto &point = volumes[i]->points[j];
+
+                if (point.x > maxX)
+                {
+                    maxX = point.x;
+                }
+
+                if (point.y > maxY)
+                {
+                    maxY = point.y;
+                }
+
+                if (point.z > maxZ)
+                {
+                    maxZ = point.z;
+                }
+            }
+        }
+
+        m_cellSizeInX = maxX / m_numberOfCellsInX;
+        m_cellSizeInY = maxY / m_numberOfCellsInY;
+        m_cellSizeInZ = maxZ / m_numberOfCellsInZ;
     }
 
     RegularGrid<std::shared_ptr<Volume>> regularGrid(

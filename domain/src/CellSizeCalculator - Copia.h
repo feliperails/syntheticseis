@@ -1,6 +1,8 @@
 #pragma once
 
+#include <vector>
 #include <array>
+#include "ExtractVolumes.h"
 #include "geometry/src/Point2D.h"
 
 namespace syntheticSeismic {
@@ -9,7 +11,7 @@ namespace domain {
 class CellSizeCalculator
 {
 public:
-    CellSizeCalculator(const size_t& numberOfCellsInX, const size_t& numberOfCellsInY, const size_t& numberOfCellsInZ, const double& rickerWaveletFrequency, const std::array<geometry::Point2D,4>& minimumRectangle);
+    CellSizeCalculator(const size_t& numberOfCellsInX, const size_t& numberOfCellsInY, const size_t& numberOfCellsInZ, const double& rickerWaveletFrequency, const std::vector<std::shared_ptr<geometry::Volume>>& volumes, const double& averageVelocity = 2500.0);
 
     void calculate();
 
@@ -23,7 +25,7 @@ public:
     void setRickerWaveletFrequency(const double& rickerWaveletFrequency);
 
 private:
-    void calculateDeltas();
+    void calculateMinMax();
 
 private:
     double m_cellSizeInX;
@@ -34,11 +36,16 @@ private:
     size_t m_numberOfCellsInY;
     size_t m_numberOfCellsInZ;
     double m_rickerWaveletFrequency;
-    const std::array<geometry::Point2D, 4> m_minimumRectangle;
+    const std::vector<std::shared_ptr<geometry::Volume>>& m_volumes;
     const double m_averageVelocity = 2500.0;
 
-    double m_dX;
-    double m_dY;
+    double m_minX;
+    double m_minY;
+    double m_minZ;
+
+    double m_maxX;
+    double m_maxY;
+    double m_maxZ;
 };
 
 } // namespace domain

@@ -9,12 +9,12 @@
 #include "SegyCreationPage.h"
 #include "domain/src/LithologyDictionary.h"
 #include "domain/src/EclipseGrid.h"
-#include "domain/src/ExtractMinimumRectangle2D.h"
 #include "domain/src/RotateVolumeCoordinate.h"
 #include "domain/src/VolumeToRegularGrid.h"
 #include "domain/src/ConvertRegularGridCalculator.h"
 #include "domain/src/Facade.h"
 #include "Wizard.h"
+#include "geometry/src/Point2D.h"
 #include "domain/src/RickerWaveletCalculator.h"
 #include "storage/src/RegularGridHdf5Storage.h"
 #include "storage/src/writer/SEGYWriter.h"
@@ -25,6 +25,7 @@
 using syntheticSeismic::domain::EclipseGrid;
 using syntheticSeismic::domain::Lithology;
 using syntheticSeismic::domain::LithologyDictionary;
+using namespace syntheticSeismic::geometry;
 
 namespace {
 const QString REGULAR_GRID_X_DIMENSION = QLatin1String("regularGridXDimension");
@@ -39,6 +40,8 @@ const QString RICKER_WAVELET_FREQUENCY = QLatin1String("rickerWaveletFrequency")
 
 const QString ECLIPSE_GRIDS = QLatin1String("eclipseGrids");
 const QString ALL_VOLUMES = QLatin1String("allVolumes");
+const QString MINIMUM_RECTANGLE = QLatin1String("minimumRectangle");
+
 }
 
 namespace syntheticSeismic {
@@ -126,10 +129,6 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
 
         Q_EMIT q_ptr->completeChanged();
     });
-
-    //QObject::connect(m_ui->rickerWaveletFrequencyDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), q_ptr, [this](const double){
-    //    Q_EMIT q_ptr->completeChanged();
-    //});
 
     // BEGIN LITHOLOGY SEGY FILE
     QObject::connect(m_ui->lithologyFileNameLineEdit, &QLineEdit::textChanged, q_ptr, [this](const QString&) {
@@ -489,7 +488,6 @@ bool SegyCreationPage::isComplete() const
     Q_D(const SegyCreationPage);
 
     return !d->m_lithologies.isEmpty()
-           //&& !qFuzzyIsNull(d->m_ui->rickerWaveletFrequencyDoubleSpinBox->value())
            && (!d->m_ui->amplitudeFileNameLineEdit->text().isEmpty() ||
                !d->m_ui->depthAmplitudeFileNameLineEdit->text().isEmpty());
 }
@@ -508,16 +506,11 @@ void SegyCreationPage::process()
         const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
 
         std::vector<std::shared_ptr<Volume>> allVolumes = field(ALL_VOLUMES).value<std::vector<std::shared_ptr<Volume>>>();
-        /*for (const auto& item : d->m_eclipseGrids)
-        {
-            const std::vector<std::shared_ptr<Volume>> volumesOfFirstLayer = ExtractVolumes::extractFirstLayerFrom(*item);
-            const std::vector<std::shared_ptr<Volume>> volumes = ExtractVolumes::extractFromVolumesOfFirstLayer(volumesOfFirstLayer, *item, true);
-            allVolumes.insert(allVolumes.end(), volumes.begin(), volumes.end());
-        }*/
 
         emit progressUpdated(5);
 
-        const auto minimumRectangle = ExtractMinimumRectangle2D::extractFrom(allVolumes);
+        const auto minimumRectangle = field(MINIMUM_RECTANGLE).value<std::array<Point2D, 4>>();
+
         const auto rotateResult = RotateVolumeCoordinate::rotateByMinimumRectangle(allVolumes, minimumRectangle);
 
         VolumeToRegularGrid volumeToRegularGrid(d->m_numberOfCellsInX, d->m_numberOfCellsInY, d->m_numberOfCellsInZ, d->m_cellSizeInX, d->m_cellSizeInY, d->m_cellSizeInZ);
@@ -807,3 +800,5 @@ void SegyCreationPage::initializePage()
 Q_DECLARE_METATYPE(syntheticSeismic::geometry::Volume)
 Q_DECLARE_METATYPE(std::shared_ptr<syntheticSeismic::geometry::Volume>)
 Q_DECLARE_METATYPE(std::vector<std::shared_ptr<syntheticSeismic::geometry::Volume>>)
+Q_DECLARE_METATYPE(Point2D)
+Q_DECLARE_METATYPE(MinRectangle2D)

@@ -10,6 +10,9 @@
 
 #include "domain/src/Lithology.h"
 
+
+
+
 namespace syntheticSeismic {
 namespace widgets {
 
@@ -42,6 +45,9 @@ public:
     bool validatePage() override;
     void initializePage() override;
     bool isComplete() const override;
+
+private Q_SLOTS:
+    void showVisualizerDialog();
 
 private:
     Q_DECLARE_PRIVATE(EclipseGridImportPage)

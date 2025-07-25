@@ -4,6 +4,7 @@
 #include "ui_EclipseGridImportPage.h"
 
 #include "FileSelectionPage.h"
+#include "EclipseGridViewerDialog.h"
 
 #include <QPushButton>
 #include <QDebug>
@@ -33,6 +34,7 @@
 #include "domain/src/ExtractVolumes.h"
 #include "geometry/src/Point2D.h"
 #include "SegyCreationPage.h"
+
 
 using syntheticSeismic::domain::Lithology;
 using namespace syntheticSeismic::storage;
@@ -474,6 +476,15 @@ EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
 
     registerField(ALL_VOLUMES, dummyWidgetAllVolumes);
     registerField(MINIMUM_RECTANGLE, dummyWidgetMinRectangle);
+
+    connect(d_ptr->m_ui->visualizeToolButton, &QToolButton::clicked, this, &EclipseGridImportPage::showVisualizerDialog);
+}
+
+void EclipseGridImportPage::showVisualizerDialog()
+{
+    EclipseGridViewerDialog dialog(d_ptr->m_allVolumes, this);
+
+    dialog.exec();
 }
 
 bool EclipseGridImportPage::validatePage()

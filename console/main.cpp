@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QFileInfo>
+#include <QIcon>
 #include <QDebug>
 
 #include "Wizard.h"
@@ -9,6 +10,8 @@
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
+    app.setWindowIcon(QIcon(":/appIco"));
 
     syntheticSeismic::domain::Facade facade;
     syntheticSeismic::widgets::Wizard wizard;

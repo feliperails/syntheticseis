@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>EclipseGridViewerDialog</class>
- <widget class="QDialog" name="EclipseGridViewerDialog">
+ <class>VtkViewerDialog</class>
+ <widget class="QDialog" name="VtkViewerDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -98,7 +98,7 @@
   <connection>
    <sender>closeToolButton</sender>
    <signal>clicked()</signal>
-   <receiver>EclipseGridViewerDialog</receiver>
+   <receiver>VtkViewerDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

@@ -137,8 +137,10 @@ add_executable(SyntheticSeismicConsole
         console/FileSelectionPage.h
         console/SegyCreationPage.cpp
         console/SegyCreationPage.h
-        console/EclipseGridViewerDialog.cpp
-        console/EclipseGridViewerDialog.h
+        console/VtkViewerDialog.cpp
+        console/VtkViewerDialog.h
+        console/EclipseGridWorker.cpp
+        console/EclipseGridWorker.h
 )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)

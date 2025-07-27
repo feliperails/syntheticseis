@@ -4,7 +4,7 @@
 #include "ui_EclipseGridImportPage.h"
 
 #include "FileSelectionPage.h"
-#include "EclipseGridViewerDialog.h"
+#include "VtkViewerDialog.h"
 
 #include <QPushButton>
 #include <QDebug>
@@ -477,14 +477,51 @@ EclipseGridImportPage::EclipseGridImportPage(QWidget* parent)
     registerField(ALL_VOLUMES, dummyWidgetAllVolumes);
     registerField(MINIMUM_RECTANGLE, dummyWidgetMinRectangle);
 
-    connect(d_ptr->m_ui->visualizeToolButton, &QToolButton::clicked, this, &EclipseGridImportPage::showVisualizerDialog);
+    connect(d_ptr->m_ui->visualizeToolButton, &QToolButton::clicked,
+                    this, &EclipseGridImportPage::createVtkEclipseGrid);
+}
+
+void EclipseGridImportPage::createVtkEclipseGrid()
+{
+    d_ptr->m_ui->visualizeToolButton->setEnabled(false);
+
+    auto workerThread = new QThread(this);
+
+    m_eclipseGridWorker = new EclipseGridWorker(&d_ptr->m_allVolumes);
+
+    m_eclipseGridWorker->moveToThread(workerThread);
+
+    m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+    m_progressDialog->setWindowTitle("Building Grid");
+    m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+
+    m_progressDialog->show();
+
+    connect(workerThread, &QThread::started, m_eclipseGridWorker, &EclipseGridWorker::run);
+    connect(m_eclipseGridWorker, &EclipseGridWorker::stepProgress, m_progressDialog, &QProgressDialog::setValue);
+    connect(m_eclipseGridWorker, &EclipseGridWorker::finished, this, &EclipseGridImportPage::showVisualizerDialog);
+    connect(m_eclipseGridWorker, &EclipseGridWorker::finished, workerThread, &QThread::quit);
+    connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+    workerThread->start();
 }
 
 void EclipseGridImportPage::showVisualizerDialog()
 {
-    EclipseGridViewerDialog dialog(d_ptr->m_allVolumes, this);
+    m_progressDialog->close();
+    delete m_progressDialog;
+    m_progressDialog = nullptr;
+
+    d_ptr->m_ui->visualizeToolButton->setEnabled(true);
+
+
+    VtkViewerDialog dialog(m_eclipseGridWorker->getRenderWindow());
 
     dialog.exec();
+
+    delete m_eclipseGridWorker;
+    m_eclipseGridWorker = nullptr;
 }
 
 bool EclipseGridImportPage::validatePage()

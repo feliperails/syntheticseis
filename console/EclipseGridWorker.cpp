@@ -1,5 +1,4 @@
-#include "EclipseGridViewerDialog.h"
-#include "ui_EclipseGridViewerDialog.h"
+#include "EclipseGridWorker.h"
 
 #include <unordered_map>
 #include <vector>
@@ -33,47 +32,28 @@
 #include <vtkTransform.h>
 #include <vtkTransformFilter.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkLight.h>
 #include <vtkSmartPointer.h>
 
 #include <QElapsedTimer>
 #include <QTime>
 
-EclipseGridViewerDialog::EclipseGridViewerDialog(const std::vector<std::shared_ptr<Volume>> & allVolumes, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::EclipseGridViewerDialog),
+namespace syntheticSeismic {
+namespace widgets {
+
+EclipseGridWorker::EclipseGridWorker(const std::vector<std::shared_ptr<Volume>> * const & allVolumes) :
     m_allVolumes(allVolumes)
 {
-    ui->setupUi(this);
-
-    QElapsedTimer timer;
-    timer.start();
-    std::cout << "Começando buildGrid(): " << std::endl;
-
-    buildGrid();
-
-    size_t elapsedMs = timer.elapsed(); // tempo em milissegundos
-
-    QTime time = QTime(0, 0).addMSecs(elapsedMs);
-    QString formattedTime = time.toString("hh:mm:ss");
-    std::cout << "Tempo de execução do buildGrid(): " << formattedTime.toStdString() << std::endl;
-
-    connect(ui->zoomZDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](const double value) -> void {
-        m_actor->SetScale(1.0, 1.0, value);
-
-        m_renderer->ResetCamera();
-        if (m_renderWindow)
-            m_renderWindow->Render();
-    });
+    init();
 }
 
-EclipseGridViewerDialog::~EclipseGridViewerDialog()
+EclipseGridWorker::~EclipseGridWorker()
 {
-    delete ui;
 }
 
-void EclipseGridViewerDialog::buildGrid()
+void EclipseGridWorker::init()
 {
-    std::vector<std::array<double, 3>> colorsDefault = {
+    m_defaultColors = {
         { {0.894, 0.102, 0.110} },
         { {0.216, 0.494, 0.722} },
         { {0.302, 0.686, 0.290} },
@@ -108,18 +88,40 @@ void EclipseGridViewerDialog::buildGrid()
         { {0.968, 0.714, 0.824} }
     };
 
+}
 
+void EclipseGridWorker::run()
+{
+    QElapsedTimer timer;
+    timer.start();
+    std::cout << "** buildGrid() started: " << std::endl;
+
+    buildGrid();
+
+    size_t elapsedMs = timer.elapsed();
+
+    QTime time = QTime(0, 0).addMSecs(elapsedMs);
+    QString formattedTime = time.toString("hh:mm:ss");
+    std::cout << "** buildGrid() finished: " << formattedTime.toStdString() << std::endl;
+
+    emit finished();
+}
+
+void EclipseGridWorker::buildGrid()
+{
+    m_currentSteps = 0;
+    emit stepProgress(m_currentSteps);
 
     m_renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    ui->vtkWidget->setRenderWindow(m_renderWindow);
 
     auto grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
     auto points = vtkSmartPointer<vtkPoints>::New();
-    points->Allocate(static_cast<vtkIdType>(m_allVolumes.size() * 8));
-    grid->Allocate(m_allVolumes.size());
-
+    points->Allocate(static_cast<vtkIdType>(m_allVolumes->size() * 8));
+    grid->Allocate(m_allVolumes->size());
 
     std::unordered_map<size_t, vtkIdType> pointMap;
+
+    std::mutex gridMutex;
     std::mutex pointMapMutex;
 
     auto lithologyArray = vtkSmartPointer<vtkFloatArray>::New();
@@ -132,8 +134,16 @@ void EclipseGridViewerDialog::buildGrid()
 
     std::vector<std::future<void>> tasks;
 
-    for (const auto& volume : m_allVolumes) {
+    m_currentSteps = 1;
+    emit stepProgress(m_currentSteps);
+
+    std::atomic<size_t> volumesProcessed{0};
+    const size_t volumesPerStep = std::max<size_t>(1, m_allVolumes->size() / 90);
+
+    for (const auto& volume : (*m_allVolumes)) {
         tasks.emplace_back(std::async(std::launch::async, [&]() {
+
+
             if (!volume->actnum) return;
 
             auto hex = vtkSmartPointer<vtkHexahedron>::New();
@@ -158,19 +168,33 @@ void EclipseGridViewerDialog::buildGrid()
             }
 
             {
-                std::lock_guard<std::mutex> lock(pointMapMutex);
+                std::lock_guard<std::mutex> lock(gridMutex);
                 grid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
                 lithologyArray->InsertNextValue(static_cast<float>(volume->idLithology));
+            }
+
+            const size_t count = ++volumesProcessed;
+            if (count % volumesPerStep == 0 && m_currentSteps < 90) {
+                int newStep = 1 + (count / volumesPerStep);
+                if (newStep > m_currentSteps) {
+                    m_currentSteps = newStep;
+                    emit stepProgress(m_currentSteps);
+                }
             }
         }));
     }
 
     for (auto& task : tasks) task.get();
 
+    m_currentSteps = 95;
+    emit stepProgress(m_currentSteps);
+
     grid->SetPoints(points);
     grid->GetCellData()->SetScalars(lithologyArray);
 
-    // Criar mapa de cores (lookup table)
+    m_currentSteps = 96;
+    emit stepProgress(m_currentSteps);
+
     double range[2];
     lithologyArray->GetRange(range);
 
@@ -185,26 +209,26 @@ void EclipseGridViewerDialog::buildGrid()
     auto colors = vtkSmartPointer<vtkNamedColors>::New();
     for (int i = minId; i <= maxId; ++i)
     {
-        const double r = colorsDefault[i][0];
-        const double g = colorsDefault[i][1];
-        const double b = colorsDefault[i][2];
+        const double r = m_defaultColors[i][0];
+        const double g = m_defaultColors[i][1];
+        const double b = m_defaultColors[i][2];
         lut->SetTableValue(i, r, g, b);
     }
 
 
+    m_currentSteps = 97;
+    emit stepProgress(m_currentSteps);
 
-    // Cria a transformação (zoom no Z)
-    double zoomFactor = 5.0; // 5x mais alto visualmente
+    double zoomFactor = 5.0;
     m_transform = vtkSmartPointer<vtkTransform>::New();
-    //m_transform->Scale(1.0, 1.0, zoomFactor);
 
-    // Aplica a transformação ao grid
     m_transformFilter = vtkSmartPointer<vtkTransformFilter>::New();
     m_transformFilter->SetInputData(grid);
     m_transformFilter->SetTransform(m_transform);
     m_transformFilter->Update();
 
-
+    m_currentSteps = 98;
+    emit stepProgress(m_currentSteps);
 
     auto mapper = vtkSmartPointer<vtkDataSetMapper>::New();
     mapper->SetInputData(grid);
@@ -218,18 +242,31 @@ void EclipseGridViewerDialog::buildGrid()
     m_actor->GetProperty()->SetOpacity(0.8);
     m_actor->SetScale(1.0, 1.0, zoomFactor);
 
-    // Barra de cores (legenda)
     auto scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
     scalarBar->SetLookupTable(lut);
     scalarBar->SetTitle("Lithology");
     scalarBar->SetNumberOfLabels(maxId - minId + 1);
 
+    m_currentSteps = 99;
+    emit stepProgress(m_currentSteps);
+
     m_renderer = vtkSmartPointer<vtkRenderer>::New();
 
     m_renderer->AddActor(m_actor);
     m_renderer->AddActor2D(scalarBar);
+
+    m_renderer->SetAmbient(0.9, 0.9, 0.9);
+
+
+    m_renderer->SetBackground(0.1, 0.1, 0.1);
     m_renderer->ResetCamera();
 
     m_renderWindow->AddRenderer(m_renderer);
+
+    m_currentSteps = 100;
+    emit stepProgress(m_currentSteps);
+}
+
+}
 }
 

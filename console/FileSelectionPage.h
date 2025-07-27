@@ -8,8 +8,6 @@
 
 #include <QSharedData>
 
-#include "domain/src/Lithology.h"
-
 namespace syntheticSeismic {
 namespace widgets {
 
@@ -24,7 +22,7 @@ public:
     bool isComplete() const override;
 
 protected:
-    void resizeEvent(QResizeEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     Q_DECLARE_PRIVATE(FileSelectionPage)

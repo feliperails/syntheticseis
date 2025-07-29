@@ -5,7 +5,6 @@ project (SyntheticSeismic LANGUAGES CXX VERSION ${VERSION_STRING})
 
 add_definitions(-D_USE_MATH_DEFINES)
 
-set(VTK_DIR "C:/Programs/VTK/build-vtk-9.2.6-qt5")
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(REMOVE_DUPLICATES CMAKE_PREFIX_PATH)
 
@@ -234,6 +233,7 @@ if(WIN32)
 
         file(COPY "${VTK_DIR}/bin/Release/"
              DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+
     endif()
 
     #IF(CMAKE_BUILD_TYPE MATCHES Debug)

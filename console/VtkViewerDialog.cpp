@@ -3,8 +3,10 @@
 
 #include <vtkRendererCollection.h>
 
+namespace syntheticSeismic {
+namespace widgets {
 
-VtkViewerDialog::VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, QWidget *parent) :
+VtkViewerDialog::VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, const double& initialZoomFactorZ, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::VtkViewerDialog),
     m_renderWindow(renderWindow)
@@ -14,6 +16,7 @@ VtkViewerDialog::VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> r
     setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint);
 
     ui->vtkWidget->setRenderWindow(m_renderWindow);
+    ui->zoomZDoubleSpinBox->setValue(initialZoomFactorZ);
 
     connect(ui->zoomZDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](const double value) -> void {
 
@@ -47,3 +50,5 @@ VtkViewerDialog::~VtkViewerDialog()
 }
 
 
+}
+}

@@ -23,6 +23,8 @@ signals:
     void finished();
 
 public:
+    static constexpr double M_ZOOM_FACTOR_Z = 5.0;
+
     explicit EclipseGridWorker(const std::vector<std::shared_ptr<Volume>> * const & allVolumes);
     ~EclipseGridWorker();
 
@@ -36,15 +38,13 @@ private:
     void buildGrid();
 
 private:
-
     const std::vector<std::shared_ptr<Volume>>* m_allVolumes;
 
+    std::vector<std::array<double, 3>> m_defaultColors;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
 
-    std::vector<std::array<double, 3>> m_defaultColors;
-
-    int m_currentSteps = 0;
     const int m_totalSteps = 100;
+    std::atomic<int> m_currentSteps{0};
 };
 
 }

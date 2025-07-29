@@ -516,7 +516,7 @@ void EclipseGridImportPage::showVisualizerDialog()
     d_ptr->m_ui->visualizeToolButton->setEnabled(true);
 
 
-    VtkViewerDialog dialog(m_eclipseGridWorker->getRenderWindow());
+    VtkViewerDialog dialog(m_eclipseGridWorker->getRenderWindow(), EclipseGridWorker::M_ZOOM_FACTOR_Z);
 
     dialog.exec();
 

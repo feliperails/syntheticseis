@@ -8,12 +8,16 @@ namespace Ui {
     class VtkViewerDialog;
 }
 
+namespace syntheticSeismic {
+namespace widgets {
+
+
 class VtkViewerDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, QWidget *parent = nullptr);
+    explicit VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, const double& initialZoomFactorZ, QWidget *parent = nullptr);
     ~VtkViewerDialog();
 
 private:
@@ -21,3 +25,6 @@ private:
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
 };
+
+}
+}

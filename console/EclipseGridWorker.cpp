@@ -102,6 +102,9 @@ void EclipseGridWorker::run()
     QString formattedTime = time.toString("hh:mm:ss");
     std::cout << "** buildGrid() finished: " << formattedTime.toStdString() << std::endl;
 
+    m_currentSteps = 100;
+    emit stepProgress(m_currentSteps);
+
     emit finished();
 }
 
@@ -137,7 +140,6 @@ void EclipseGridWorker::buildGrid()
     m_currentSteps = 1;
     emit stepProgress(m_currentSteps);
 
-    std::set<int> uniqueIds;
     std::atomic<size_t> volumesProcessed{0};
     const size_t volumesPerStep = std::max<size_t>(1, m_allVolumes->size() / 80);
 
@@ -171,39 +173,32 @@ void EclipseGridWorker::buildGrid()
 
             {
                 std::lock_guard<std::mutex> lock(gridMutex);
-                uniqueIds.insert(volume->idLithology);
                 grid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
                 lithologyArray->InsertNextValue(static_cast<float>(volume->idLithology));
             }
 
             const size_t count = ++volumesProcessed;
-            if (count % volumesPerStep == 0 && m_currentSteps < 80) {
-                const int& newStep = static_cast<int>(1 + (count / volumesPerStep));
-                if (newStep > m_currentSteps) {
-                    m_currentSteps = newStep;
-                    emit stepProgress(m_currentSteps);
-                }
+            if (count % volumesPerStep == 0 && m_currentSteps < 98) {
+                ++m_currentSteps;
+                emit stepProgress(m_currentSteps);
             }
         }));
     }
 
     size_t tasksProcessed{0};
-    const size_t tasksPerStep = std::max<size_t>(1, tasks.size() / 20);
+    const size_t tasksPerStep = std::max<size_t>(1, tasks.size() / 18);
     for (auto& task : tasks)
     {
         task.get();
 
         const size_t count = ++tasksProcessed;
-        if (count % tasksPerStep == 0 && m_currentSteps < 99) {
-            const int& newStep = static_cast<int>(80 + (count / tasksPerStep));
-            if (newStep > m_currentSteps) {
-                m_currentSteps = newStep;
-                emit stepProgress(m_currentSteps);
-            }
+        if (count % tasksPerStep == 0 && m_currentSteps < 98) {
+            ++m_currentSteps;
+            emit stepProgress(m_currentSteps);
         }
     }
 
-    m_currentSteps = 99;
+    m_currentSteps = 98;
     emit stepProgress(m_currentSteps);
 
     grid->SetPoints(points);
@@ -232,7 +227,6 @@ void EclipseGridWorker::buildGrid()
     }
 
 
-    const double zoomFactor = 5.0;
     auto m_transform = vtkSmartPointer<vtkTransform>::New();
 
     auto m_transformFilter = vtkSmartPointer<vtkTransformFilter>::New();
@@ -252,7 +246,7 @@ void EclipseGridWorker::buildGrid()
     actor->GetProperty()->EdgeVisibilityOff();
     actor->GetProperty()->SetInterpolationToGouraud();
     actor->GetProperty()->SetRepresentationToSurface();
-    actor->SetScale(1.0, 1.0, zoomFactor);
+    actor->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
 
     auto scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
     scalarBar->SetLookupTable(lut);
@@ -270,7 +264,7 @@ void EclipseGridWorker::buildGrid()
     m_renderWindow->SetMultiSamples(8); // anti-aliasing
     m_renderWindow->AddRenderer(renderer);
 
-    m_currentSteps = 100;
+    m_currentSteps = 99;
     emit stepProgress(m_currentSteps);
 }
 

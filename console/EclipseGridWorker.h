@@ -4,11 +4,8 @@
 #include <memory>
 #include "geometry/src/Volume.h"
 
-#include <vtkActor.h>
-#include <vtkTransform.h>
-#include <vtkTransformFilter.h>
-#include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkSmartPointer.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 
 using namespace syntheticSeismic;
 using namespace syntheticSeismic::geometry;
@@ -42,10 +39,6 @@ private:
 
     const std::vector<std::shared_ptr<Volume>>* m_allVolumes;
 
-    vtkSmartPointer<vtkActor> m_actor;
-    vtkSmartPointer<vtkTransform> m_transform;
-    vtkSmartPointer<vtkTransformFilter> m_transformFilter;
-    vtkSmartPointer<vtkRenderer> m_renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
 
     std::vector<std::array<double, 3>> m_defaultColors;

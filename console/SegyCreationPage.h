@@ -10,6 +10,7 @@ namespace syntheticSeismic {
 namespace widgets {
 
 class Worker;
+class RegularGridWorker;
 class SegyCreationPagePrivate;
 class SegyCreationPage : public QWizardPage
 {
@@ -37,11 +38,17 @@ private:
 private slots:
     void showProcessMessage();
 
+    void showVisualizerDialog();
+    void createDepthVtkRegularGrid();
+    void createAmplitudeVtkRegularGrid();
+
 private:
     QThread* m_processThread;
-    QProgressDialog* m_progressDialog;
+    QProgressDialog* m_progressDialog = nullptr;
     Worker* m_processWorker;
     QPair<QMessageBox::Icon, QString> m_processMessage;
+
+    RegularGridWorker* m_regularGridWorker = nullptr;
 
     Q_DECLARE_PRIVATE(SegyCreationPage)
     SegyCreationPagePrivate* const d_ptr;

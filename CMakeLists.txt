@@ -140,6 +140,8 @@ add_executable(SyntheticSeismicConsole
         console/VtkViewerDialog.h
         console/EclipseGridWorker.cpp
         console/EclipseGridWorker.h
+        console/RegularGridWorker.cpp
+        console/RegularGridWorker.h
 )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
@@ -224,17 +226,19 @@ if(WIN32)
              DESTINATION "${CMAKE_BINARY_DIR}/bin/")
 
 
-        file(COPY "${VTK_DIR}/bin/Debug/"
-             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Debug/*.dll")
 
     else()
         file(COPY "${Qt5_DIR}/../../../bin/platforms"
              DESTINATION "${CMAKE_BINARY_DIR}/bin/")
 
-        file(COPY "${VTK_DIR}/bin/Release/"
-             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Release/*.dll")
 
     endif()
+
+    foreach(dll ${DLLS_TO_COPY})
+        file(COPY "${dll}" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    endforeach()
 
     #IF(CMAKE_BUILD_TYPE MATCHES Debug)
     #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")

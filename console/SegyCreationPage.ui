@@ -232,6 +232,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="amplitudeVisualizePushButton">
+         <property name="text">
+          <string>Visualize</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="outputAmplitudeFileNameToolButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -256,6 +263,13 @@
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <item>
         <widget class="QLineEdit" name="depthAmplitudeFileNameLineEdit"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="depthVisualizePushButton">
+         <property name="text">
+          <string>Visualize</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="outputDepthAmplitudeFileNameToolButton">

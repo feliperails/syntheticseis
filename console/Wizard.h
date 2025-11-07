@@ -8,7 +8,12 @@
 
 #include <QSharedData>
 
+#include "EclipseGridWorker.h"
 #include "domain/src/Lithology.h"
+
+
+#include <vtkSmartPointer.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -43,9 +48,17 @@ public:
     void initializePage() override;
     bool isComplete() const override;
 
+private Q_SLOTS:
+    void showVisualizerDialog();
+    void createVtkEclipseGrid();
+
 private:
     Q_DECLARE_PRIVATE(EclipseGridImportPage)
     EclipseGridImportPagePrivate* const d_ptr;
+
+    EclipseGridWorker* m_eclipseGridWorker = nullptr;
+    QProgressDialog* m_progressDialog = nullptr;
+
 };
 
 

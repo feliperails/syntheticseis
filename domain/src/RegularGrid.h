@@ -45,6 +45,25 @@ public:
 
     }
 
+    RegularGrid(const RegularGrid<T>& _other) :
+        m_data(_other.m_data),
+        m_cellSizeInX(_other.m_cellSizeInX),
+        m_cellSizeInY(_other.m_cellSizeInY),
+        m_cellSizeInZ(_other.m_cellSizeInZ),
+        m_unitInX(_other.m_unitInX),
+        m_unitInY(_other.m_unitInY),
+        m_unitInZ(_other.m_unitInZ),
+        m_numberOfCellsInX(_other.m_numberOfCellsInX),
+        m_numberOfCellsInY(_other.m_numberOfCellsInY),
+        m_numberOfCellsInZ(_other.m_numberOfCellsInZ),
+        m_rectanglePoints(_other.m_rectanglePoints),
+        m_zBottom(_other.m_zBottom),
+        m_zTop(_other.m_zTop),
+        m_noDataValue(_other.m_noDataValue)
+    {
+
+    }
+
     std::vector<std::vector<std::vector<T>>>& getData()
     {
         return m_data;

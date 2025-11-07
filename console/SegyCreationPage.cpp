@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include "ui_SegyCreationPage.h"
 #include "SegyCreationPage.h"
+#include "RegularGridWorker.h"
 #include "domain/src/LithologyDictionary.h"
 #include "domain/src/EclipseGrid.h"
 #include "domain/src/RotateVolumeCoordinate.h"
@@ -14,6 +15,7 @@
 #include "domain/src/ConvertRegularGridCalculator.h"
 #include "domain/src/Facade.h"
 #include "Wizard.h"
+#include "VtkViewerDialog.h"
 #include "geometry/src/Point2D.h"
 #include "domain/src/RickerWaveletCalculator.h"
 #include "storage/src/RegularGridHdf5Storage.h"
@@ -80,6 +82,9 @@ class SegyCreationPagePrivate
     double m_cellSizeInY;
     double m_cellSizeInZ;
     double m_rickerWaveletFrequency;
+
+    std::shared_ptr<domain::RegularGrid<double>> m_depthRegularGrid = nullptr;
+    std::shared_ptr<domain::RegularGrid<double>> m_amplitudeRegularGrid = nullptr;
 };
 
 SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
@@ -186,6 +191,9 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
         Q_EMIT q_ptr->completeChanged();
     });
     // END AMPLITUDE SEGY FILE
+
+    QObject::connect(m_ui->depthVisualizePushButton, &QPushButton::clicked, q_ptr, &SegyCreationPage::createDepthVtkRegularGrid);
+    QObject::connect(m_ui->amplitudeVisualizePushButton, &QPushButton::clicked, q_ptr, &SegyCreationPage::createAmplitudeVtkRegularGrid);
 
     updateWidget();
 }
@@ -483,6 +491,102 @@ void SegyCreationPage::showProcessMessage()
     }
 }
 
+void SegyCreationPage::showVisualizerDialog()
+{
+    m_progressDialog->close();
+    delete m_progressDialog;
+    m_progressDialog = nullptr;
+
+    d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+    d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+
+
+    VtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(), RegularGridWorker::M_ZOOM_FACTOR_Z);
+
+    dialog.exec();
+
+    delete m_regularGridWorker;
+    m_regularGridWorker = nullptr;
+}
+
+void SegyCreationPage::createDepthVtkRegularGrid()
+{
+    try {
+
+        if (d_ptr->m_depthRegularGrid != nullptr)
+        {
+            auto workerThread = new QThread(this);
+
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_depthRegularGrid);
+
+            m_regularGridWorker->moveToThread(workerThread);
+
+            m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+            m_progressDialog->setWindowTitle("Building Grid");
+            m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+
+            m_progressDialog->show();
+
+            connect(workerThread, &QThread::started, m_regularGridWorker, &RegularGridWorker::run);
+            connect(m_regularGridWorker, &RegularGridWorker::stepProgress, m_progressDialog, &QProgressDialog::setValue);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, this, &SegyCreationPage::showVisualizerDialog);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, workerThread, &QThread::quit);
+            connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+            workerThread->start();
+
+        }
+    }
+    catch (std::exception &e)
+    {
+        d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+        d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+
+        QMessageBox::warning(QApplication::activeWindow(), tr("Error"), e.what(), QMessageBox::NoButton);
+    }
+}
+
+void SegyCreationPage::createAmplitudeVtkRegularGrid()
+{
+    try {
+
+        if (d_ptr->m_amplitudeRegularGrid != nullptr)
+        {
+            d_ptr->m_ui->depthVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(false);
+
+            auto workerThread = new QThread(this);
+
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_amplitudeRegularGrid);
+
+            m_regularGridWorker->moveToThread(workerThread);
+
+            m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+            m_progressDialog->setWindowTitle("Building Grid");
+            m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+
+            m_progressDialog->show();
+
+            connect(workerThread, &QThread::started, m_regularGridWorker, &RegularGridWorker::run);
+            connect(m_regularGridWorker, &RegularGridWorker::stepProgress, m_progressDialog, &QProgressDialog::setValue);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, this, &SegyCreationPage::showVisualizerDialog);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, workerThread, &QThread::quit);
+            connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+            workerThread->start();
+        }
+    }
+    catch (std::exception &e)
+    {
+        d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+        d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+
+        QMessageBox::warning(QApplication::activeWindow(), tr("Error"), e.what(), QMessageBox::NoButton);
+    }
+}
+
 bool SegyCreationPage::isComplete() const
 {
     Q_D(const SegyCreationPage);
@@ -502,6 +606,9 @@ void SegyCreationPage::process()
 
     try
     {
+        d_ptr->m_depthRegularGrid = nullptr;
+        d_ptr->m_amplitudeRegularGrid = nullptr;
+
         const double undefinedImpedance = 2.500;
         const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
 
@@ -658,6 +765,8 @@ void SegyCreationPage::process()
 
             SegyWriter segyWriter(amplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
+
+            d->m_amplitudeRegularGrid = amplitudeRegularGrid;
         }
 
         emit progressUpdated(90);
@@ -665,7 +774,7 @@ void SegyCreationPage::process()
         const QString depthAmplitudePath = d->m_ui->depthAmplitudeFileNameLineEdit->text();
         if (!depthAmplitudePath.isEmpty())
         {
-            auto depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(filledRegularGridInSeconds, *amplitudeRegularGrid);
+            RegularGrid<double> depthAmplitudeRegularGrid = convertGrid.fromZInSecondsToZInMeters(filledRegularGridInSeconds, *amplitudeRegularGrid);
 
             const QString hdf5Path = depthAmplitudePath + ".h5";
             RegularGridHdf5Storage<double> storage(hdf5Path, "data");
@@ -673,6 +782,8 @@ void SegyCreationPage::process()
 
             SegyWriter segyWriter(depthAmplitudePath);
             segyWriter.writeByHdf5File(hdf5Path);
+
+            d->m_depthRegularGrid = std::make_shared<domain::RegularGrid<double>>(depthAmplitudeRegularGrid);
         }
 
         m_processMessage.first = QMessageBox::Information;
@@ -687,6 +798,9 @@ void SegyCreationPage::process()
 
         emit progressUpdated(100);
     }
+
+    d->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+    d->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
 
     emit processFinished();
 }
@@ -792,6 +906,9 @@ void SegyCreationPage::initializePage()
     d->m_cellSizeInY = field(CELL_SIZE_IN_Y).value<double>();
     d->m_cellSizeInZ = field(CELL_SIZE_IN_Z).value<double>();
     d->m_rickerWaveletFrequency = field(RICKER_WAVELET_FREQUENCY).value<double>();
+
+    d->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+    d->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
 }
 
 } // widgets

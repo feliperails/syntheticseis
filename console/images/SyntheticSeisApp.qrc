@@ -1,6 +1,7 @@
 <RCC>
-    <qresource prefix="/">
-        <file alias="remove">trash_can.png</file>
-        <file alias="export">export.png</file>
-    </qresource>
+  <qresource prefix="/">
+    <file alias="remove">trash_can.png</file>
+    <file alias="appIco">appIco.png</file>
+    <file alias="export">export.png</file>
+  </qresource>
 </RCC>

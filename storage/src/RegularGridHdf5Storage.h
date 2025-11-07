@@ -196,7 +196,8 @@ public:
         auto totalCells = numberOfCellsInX * numberOfCellsInY * numberOfCellsInZ;
         auto data = new RasterType[totalCells];
 
-        dataset.read(data, std::is_floating_point<RasterType>::value ? H5::PredType::NATIVE_DOUBLE : H5::PredType::NATIVE_INT);
+        //dataset.read(data, std::is_floating_point<RasterType>::value ? H5::PredType::NATIVE_DOUBLE : H5::PredType::NATIVE_INT);
+        dataset.read(data, H5::PredType::NATIVE_DOUBLE);
         size_t i = 0;
         for (size_t x = 0; x < numberOfCellsInX; ++x)
         {

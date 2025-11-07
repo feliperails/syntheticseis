@@ -23,7 +23,12 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 
+
+
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
+include_directories(${GTEST_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets Concurrent)
@@ -31,9 +36,11 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 find_package(Threads REQUIRED)
 find_package(GMP REQUIRED)
 find_package(GTest CONFIG REQUIRED)
+find_package(VTK REQUIRED)
 
-include_directories(${GTEST_INCLUDE_DIR})
-include_directories(${HDF5_INCLUDE_DIRS})
+
+
+
 
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -129,6 +136,12 @@ add_executable(SyntheticSeismicConsole
         console/FileSelectionPage.h
         console/SegyCreationPage.cpp
         console/SegyCreationPage.h
+        console/VtkViewerDialog.cpp
+        console/VtkViewerDialog.h
+        console/EclipseGridWorker.cpp
+        console/EclipseGridWorker.h
+        console/RegularGridWorker.cpp
+        console/RegularGridWorker.h
 )
 
 #add_library(SyntheticSeismicCoreTest SHARED test/CoreTest.cpp)
@@ -174,6 +187,7 @@ target_link_libraries(SyntheticSeismicConsole
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
     PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC ${VTK_LIBRARIES}
     PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
@@ -182,6 +196,8 @@ if(WIN32)
 
     #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
     set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
+    set(SEARCH_PREFIX_PATH "${GLEW_ROOT}/lib" ${Qt5_DIR})
+    set(SEARCH_PREFIX_PATH "${VTK_ROOT}/lib" ${Qt5_DIR})
     message("Qt dir: ${Qt5_DIR} \n\n")
     get_cmake_property(_variableNames VARIABLES)
     foreach(_variableName ${_variableNames})
@@ -208,10 +224,21 @@ if(WIN32)
     if(CMAKE_BUILD_TYPE MATCHES Debug)
         file(COPY "${Qt5_DIR}/../../../bin/platforms"
              DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+
+
+        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Debug/*.dll")
+
     else()
         file(COPY "${Qt5_DIR}/../../../bin/platforms"
              DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+
+        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Release/*.dll")
+
     endif()
+
+    foreach(dll ${DLLS_TO_COPY})
+        file(COPY "${dll}" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    endforeach()
 
     #IF(CMAKE_BUILD_TYPE MATCHES Debug)
     #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")

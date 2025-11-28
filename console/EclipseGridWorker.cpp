@@ -33,6 +33,13 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkLight.h>
 #include <vtkSmartPointer.h>
+#include <vtkCamera.h>
+#include <vtkOrientationMarkerWidget.h>
+#include <vtkAxesActor.h>
+#include <vtkTextProperty.h>
+#include <vtkCaptionActor2D.h>
+#include <vtkTextActor.h>
+#include <vtkRenderWindowInteractor.h>
 
 
 namespace syntheticSeismic {
@@ -133,7 +140,7 @@ void EclipseGridWorker::buildGrid()
         return std::hash<double>{}(pt.x) ^ std::hash<double>{}(pt.y) << 1 ^ std::hash<double>{}(pt.z) << 2;
     };
 
-    static const int vtkToVolumeIndex[8] = { 0, 4, 6, 2, 1, 5, 7, 3 };
+    static const int vtkToVolumeIndex[8] = { 4, 6, 7, 5, 0, 2, 3, 1 };
 
     std::vector<std::future<void>> tasks;
 
@@ -161,7 +168,7 @@ void EclipseGridWorker::buildGrid()
                     std::lock_guard<std::mutex> lock(pointMapMutex);
                     auto it = pointMap.find(key);
                     if (it == pointMap.end()) {
-                        id = points->InsertNextPoint(pt.x, pt.y, pt.z);
+                        id = points->InsertNextPoint(pt.x, pt.y, -pt.z);
                         pointMap[key] = id;
                     } else {
                         id = it->second;
@@ -250,8 +257,13 @@ void EclipseGridWorker::buildGrid()
 
     auto scalarBar = vtkSmartPointer<vtkScalarBarActor>::New();
     scalarBar->SetLookupTable(lut);
-    scalarBar->SetTitle("Litho");
+    scalarBar->SetTitle("Lithologies");
     scalarBar->SetNumberOfLabels(numColors);
+    scalarBar->SetWidth(0.05);
+    scalarBar->SetHeight(0.25);
+    scalarBar->GetPositionCoordinate()->SetCoordinateSystemToNormalizedViewport();
+    scalarBar->GetPositionCoordinate()->SetValue(0.93, 0.02);
+    scalarBar->SetOrientationToVertical();
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
 
@@ -259,6 +271,12 @@ void EclipseGridWorker::buildGrid()
     renderer->AddActor2D(scalarBar);
     renderer->SetAmbient(0.9, 0.9, 0.9);
     renderer->SetBackground(0.1, 0.1, 0.1);
+    renderer->ResetCamera();
+
+    vtkCamera* camera = renderer->GetActiveCamera();
+    camera->Elevation(-90.0);
+    camera->Azimuth(0.0);
+    camera->OrthogonalizeViewUp();
     renderer->ResetCamera();
 
     m_renderWindow->SetMultiSamples(8); // anti-aliasing

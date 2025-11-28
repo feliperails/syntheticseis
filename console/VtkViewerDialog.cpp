@@ -2,6 +2,7 @@
 #include "ui_VtkViewerDialog.h"
 
 #include <vtkRendererCollection.h>
+#include <vtkActor.h>
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -37,6 +38,21 @@ VtkViewerDialog::VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> r
                 actor->SetScale(1.0, 1.0, value);
             }
 
+            renderer->ResetCamera();
+        }
+
+        m_renderWindow->Render();
+    });
+
+    connect(ui->resetCameraPushButton, &QPushButton::clicked, this, [this]() -> void {
+        if (m_renderWindow == nullptr) return;
+
+        vtkRendererCollection* const& renderers = m_renderWindow->GetRenderers();
+        renderers->InitTraversal();
+
+        vtkRenderer* renderer = nullptr;
+        while ((renderer = renderers->GetNextItem()) != nullptr)
+        {
             renderer->ResetCamera();
         }
 

@@ -24,6 +24,8 @@ private:
     Ui::VtkViewerDialog *ui;
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
+    double m_bounds[6] = {0.0, 1.0, 0.0, 1.0, 0.0, 1.0};
+    bool m_boundsInitialized = false;
 };
 
 }

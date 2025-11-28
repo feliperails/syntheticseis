@@ -28,7 +28,6 @@ set(GTEST_LINKED_AS_SHARED_LIBRARY 1)
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 include_directories(${GTEST_INCLUDE_DIR})
-include_directories(${HDF5_INCLUDE_DIRS})
 
 find_package(OpenMP)
 find_package(Qt5 COMPONENTS REQUIRED Core Test Widgets Concurrent)
@@ -37,10 +36,7 @@ find_package(Threads REQUIRED)
 find_package(GMP REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(VTK REQUIRED)
-
-
-
-
+find_package(HDF5 REQUIRED COMPONENTS CXX HL)
 
 # FIXME Retirar essa aberração.
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -154,7 +150,7 @@ target_link_libraries(SyntheticSeismic
     PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
-    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC HDF5::HDF5
     PUBLIC ${GTEST_LIBRARIES}
 )
 
@@ -163,7 +159,7 @@ target_link_libraries(SyntheticSeismicMock
     PUBLIC ${GMP_LIBRARIES}/gmp.lib
     PUBLIC CGAL::CGAL
     PUBLIC CGAL::CGAL_Core
-    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC HDF5::HDF5
     PUBLIC SyntheticSeismic
 )
 
@@ -175,7 +171,7 @@ target_link_libraries(SyntheticSeismicTest
     PUBLIC CGAL::CGAL_Core
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
-    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC HDF5::HDF5
     PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
@@ -186,28 +182,13 @@ target_link_libraries(SyntheticSeismicConsole
     PUBLIC Qt5::Concurrent
     PUBLIC SyntheticSeismic
     PUBLIC SyntheticSeismicMock
-    PUBLIC ${HDF5_LIBRARIES}
+    PUBLIC HDF5::HDF5
     PUBLIC ${VTK_LIBRARIES}
     PUBLIC GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main
 )
 
 if(WIN32)
     include(GetPrerequisites)
-
-    #get_filename_component(@_package_upper_name@_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
-    set(SEARCH_PREFIX_PATH "${GTest_ROOT}/lib" ${Qt5_DIR})
-    set(SEARCH_PREFIX_PATH "${GLEW_ROOT}/lib" ${Qt5_DIR})
-    set(SEARCH_PREFIX_PATH "${VTK_ROOT}/lib" ${Qt5_DIR})
-    message("Qt dir: ${Qt5_DIR} \n\n")
-    get_cmake_property(_variableNames VARIABLES)
-    foreach(_variableName ${_variableNames})
-        message("${_variableName}=${${_variableName}}")
-    endforeach()
-    MESSAGE(STATUS "SEARCH_PREFIX_PATH: ${SEARCH_PREFIX_PATH}")
-    set(_search_paths "${CMAKE_PREFIX_PATH};${CMAKE_BINARY_DIR}/bin;${SEARCH_PREFIX_PATH}")
-    string(REPLACE ";" "%3b" _search_paths "${_search_paths}")
-
-    message(STATUS "SEARCH_PATHS: " ${_search_paths})
 
     add_custom_command(TARGET SyntheticSeismicTest
         POST_BUILD
@@ -221,30 +202,36 @@ if(WIN32)
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ConfigureBuildPrerequisites.cmake
     )
 
+
     if(CMAKE_BUILD_TYPE MATCHES Debug)
-        file(COPY "${Qt5_DIR}/../../../bin/platforms"
-             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
 
-
-        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Debug/*.dll")
-
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Concurrentd.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(GLOB DLLS_TO_COPY "${VTK_BIN_DIR}/bin/*.dll")
     else()
-        file(COPY "${Qt5_DIR}/../../../bin/platforms"
-             DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qdirect2d.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qdirect2d.pdb" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qminimal.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qminimal.pdb" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qoffscreen.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qoffscreen.pdb" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qwebgl.pdb" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qwindows.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
+        file(COPY "${Qt5_DIR}/../../../plugins/platforms/qwindows.pdb" DESTINATION "${CMAKE_BINARY_DIR}/bin/platforms")
 
-        file(GLOB DLLS_TO_COPY "${VTK_DIR}/bin/Release/*.dll")
-
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Concurrent.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+        file(GLOB DLLS_TO_COPY "${VTK_BIN_DIR}/bin/*.dll")
     endif()
 
     foreach(dll ${DLLS_TO_COPY})
         file(COPY "${dll}" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
     endforeach()
 
-    #IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
-    #else()
-    #    file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
-    #endif()
+    IF(CMAKE_BUILD_TYPE MATCHES Debug)
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Cored.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    else()
+        file(COPY "${Qt5_DIR}/../../../bin/Qt5Core.dll" DESTINATION "${CMAKE_BINARY_DIR}/bin/")
+    endif()
 endif()
 
 install(FILES README.md

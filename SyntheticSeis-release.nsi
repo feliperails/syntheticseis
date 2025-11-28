@@ -11,8 +11,8 @@
 ;General
 
   ;Name and file
-  Name "SyntheticSeismic 1.0.11"
-  OutFile "SyntheticSeismic-1.0.11-release.exe"
+  Name "SyntheticSeismic 2.0.0"
+  OutFile "SyntheticSeismic-2.0.0-release.exe"
   Unicode True
 
   ;Default installation folder
@@ -59,14 +59,20 @@ Section "SyntheticSeis" SecSyntheticSeis
 
   File /nonfatal /a /r "..\build\release\bin\python"
   File "..\build\release\bin\Qt5Core.dll"
-  File "..\build\release\bin\Qt5Test.dll"
   File "..\build\release\bin\SyntheticSeismic.dll"
   File "..\build\release\bin\SyntheticSeismicConsole.exe"
-  File "..\build\release\bin\VCOMP140.DLL"
+  File "..\build\release\bin\vtk*.*"
+  File "..\WindowsLibraries\vcomp140.dll"
   File "..\WindowsLibraries\gmp-10.dll"
   File "..\WindowsLibraries\Qt5Concurrent.dll"
   File "..\WindowsLibraries\Qt5Gui.dll"
   File "..\WindowsLibraries\Qt5Widgets.dll"
+  File "..\WindowsLibraries\hdf5.dll"
+  File "..\WindowsLibraries\hdf5_cpp.dll"
+  File "..\WindowsLibraries\hdf5.dll"
+  File "..\WindowsLibraries\hdf5_cpp.dll"
+  File "..\WindowsLibraries\zlib1.dll"
+  File "..\WindowsLibraries\szip.dll"
   File /nonfatal /a /r "..\WindowsLibraries\platforms"
   File "logo.ico"
   File "SyntheticSeisReadme.txt"

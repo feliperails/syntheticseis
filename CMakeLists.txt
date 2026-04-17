@@ -134,6 +134,8 @@ add_executable(SyntheticSeismicConsole
         console/SegyCreationPage.h
         console/VtkViewerDialog.cpp
         console/VtkViewerDialog.h
+        console/SeismicVtkViewerDialog.cpp
+        console/SeismicVtkViewerDialog.h
         console/EclipseGridWorker.cpp
         console/EclipseGridWorker.h
         console/RegularGridWorker.cpp

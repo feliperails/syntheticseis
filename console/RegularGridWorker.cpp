@@ -5,26 +5,27 @@
 #include <QDebug>
 #include <QVTKOpenGLNativeWidget.h>
 
+#include <array>
 #include <future>
 #include <cstdint>
 #include <cstring>
+#include <cmath>
 
 #include <vtkRenderer.h>
 #include <vtkCamera.h>
 #include <vtkScalarBarActor.h>
-#include <vtkStructuredGrid.h>
-#include <vtkPoints.h>
-#include <vtkPointData.h>
-#include <vtkFloatArray.h>
+#include <vtkImageData.h>
 #include <vtkColorTransferFunction.h>
-#include <vtkLookupTable.h>
-#include <vtkDataSetMapper.h>
-#include <vtkProperty.h>
+#include <vtkImageProperty.h>
+#include <vtkImageSliceMapper.h>
+#include <vtkImageSlice.h>
+#include <vtkOutlineFilter.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
+#include <vtkProperty.h>
 #include <vtkTextProperty.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkPlane.h>
-#include <vtkClipDataSet.h>
 
 
 namespace syntheticSeismic {
@@ -68,22 +69,31 @@ void RegularGridWorker::buildGrid()
     const size_t dimX = m_regularGrid->getNumberOfCellsInX();
     const size_t dimY = m_regularGrid->getNumberOfCellsInY();
     const size_t dimZ = m_regularGrid->getNumberOfCellsInZ();
-    const size_t totalPoints = dimX * dimY * dimZ;
+    const size_t totalSamples = dimX * dimY * dimZ;
     const double noDataValue = static_cast<double>(m_regularGrid->getNoDataValue());
 
-    auto points = vtkSmartPointer<vtkPoints>::New();
-    points->SetNumberOfPoints(totalPoints);
-
-    auto scalars = vtkSmartPointer<vtkFloatArray>::New();
-    scalars->SetName(m_scalarBarTitle.toUtf8().constData());
-    scalars->SetNumberOfValues(totalPoints);
+    // Seismic viewer pattern borrowed from CimaView3D (cs2i-senai-cimatec):
+    // the data is rendered as a set of axis-aligned slice planes textured
+    // with the amplitudes on that plane, not as a 3D volume. In VTK this is
+    // vtkImageResliceMapper + vtkImageSlice. Three planes, one per axis,
+    // positioned by the dialog's slider. Every pixel on a slice face IS the
+    // amplitude at that (x, y, z) point, so interior cells are visible by
+    // construction — unlike surface rendering, which only draws the hull.
+    auto imageData = vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions(static_cast<int>(dimX), static_cast<int>(dimY), static_cast<int>(dimZ));
+    imageData->SetOrigin(0.0, 0.0, 0.0);
+    // Z spacing negated so depth (increasing k) goes downward in world space,
+    // matching the EclipseGridWorker convention expected by VtkViewerDialog slicing.
+    imageData->SetSpacing(1.0, 1.0, -1.0);
+    imageData->AllocateScalars(VTK_FLOAT, 1);
+    float* const rawScalars = static_cast<float*>(imageData->GetScalarPointer());
 
     std::vector<std::future<void>> tasks;
 
     const size_t hwConcurrency = std::max<size_t>(1, std::thread::hardware_concurrency());
     const size_t slicesPerThread = std::max<size_t>(1, dimZ / hwConcurrency);
-    std::atomic<size_t> pointsProcessed{0};
-    const size_t volumesPerStep = std::max<size_t>(1, totalPoints / 80);
+    std::atomic<size_t> samplesProcessed{0};
+    const size_t samplesPerStep = std::max<size_t>(1, totalSamples / 80);
 
     // Data range over valid (non-noData) values, computed in parallel.
     std::atomic<uint32_t> minBits{0x7F800000u}; // +inf
@@ -113,23 +123,17 @@ void RegularGridWorker::buildGrid()
     {
         const size_t kEnd = std::min(kStart + slicesPerThread, dimZ);
 
-        tasks.emplace_back(std::async(std::launch::async, [=, &points, &scalars, &pointsProcessed, &minBits, &maxBits]() {
+        tasks.emplace_back(std::async(std::launch::async, [=, &samplesProcessed, &minBits, &maxBits]() {
             for (size_t k = kStart; k < kEnd; ++k)
             {
                 for (size_t j = 0; j < dimY; ++j)
                 {
                     for (size_t i = 0; i < dimX; ++i)
                     {
-                        const vtkIdType idx = static_cast<vtkIdType>(k * dimY * dimX + j * dimX + i);
-                        const double x = static_cast<double>(i);
-                        const double y = static_cast<double>(j);
-                        // Negate Z so depth (increasing k) goes downward in world space,
-                        // matching the EclipseGridWorker convention expected by VtkViewerDialog slicing.
-                        const double z = -static_cast<double>(k);
+                        const size_t idx = k * dimY * dimX + j * dimX + i;
                         const float value = static_cast<float>(m_regularGrid->getData(i, j, k));
 
-                        points->SetPoint(idx, x, y, z);
-                        scalars->SetValue(idx, value);
+                        rawScalars[idx] = value;
 
                         if (static_cast<double>(value) != noDataValue)
                         {
@@ -137,8 +141,8 @@ void RegularGridWorker::buildGrid()
                             atomicMaxFloat(maxBits, value);
                         }
 
-                        const size_t count = ++pointsProcessed;
-                        if (count % volumesPerStep == 0 && m_currentSteps < 98) {
+                        const size_t count = ++samplesProcessed;
+                        if (count % samplesPerStep == 0 && m_currentSteps < 98) {
                             ++m_currentSteps;
                             emit stepProgress(m_currentSteps);
                         }
@@ -164,11 +168,6 @@ void RegularGridWorker::buildGrid()
     m_currentSteps = 98;
     emit stepProgress(m_currentSteps);
 
-    vtkNew<vtkStructuredGrid> grid;
-    grid->SetDimensions(static_cast<int>(dimX), static_cast<int>(dimY), static_cast<int>(dimZ));
-    grid->SetPoints(points);
-    grid->GetPointData()->SetScalars(scalars);
-
     float minValueF, maxValueF;
     const uint32_t minB = minBits.load();
     const uint32_t maxB = maxBits.load();
@@ -177,70 +176,96 @@ void RegularGridWorker::buildGrid()
 
     double minValue = static_cast<double>(minValueF);
     double maxValue = static_cast<double>(maxValueF);
-    if (!(maxValue > minValue))
+    if (!std::isfinite(minValue) || !std::isfinite(maxValue))
     {
-        // Fallback if grid has no valid data or is flat.
-        double range[2];
-        scalars->GetRange(range);
-        minValue = range[0];
-        maxValue = range[1];
-        if (!(maxValue > minValue))
-        {
-            maxValue = minValue + 1.0;
-        }
+        minValue = 0.0;
+        maxValue = 1.0;
+    }
+    else if (!(maxValue > minValue))
+    {
+        maxValue = minValue + 1.0;
     }
 
-    const double midValue = (minValue + maxValue) / 2.0;
+    // Seismic "seismic" colormap: symmetric blue → white → red around zero
+    // (CimaView3D's default for amplitude). For amplitude we clamp the range
+    // to ±max(|min|, |max|) so the white sits exactly at zero; for lithology
+    // or depth where the range isn't zero-centred we just span [min, max].
+    const bool symmetricAroundZero = (minValue < 0.0) && (maxValue > 0.0);
+    double cmin = minValue;
+    double cmax = maxValue;
+    if (symmetricAroundZero)
+    {
+        const double clim = std::max(std::abs(minValue), std::abs(maxValue));
+        cmin = -clim;
+        cmax = clim;
+    }
+    const double cmid = (cmin + cmax) / 2.0;
     const int numIntermediateSteps = 8;
 
     vtkNew<vtkColorTransferFunction> colorTransfer;
     colorTransfer->SetColorSpaceToRGB();
-
-    // Blue -> white (min -> mid)
     for (int i = 0; i <= numIntermediateSteps; ++i) {
         const double t = static_cast<double>(i) / numIntermediateSteps;
-        const double val = minValue + t * (midValue - minValue);
+        const double val = cmin + t * (cmid - cmin);
         colorTransfer->AddRGBPoint(val, t, t, 1.0);
     }
-
-    // White -> red (mid -> max); start at i=1 so we don't re-declare midValue.
     for (int i = 1; i <= numIntermediateSteps; ++i) {
         const double t = static_cast<double>(i) / numIntermediateSteps;
-        const double val = midValue + t * (maxValue - midValue);
+        const double val = cmid + t * (cmax - cmid);
         colorTransfer->AddRGBPoint(val, 1.0, 1.0 - t, 1.0 - t);
     }
 
-    // vtkClipDataSet between grid and mapper: when the dialog moves the plane,
-    // the filter regenerates geometry at the cut face so the interior (colored
-    // by scalars) becomes visible. Default plane sits far outside the data
-    // bounds so that F(point) = (point - origin) . normal > 0 for every cell,
-    // which VTK's default (InsideOut off) keeps — i.e., the full volume is
-    // shown until the dialog starts slicing.
+    // Semi-transparent slice planes: CimaView3D's n-slices view shows each
+    // plane through the others, so when three axis-aligned slices cross at a
+    // point you can read the data on all three at once instead of the frontmost
+    // plane hiding the others. 0.85 mirrors the opacity level visible in the
+    // reference figure (imgs/n-slices.png).
+    vtkNew<vtkImageProperty> imageProperty;
+    imageProperty->SetLookupTable(colorTransfer);
+    imageProperty->UseLookupTableScalarRangeOn();
+    imageProperty->SetInterpolationTypeToLinear();
+    imageProperty->SetOpacity(0.85);
+
+    // One slice actor using vtkImageSliceMapper — the simple axis-aligned
+    // image slicer. The dialog sets SetOrientation(0/1/2) for X/Y/Z and
+    // SetSliceNumber(k) for the voxel-index position; vtkImageSliceMapper
+    // handles bounds, re-rendering and caching without needing a vtkPlane.
+    // Starts hidden (axis = None in the combo) and at slice index 0.
+    auto sliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
+    sliceMapper->SetInputData(imageData);
+    sliceMapper->SetOrientationToX();
+    sliceMapper->SetSliceNumber(static_cast<int>(dimX) / 2);
+
+    auto slice = vtkSmartPointer<vtkImageSlice>::New();
+    slice->SetMapper(sliceMapper);
+    slice->SetProperty(imageProperty);
+    slice->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
+    slice->SetVisibility(false);
+
+    // m_clipPlane is retained for API compatibility (getClipPlane()) but is
+    // no longer the slicing mechanism; vtkImageSliceMapper uses integer
+    // slice indices directly.
     m_clipPlane = vtkSmartPointer<vtkPlane>::New();
-    m_clipPlane->SetNormal(-1.0, 0.0, 0.0);
-    m_clipPlane->SetOrigin(-1.0, 0.0, 0.0);
+    m_clipPlane->SetNormal(1.0, 0.0, 0.0);
+    m_clipPlane->SetOrigin(0.0, 0.0, 0.0);
 
-    auto clipFilter = vtkSmartPointer<vtkClipDataSet>::New();
-    clipFilter->SetInputData(grid);
-    clipFilter->SetClipFunction(m_clipPlane);
+    // Wireframe outline of the volume so the user sees the extent even when
+    // the slice planes don't cover the full cube.
+    auto outlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
+    outlineFilter->SetInputData(imageData);
 
-    vtkNew<vtkDataSetMapper> mapper;
-    mapper->SetInputConnection(clipFilter->GetOutputPort());
-    mapper->SetScalarRange(minValue, maxValue);
-    mapper->SetLookupTable(colorTransfer);
-    mapper->ScalarVisibilityOn();
-    mapper->SetColorModeToMapScalars();
+    auto outlineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    outlineMapper->SetInputConnection(outlineFilter->GetOutputPort());
 
-    vtkNew<vtkActor> actor;
-    actor->SetMapper(mapper);
-    actor->GetProperty()->SetOpacity(1.0);
-    actor->GetProperty()->EdgeVisibilityOff();
-    actor->GetProperty()->SetInterpolationToGouraud();
-    actor->GetProperty()->SetRepresentationToSurface();
-    actor->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
+    auto outlineActor = vtkSmartPointer<vtkActor>::New();
+    outlineActor->SetMapper(outlineMapper);
+    outlineActor->GetProperty()->SetColor(0.7, 0.7, 0.7);
+    outlineActor->GetProperty()->SetLineWidth(1.0);
+    outlineActor->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
 
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->AddActor(actor);
+    renderer->AddViewProp(slice);
+    renderer->AddActor(outlineActor);
 
     vtkNew<vtkScalarBarActor> scalarBar;
     scalarBar->SetLookupTable(colorTransfer);
@@ -256,17 +281,17 @@ void RegularGridWorker::buildGrid()
 
     renderer->AddActor2D(scalarBar);
     renderer->SetBackground(0.1, 0.1, 0.1);
-    renderer->SetAmbient(0.9, 0.9, 0.9);
     renderer->ResetCamera();
 
-    // Preset view: look down the -Z axis (top-down) like the Eclipse viewer.
+    // Isometric-ish default view so any axis-aligned slice the user picks
+    // later is visible instead of edge-on.
     vtkCamera* camera = renderer->GetActiveCamera();
-    camera->Elevation(-90.0);
-    camera->Azimuth(0.0);
+    camera->Elevation(-60.0);
+    camera->Azimuth(30.0);
     camera->OrthogonalizeViewUp();
     renderer->ResetCamera();
 
-    m_renderWindow->SetMultiSamples(8); // anti-aliasing
+    m_renderWindow->SetMultiSamples(8);
     m_renderWindow->AddRenderer(renderer);
 
     m_currentSteps = 99;

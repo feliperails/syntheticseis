@@ -15,7 +15,7 @@
 #include "domain/src/ConvertRegularGridCalculator.h"
 #include "domain/src/Facade.h"
 #include "Wizard.h"
-#include "VtkViewerDialog.h"
+#include "SeismicVtkViewerDialog.h"
 #include "geometry/src/Point2D.h"
 #include "domain/src/RickerWaveletCalculator.h"
 #include "storage/src/RegularGridHdf5Storage.h"
@@ -483,6 +483,10 @@ void SegyCreationPage::initProcessThread()
 
 void SegyCreationPage::showProcessMessage()
 {
+    d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+    d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+    d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
+
     if (m_processMessage.first == QMessageBox::Warning)
     {
         QMessageBox::warning(QApplication::activeWindow(), tr("SyntheticSeis - Error"), m_processMessage.second, QMessageBox::NoButton);
@@ -503,7 +507,7 @@ void SegyCreationPage::showVisualizerDialog()
     d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
     d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
-    VtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(), RegularGridWorker::M_ZOOM_FACTOR_Z);
+    SeismicVtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(), RegularGridWorker::M_ZOOM_FACTOR_Z);
 
     dialog.exec();
 
@@ -872,9 +876,9 @@ void SegyCreationPage::process()
         emit progressUpdated(100);
     }
 
-    d->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
-    d->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
-    d->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
+    // Do not touch QWidgets here: process() runs on a worker thread (Worker::run)
+    // and calling setEnabled across threads fires a Qt assert (QCoreApplication::sendEvent).
+    // The visualize buttons are re-enabled on the GUI thread by showProcessMessage().
 
     emit processFinished();
 }

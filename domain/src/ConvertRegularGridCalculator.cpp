@@ -565,7 +565,7 @@ namespace domain {
 
         if (m_lithologies.count(idLithology) == 0)
         {
-            std::cout << "missing lithology: " << idLithology << " for (" << x << ", " << y << ", " << z << ")" << std::endl;
+            // std::cout << "missing lithology: " << idLithology << " for (" << x << ", " << y << ", " << z << ")" << std::endl;
 
             if (m_defineMissingLithologyByProximity)
             {
@@ -579,7 +579,7 @@ namespace domain {
                     );
             }
 
-            return {0.0, false};
+            return {0.0, true};
         }
 
 

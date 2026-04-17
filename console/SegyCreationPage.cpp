@@ -85,6 +85,7 @@ class SegyCreationPagePrivate
 
     std::shared_ptr<domain::RegularGrid<double>> m_depthRegularGrid = nullptr;
     std::shared_ptr<domain::RegularGrid<double>> m_amplitudeRegularGrid = nullptr;
+    std::shared_ptr<domain::RegularGrid<double>> m_lithologyRegularGrid = nullptr;
 };
 
 SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
@@ -194,6 +195,7 @@ SegyCreationPagePrivate::SegyCreationPagePrivate(SegyCreationPage *q)
 
     QObject::connect(m_ui->depthVisualizePushButton, &QPushButton::clicked, q_ptr, &SegyCreationPage::createDepthVtkRegularGrid);
     QObject::connect(m_ui->amplitudeVisualizePushButton, &QPushButton::clicked, q_ptr, &SegyCreationPage::createAmplitudeVtkRegularGrid);
+    QObject::connect(m_ui->lithologyVisualizePushButton, &QPushButton::clicked, q_ptr, &SegyCreationPage::createLithologyVtkRegularGrid);
 
     updateWidget();
 }
@@ -499,7 +501,7 @@ void SegyCreationPage::showVisualizerDialog()
 
     d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
     d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
-
+    d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
     VtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(), RegularGridWorker::M_ZOOM_FACTOR_Z);
 
@@ -515,9 +517,13 @@ void SegyCreationPage::createDepthVtkRegularGrid()
 
         if (d_ptr->m_depthRegularGrid != nullptr)
         {
+            d_ptr->m_ui->depthVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(false);
+
             auto workerThread = new QThread(this);
 
-            m_regularGridWorker = new RegularGridWorker(d_ptr->m_depthRegularGrid);
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_depthRegularGrid, tr("Depth"));
 
             m_regularGridWorker->moveToThread(workerThread);
 
@@ -542,6 +548,7 @@ void SegyCreationPage::createDepthVtkRegularGrid()
     {
         d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
         d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+        d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
         QMessageBox::warning(QApplication::activeWindow(), tr("Error"), e.what(), QMessageBox::NoButton);
     }
@@ -555,10 +562,11 @@ void SegyCreationPage::createAmplitudeVtkRegularGrid()
         {
             d_ptr->m_ui->depthVisualizePushButton->setEnabled(false);
             d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(false);
 
             auto workerThread = new QThread(this);
 
-            m_regularGridWorker = new RegularGridWorker(d_ptr->m_amplitudeRegularGrid);
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_amplitudeRegularGrid, tr("Amplitude"));
 
             m_regularGridWorker->moveToThread(workerThread);
 
@@ -582,6 +590,47 @@ void SegyCreationPage::createAmplitudeVtkRegularGrid()
     {
         d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
         d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+        d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
+
+        QMessageBox::warning(QApplication::activeWindow(), tr("Error"), e.what(), QMessageBox::NoButton);
+    }
+}
+
+void SegyCreationPage::createLithologyVtkRegularGrid()
+{
+    try {
+        if (d_ptr->m_lithologyRegularGrid != nullptr)
+        {
+            d_ptr->m_ui->depthVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(false);
+            d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(false);
+
+            auto workerThread = new QThread(this);
+
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_lithologyRegularGrid, tr("Lithology"));
+
+            m_regularGridWorker->moveToThread(workerThread);
+
+            m_progressDialog = new QProgressDialog("Processing...", nullptr, 0, 100, this);
+            m_progressDialog->setWindowTitle("Building Grid");
+            m_progressDialog->setWindowFlags(m_progressDialog->windowFlags() & ~Qt::WindowCloseButtonHint);
+
+            m_progressDialog->show();
+
+            connect(workerThread, &QThread::started, m_regularGridWorker, &RegularGridWorker::run);
+            connect(m_regularGridWorker, &RegularGridWorker::stepProgress, m_progressDialog, &QProgressDialog::setValue);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, this, &SegyCreationPage::showVisualizerDialog);
+            connect(m_regularGridWorker, &RegularGridWorker::finished, workerThread, &QThread::quit);
+            connect(workerThread, &QThread::finished, workerThread, &QObject::deleteLater);
+
+            workerThread->start();
+        }
+    }
+    catch (std::exception &e)
+    {
+        d_ptr->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
+        d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+        d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
         QMessageBox::warning(QApplication::activeWindow(), tr("Error"), e.what(), QMessageBox::NoButton);
     }
@@ -608,6 +657,7 @@ void SegyCreationPage::process()
     {
         d_ptr->m_depthRegularGrid = nullptr;
         d_ptr->m_amplitudeRegularGrid = nullptr;
+        d_ptr->m_lithologyRegularGrid = nullptr;
 
         const double undefinedImpedance = 2.500;
         const auto undefinedLithology = std::make_shared<Lithology>(0, "undefined", 2500, 1);
@@ -712,6 +762,29 @@ void SegyCreationPage::process()
 
             SegyWriter segyWriter(lithologyPath);
             segyWriter.writeByHdf5File(hdf5Path);
+
+            auto lithologyDoubleGrid = std::make_shared<domain::RegularGrid<double>>(
+                lithologyRegularGrid.getNumberOfCellsInX(),
+                lithologyRegularGrid.getNumberOfCellsInY(),
+                lithologyRegularGrid.getNumberOfCellsInZ(),
+                lithologyRegularGrid.getCellSizeInX(),
+                lithologyRegularGrid.getCellSizeInY(),
+                lithologyRegularGrid.getCellSizeInZ(),
+                lithologyRegularGrid.getUnitInX(),
+                lithologyRegularGrid.getUnitInY(),
+                lithologyRegularGrid.getUnitInZ(),
+                lithologyRegularGrid.getRectanglePoints(),
+                lithologyRegularGrid.getZBottom(),
+                lithologyRegularGrid.getZTop(),
+                0.0, EclipseGrid::NoDataValue
+            );
+            auto &doubleData = lithologyDoubleGrid->getData();
+            const auto &intData = lithologyRegularGrid.getData();
+            for (size_t i = 0; i < lithologyRegularGrid.getNumberOfCellsInX(); ++i)
+                for (size_t j = 0; j < lithologyRegularGrid.getNumberOfCellsInY(); ++j)
+                    for (size_t k = 0; k < lithologyRegularGrid.getNumberOfCellsInZ(); ++k)
+                        doubleData[i][j][k] = static_cast<double>(intData[i][j][k]);
+            d->m_lithologyRegularGrid = lithologyDoubleGrid;
         }
 
         emit progressUpdated(50);
@@ -801,6 +874,7 @@ void SegyCreationPage::process()
 
     d->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
     d->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+    d->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
     emit processFinished();
 }
@@ -909,6 +983,7 @@ void SegyCreationPage::initializePage()
 
     d->m_ui->depthVisualizePushButton->setEnabled(d_ptr->m_depthRegularGrid != nullptr);
     d->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
+    d->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 }
 
 } // widgets

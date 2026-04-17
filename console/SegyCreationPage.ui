@@ -147,6 +147,13 @@
         <widget class="QLineEdit" name="lithologyFileNameLineEdit"/>
        </item>
        <item>
+        <widget class="QPushButton" name="lithologyVisualizePushButton">
+         <property name="text">
+          <string>Visualize</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="outputLithologyFileNameToolButton">
          <property name="text">
           <string>...</string>

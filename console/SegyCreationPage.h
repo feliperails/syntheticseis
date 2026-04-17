@@ -41,6 +41,7 @@ private slots:
     void showVisualizerDialog();
     void createDepthVtkRegularGrid();
     void createAmplitudeVtkRegularGrid();
+    void createLithologyVtkRegularGrid();
 
 private:
     QThread* m_processThread;

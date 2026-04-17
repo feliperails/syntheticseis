@@ -20,6 +20,9 @@ public:
     explicit VtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, const double& initialZoomFactorZ, QWidget *parent = nullptr);
     ~VtkViewerDialog();
 
+protected:
+    void done(int result) override;
+
 private:
     Ui::VtkViewerDialog *ui;
 

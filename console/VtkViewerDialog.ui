@@ -99,6 +99,11 @@
           <string>Y</string>
          </property>
         </item>
+        <item>
+         <property name="text">
+          <string>Z</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>

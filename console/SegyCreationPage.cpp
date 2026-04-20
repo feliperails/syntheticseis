@@ -507,7 +507,9 @@ void SegyCreationPage::showVisualizerDialog()
     d_ptr->m_ui->amplitudeVisualizePushButton->setEnabled(d_ptr->m_amplitudeRegularGrid != nullptr);
     d_ptr->m_ui->lithologyVisualizePushButton->setEnabled(d_ptr->m_lithologyRegularGrid != nullptr);
 
-    SeismicVtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(), RegularGridWorker::M_ZOOM_FACTOR_Z);
+    SeismicVtkViewerDialog dialog(m_regularGridWorker->getRenderWindow(),
+                                  RegularGridWorker::M_ZOOM_FACTOR_Z,
+                                  m_regularGridWorker->getFullImageData());
 
     dialog.exec();
 
@@ -611,7 +613,7 @@ void SegyCreationPage::createLithologyVtkRegularGrid()
 
             auto workerThread = new QThread(this);
 
-            m_regularGridWorker = new RegularGridWorker(d_ptr->m_lithologyRegularGrid, tr("Lithology"));
+            m_regularGridWorker = new RegularGridWorker(d_ptr->m_lithologyRegularGrid, tr("Lithology"), true);
 
             m_regularGridWorker->moveToThread(workerThread);
 

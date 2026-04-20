@@ -236,15 +236,34 @@
        <widget class="QDoubleSpinBox" name="zoomZDoubleSpinBox">
         <property name="minimumSize">
          <size>
-          <width>80</width>
+          <width>110</width>
           <height>28</height>
          </size>
         </property>
+        <property name="decimals">
+         <number>2</number>
+        </property>
+        <property name="minimum">
+         <double>0.010000000000000</double>
+        </property>
         <property name="maximum">
-         <double>999.990000000000009</double>
+         <double>10000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>1.000000000000000</double>
         </property>
         <property name="value">
          <double>5.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="trimEmptySlicesCheckBox">
+        <property name="text">
+         <string>Trim empty slices</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

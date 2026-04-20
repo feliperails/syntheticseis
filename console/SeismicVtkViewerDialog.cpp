@@ -120,10 +120,14 @@ void applySeismicColorMap(vtkColorTransferFunction* lut, double min, double max)
 
 }
 
-SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow, const double& initialZoomFactorZ, QWidget *parent) :
+SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow,
+                                               const double& initialZoomFactorZ,
+                                               vtkSmartPointer<vtkImageData> fullImageData,
+                                               QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SeismicVtkViewerDialog),
-    m_renderWindow(renderWindow)
+    m_renderWindow(renderWindow),
+    m_fullImageData(fullImageData)
 {
     ui->setupUi(this);
 
@@ -131,6 +135,57 @@ SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLR
 
     ui->vtkWidget->setRenderWindow(m_renderWindow);
     ui->zoomZDoubleSpinBox->setValue(initialZoomFactorZ);
+
+    // Capture whichever ImageData the worker wired into the slice mappers —
+    // that's the trimmed view by default. Stash it so the "Trim empty
+    // slices" checkbox can restore it after the user swaps to the full
+    // view.
+    if (vtkRenderer* renderer = firstRenderer(m_renderWindow))
+    {
+        if (vtkImageSlice* slice = findSliceForAxis(renderer, 0))
+        {
+            if (auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper()))
+            {
+                m_trimmedImageData = mapper->GetInput();
+            }
+        }
+    }
+
+    // No alternate to swap to → checkbox is meaningless.
+    if (m_fullImageData == nullptr || m_trimmedImageData == nullptr ||
+        m_fullImageData.Get() == m_trimmedImageData.Get())
+    {
+        ui->trimEmptySlicesCheckBox->setVisible(false);
+    }
+
+    connect(ui->trimEmptySlicesCheckBox, &QCheckBox::toggled, this, [this](bool checked) {
+        if (m_renderWindow == nullptr) return;
+        vtkRenderer* renderer = firstRenderer(m_renderWindow);
+        if (renderer == nullptr) return;
+
+        vtkImageData* target = checked ? m_trimmedImageData.Get() : m_fullImageData.Get();
+        if (target == nullptr) return;
+
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            vtkImageSlice* slice = findSliceForAxis(renderer, axis);
+            if (slice == nullptr) continue;
+            auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper());
+            if (mapper == nullptr) continue;
+            mapper->SetInputData(target);
+            // Re-clamp slice number to the new extent — the full view has
+            // more Z slices than the trimmed one, so the current index is
+            // always valid when widening, but shrinking can leave the Z
+            // mapper pointing past the new max.
+            int lo = 0, hi = 0;
+            extentForAxis(target, axis, lo, hi);
+            const int current = mapper->GetSliceNumber();
+            mapper->SetSliceNumber(std::max(lo, std::min(hi, current)));
+        }
+
+        renderer->ResetCamera();
+        m_renderWindow->Render();
+    });
 
     connect(ui->zoomZDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this](const double value) -> void {
         if (m_renderWindow == nullptr) return;

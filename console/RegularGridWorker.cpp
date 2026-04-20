@@ -32,9 +32,11 @@ namespace syntheticSeismic {
 namespace widgets {
 
 RegularGridWorker::RegularGridWorker(const std::shared_ptr<domain::RegularGrid<double>>& regularGrid,
-                                     const QString& scalarBarTitle) :
+                                     const QString& scalarBarTitle,
+                                     bool useNearestInterpolation) :
     m_regularGrid(regularGrid),
-    m_scalarBarTitle(scalarBarTitle)
+    m_scalarBarTitle(scalarBarTitle),
+    m_useNearestInterpolation(useNearestInterpolation)
 {
 }
 
@@ -66,164 +68,79 @@ void RegularGridWorker::buildGrid()
 
     m_renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
 
-    const size_t dimX = m_regularGrid->getNumberOfCellsInX();
-    const size_t dimY = m_regularGrid->getNumberOfCellsInY();
-    const size_t dimZ = m_regularGrid->getNumberOfCellsInZ();
-    const double noDataValue = static_cast<double>(m_regularGrid->getNoDataValue());
-
-    // Trim trailing empty X slices: walk backward from i = dimX-1 and drop
-    // YZ planes where every cell is either noData or a single constant value
-    // (fuzzy compare — the grid stores doubles, so a slice that is nominally
-    // uniform may differ in the last few ULPs from processing). The first
-    // slice with real variation becomes the right edge of the rendered
-    // volume, so a large no-data block at the end of X does not dominate
-    // the rendered extent.
-    auto sliceHasVariation = [&](size_t i) -> bool {
-        bool refSet = false;
-        double refValue = 0.0;
-        const double absTol = 1e-9;
-        const double relTol = 1e-9;
-        for (size_t k = 0; k < dimZ; ++k)
-        {
-            for (size_t j = 0; j < dimY; ++j)
-            {
-                const double v = static_cast<double>(m_regularGrid->getData(i, j, k));
-                if (v == noDataValue) continue;
-                if (!refSet) { refValue = v; refSet = true; continue; }
-                const double diff = std::abs(v - refValue);
-                const double scale = std::max(std::abs(v), std::abs(refValue));
-                if (diff > absTol && diff > relTol * scale) return true;
-            }
-        }
-        return false;
-    };
-
-    size_t effectiveDimX = dimX;
-    while (effectiveDimX > 1 && !sliceHasVariation(effectiveDimX - 1))
-    {
-        --effectiveDimX;
-    }
-    if (effectiveDimX != dimX)
-    {
-        qInfo().noquote() << "RegularGridWorker: trimmed" << (dimX - effectiveDimX)
-                          << "trailing empty X slices (kept" << effectiveDimX << "of" << dimX << ").";
-    }
-
-    const size_t totalSamples = effectiveDimX * dimY * dimZ;
-
     // Seismic viewer pattern borrowed from CimaView3D (cs2i-senai-cimatec):
     // the data is rendered as a set of axis-aligned slice planes textured
-    // with the amplitudes on that plane, not as a 3D volume. In VTK this is
-    // vtkImageResliceMapper + vtkImageSlice. Three planes, one per axis,
-    // positioned by the dialog's slider. Every pixel on a slice face IS the
-    // amplitude at that (x, y, z) point, so interior cells are visible by
-    // construction — unlike surface rendering, which only draws the hull.
-    auto imageData = vtkSmartPointer<vtkImageData>::New();
-    imageData->SetDimensions(static_cast<int>(effectiveDimX), static_cast<int>(dimY), static_cast<int>(dimZ));
-    imageData->SetOrigin(0.0, 0.0, 0.0);
-    // Z spacing negated so depth (increasing k) goes downward in world space,
-    // matching the EclipseGridWorker convention expected by VtkViewerDialog slicing.
-    imageData->SetSpacing(1.0, 1.0, -1.0);
-    imageData->AllocateScalars(VTK_FLOAT, 1);
-    float* const rawScalars = static_cast<float*>(imageData->GetScalarPointer());
+    // with the amplitudes on that plane, not as a 3D volume — see
+    // vtkImageResliceMapper + vtkImageSlice below. The dialog's Z-zoom
+    // spinbox scales the actors for vertical exaggeration; the "trim empty
+    // slices" checkbox swaps the mappers' input between the full view and a
+    // trimmed domain-level copy (see m_imageDataFull vs imageDataTrimmed
+    // below).
+    //
+    // The grid is anchored at world origin (0, 0, 0) by construction:
+    // RotateVolumeCoordinate translates + rotates the input volumes so
+    // their reference corner sits at origin and the min-rectangle is
+    // axis-aligned; VolumeToRegularGrid then indexes cells by
+    // point.x / cellSize (cell 0,0,0 → world 0,0,0). rectanglePoints
+    // describes the ORIGINAL pre-translation footprint and is only relevant
+    // for SEG-Y georeferencing, not for rendering.
+    //
+    // Cell sizes are applied as VTK spacing so world extents reflect the
+    // real anisotropy (e.g. 25m × 25m × 2m). Z spacing is negated so depth
+    // (increasing k) renders downward, matching the EclipseGridWorker
+    // convention used by VtkViewerDialog slicing.
 
-    std::vector<std::future<void>> tasks;
+    const size_t dimZ = m_regularGrid->getNumberOfCellsInZ();
+    const size_t effectiveDimZ = computeEffectiveDimZ(*m_regularGrid);
+    if (effectiveDimZ != dimZ)
+    {
+        qInfo().noquote() << "RegularGridWorker: trimmed" << (dimZ - effectiveDimZ)
+                          << "trailing empty Z slices (kept" << effectiveDimZ << "of" << dimZ << ").";
+    }
 
-    const size_t hwConcurrency = std::max<size_t>(1, std::thread::hardware_concurrency());
-    const size_t slicesPerThread = std::max<size_t>(1, dimZ / hwConcurrency);
-    std::atomic<size_t> samplesProcessed{0};
-    const size_t samplesPerStep = std::max<size_t>(1, totalSamples / 80);
+    const bool didTrim = (effectiveDimZ != dimZ);
+    auto trimmedGrid = didTrim
+        ? copyTrimmedZ(*m_regularGrid, effectiveDimZ)
+        : m_regularGrid;
 
-    // Data range over valid (non-noData) values, computed in parallel.
-    std::atomic<uint32_t> minBits{0x7F800000u}; // +inf
-    std::atomic<uint32_t> maxBits{0xFF800000u}; // -inf
-    auto atomicMinFloat = [](std::atomic<uint32_t>& target, float value) {
-        uint32_t newBits;
-        std::memcpy(&newBits, &value, sizeof(newBits));
-        uint32_t current = target.load(std::memory_order_relaxed);
-        float currentVal;
-        do {
-            std::memcpy(&currentVal, &current, sizeof(currentVal));
-            if (!(value < currentVal)) return;
-        } while (!target.compare_exchange_weak(current, newBits, std::memory_order_relaxed));
+    // Helper: allocate a vtkImageData whose geometry matches the given grid.
+    auto makeImageData = [](const domain::RegularGrid<double>& grid) {
+        auto img = vtkSmartPointer<vtkImageData>::New();
+        img->SetDimensions(
+            static_cast<int>(grid.getNumberOfCellsInX()),
+            static_cast<int>(grid.getNumberOfCellsInY()),
+            static_cast<int>(grid.getNumberOfCellsInZ()));
+        img->SetOrigin(0.0, 0.0, 0.0);
+        img->SetSpacing(
+            grid.getCellSizeInX(),
+            grid.getCellSizeInY(),
+            -grid.getCellSizeInZ());
+        img->AllocateScalars(VTK_FLOAT, 1);
+        return img;
     };
-    auto atomicMaxFloat = [](std::atomic<uint32_t>& target, float value) {
-        uint32_t newBits;
-        std::memcpy(&newBits, &value, sizeof(newBits));
-        uint32_t current = target.load(std::memory_order_relaxed);
-        float currentVal;
-        do {
-            std::memcpy(&currentVal, &current, sizeof(currentVal));
-            if (!(value > currentVal)) return;
-        } while (!target.compare_exchange_weak(current, newBits, std::memory_order_relaxed));
-    };
 
-    for (size_t kStart = 0; kStart < dimZ; kStart += slicesPerThread)
+    // Build the full ImageData always (exposed via getFullImageData() for
+    // the dialog's trim-off toggle). When no trim happened, the trimmed
+    // view reuses it verbatim — no second fill.
+    m_imageDataFull = makeImageData(*m_regularGrid);
+    vtkSmartPointer<vtkImageData> imageDataTrimmed;
+    FillResult colorFill;
+    if (didTrim)
     {
-        const size_t kEnd = std::min(kStart + slicesPerThread, dimZ);
-
-        tasks.emplace_back(std::async(std::launch::async, [=, &samplesProcessed, &minBits, &maxBits]() {
-            for (size_t k = kStart; k < kEnd; ++k)
-            {
-                for (size_t j = 0; j < dimY; ++j)
-                {
-                    for (size_t i = 0; i < effectiveDimX; ++i)
-                    {
-                        const size_t idx = k * dimY * effectiveDimX + j * effectiveDimX + i;
-                        const float value = static_cast<float>(m_regularGrid->getData(i, j, k));
-
-                        rawScalars[idx] = value;
-
-                        if (static_cast<double>(value) != noDataValue)
-                        {
-                            atomicMinFloat(minBits, value);
-                            atomicMaxFloat(maxBits, value);
-                        }
-
-                        const size_t count = ++samplesProcessed;
-                        if (count % samplesPerStep == 0 && m_currentSteps < 98) {
-                            ++m_currentSteps;
-                            emit stepProgress(m_currentSteps);
-                        }
-                    }
-                }
-            }
-        }));
+        (void)fillImageDataFromGrid(*m_regularGrid, m_imageDataFull, 0, 48);
+        imageDataTrimmed = makeImageData(*trimmedGrid);
+        colorFill = fillImageDataFromGrid(*trimmedGrid, imageDataTrimmed, 50, 98);
+    }
+    else
+    {
+        colorFill = fillImageDataFromGrid(*m_regularGrid, m_imageDataFull, 0, 98);
+        imageDataTrimmed = m_imageDataFull;
     }
 
-    size_t tasksProcessed{0};
-    const size_t tasksPerStep = std::max<size_t>(1, tasks.size() / 18);
-    for (auto& task : tasks)
-    {
-        task.get();
-
-        const size_t count = ++tasksProcessed;
-        if (count % tasksPerStep == 0 && m_currentSteps < 98) {
-            ++m_currentSteps;
-            emit stepProgress(m_currentSteps);
-        }
-    }
-
-    m_currentSteps = 98;
-    emit stepProgress(m_currentSteps);
-
-    float minValueF, maxValueF;
-    const uint32_t minB = minBits.load();
-    const uint32_t maxB = maxBits.load();
-    std::memcpy(&minValueF, &minB, sizeof(minValueF));
-    std::memcpy(&maxValueF, &maxB, sizeof(maxValueF));
-
-    double minValue = static_cast<double>(minValueF);
-    double maxValue = static_cast<double>(maxValueF);
-    if (!std::isfinite(minValue) || !std::isfinite(maxValue))
-    {
-        minValue = 0.0;
-        maxValue = 1.0;
-    }
-    else if (!(maxValue > minValue))
-    {
-        maxValue = minValue + 1.0;
-    }
+    // Mappers bind to the trimmed (or full, if no trim) view by default.
+    auto imageData = imageDataTrimmed;
+    double minValue = colorFill.minValue;
+    double maxValue = colorFill.maxValue;
 
     // Seismic "seismic" colormap: symmetric blue → white → red around zero
     // (CimaView3D's default for amplitude). For amplitude we clamp the range
@@ -261,7 +178,18 @@ void RegularGridWorker::buildGrid()
     vtkNew<vtkImageProperty> imageProperty;
     imageProperty->SetLookupTable(colorTransfer);
     imageProperty->UseLookupTableScalarRangeOn();
-    imageProperty->SetInterpolationTypeToLinear();
+    // Lithology is a categorical field — each integer code maps to a distinct
+    // rock type, so linear interpolation between adjacent cells would invent
+    // nonexistent intermediate codes (and colours). Use nearest-neighbour so
+    // cell boundaries stay sharp and colours are never mixed.
+    if (m_useNearestInterpolation)
+    {
+        imageProperty->SetInterpolationTypeToNearest();
+    }
+    else
+    {
+        imageProperty->SetInterpolationTypeToLinear();
+    }
     imageProperty->SetOpacity(1.0);
 
     // Three slice actors, one per axis. Each is driven independently by its
@@ -270,9 +198,9 @@ void RegularGridWorker::buildGrid()
     // the canonical way to do an axis-aligned slice on vtkImageData; no
     // vtkPlane indirection is needed.
     const int midIndex[3] = {
-        static_cast<int>(effectiveDimX) / 2,
-        static_cast<int>(dimY) / 2,
-        static_cast<int>(dimZ) / 2,
+        static_cast<int>(trimmedGrid->getNumberOfCellsInX()) / 2,
+        static_cast<int>(trimmedGrid->getNumberOfCellsInY()) / 2,
+        static_cast<int>(trimmedGrid->getNumberOfCellsInZ()) / 2,
     };
     std::array<vtkSmartPointer<vtkImageSlice>, 3> slices;
     for (int axis = 0; axis < 3; ++axis)
@@ -336,6 +264,176 @@ void RegularGridWorker::buildGrid()
 
     m_currentSteps = 99;
     emit stepProgress(m_currentSteps);
+}
+
+size_t RegularGridWorker::computeEffectiveDimZ(const domain::RegularGrid<double>& grid)
+{
+    // Walk backward from k = dimZ-1 and drop XY planes where every cell is
+    // either noData or a single constant value (fuzzy compare, since values
+    // are doubles — a slice that is nominally uniform may differ in the
+    // last few ULPs from processing). The first slice with real variation
+    // becomes the bottom of the rendered volume.
+    const size_t dimX = grid.getNumberOfCellsInX();
+    const size_t dimY = grid.getNumberOfCellsInY();
+    const size_t dimZ = grid.getNumberOfCellsInZ();
+    const double noDataValue = static_cast<double>(grid.getNoDataValue());
+
+    auto sliceHasVariation = [&](size_t k) -> bool {
+        bool refSet = false;
+        double refValue = 0.0;
+        const double absTol = 1e-9;
+        const double relTol = 1e-9;
+        for (size_t j = 0; j < dimY; ++j)
+        {
+            for (size_t i = 0; i < dimX; ++i)
+            {
+                const double v = static_cast<double>(grid.getData(i, j, k));
+                if (v == noDataValue) continue;
+                if (!refSet) { refValue = v; refSet = true; continue; }
+                const double diff = std::abs(v - refValue);
+                const double scale = std::max(std::abs(v), std::abs(refValue));
+                if (diff > absTol && diff > relTol * scale) return true;
+            }
+        }
+        return false;
+    };
+
+    size_t effectiveDimZ = dimZ;
+    while (effectiveDimZ > 1 && !sliceHasVariation(effectiveDimZ - 1))
+    {
+        --effectiveDimZ;
+    }
+    return effectiveDimZ;
+}
+
+std::shared_ptr<domain::RegularGrid<double>> RegularGridWorker::copyTrimmedZ(
+    const domain::RegularGrid<double>& src, size_t newNumberOfCellsInZ)
+{
+    const size_t dimX = src.getNumberOfCellsInX();
+    const size_t dimY = src.getNumberOfCellsInY();
+
+    auto trimmed = std::make_shared<domain::RegularGrid<double>>(
+        dimX, dimY, newNumberOfCellsInZ,
+        src.getCellSizeInX(), src.getCellSizeInY(), src.getCellSizeInZ(),
+        src.getUnitInX(), src.getUnitInY(), src.getUnitInZ(),
+        src.getRectanglePoints(),
+        src.getZBottom(), src.getZTop(),
+        0.0, src.getNoDataValue()
+    );
+    auto& dst = trimmed->getData();
+    for (size_t i = 0; i < dimX; ++i)
+    {
+        for (size_t j = 0; j < dimY; ++j)
+        {
+            for (size_t k = 0; k < newNumberOfCellsInZ; ++k)
+            {
+                dst[i][j][k] = src.getData(i, j, k);
+            }
+        }
+    }
+    return trimmed;
+}
+
+RegularGridWorker::FillResult RegularGridWorker::fillImageDataFromGrid(
+    const domain::RegularGrid<double>& grid, vtkImageData* imageData,
+    int progressLo, int progressHi)
+{
+    const size_t dimX = grid.getNumberOfCellsInX();
+    const size_t dimY = grid.getNumberOfCellsInY();
+    const size_t dimZ = grid.getNumberOfCellsInZ();
+    const double noDataValue = static_cast<double>(grid.getNoDataValue());
+    float* const rawScalars = static_cast<float*>(imageData->GetScalarPointer());
+    const size_t totalSamples = dimX * dimY * dimZ;
+
+    const int progressSpan = std::max(1, progressHi - progressLo);
+    const size_t samplesPerStep = std::max<size_t>(1, totalSamples / static_cast<size_t>(progressSpan));
+
+    std::atomic<size_t> samplesProcessed{0};
+    std::atomic<uint32_t> minBits{0x7F800000u}; // +inf
+    std::atomic<uint32_t> maxBits{0xFF800000u}; // -inf
+    auto atomicMinFloat = [](std::atomic<uint32_t>& target, float value) {
+        uint32_t newBits;
+        std::memcpy(&newBits, &value, sizeof(newBits));
+        uint32_t current = target.load(std::memory_order_relaxed);
+        float currentVal;
+        do {
+            std::memcpy(&currentVal, &current, sizeof(currentVal));
+            if (!(value < currentVal)) return;
+        } while (!target.compare_exchange_weak(current, newBits, std::memory_order_relaxed));
+    };
+    auto atomicMaxFloat = [](std::atomic<uint32_t>& target, float value) {
+        uint32_t newBits;
+        std::memcpy(&newBits, &value, sizeof(newBits));
+        uint32_t current = target.load(std::memory_order_relaxed);
+        float currentVal;
+        do {
+            std::memcpy(&currentVal, &current, sizeof(currentVal));
+            if (!(value > currentVal)) return;
+        } while (!target.compare_exchange_weak(current, newBits, std::memory_order_relaxed));
+    };
+
+    const size_t hwConcurrency = std::max<size_t>(1, std::thread::hardware_concurrency());
+    const size_t slicesPerThread = std::max<size_t>(1, dimZ / hwConcurrency);
+
+    std::vector<std::future<void>> tasks;
+    for (size_t kStart = 0; kStart < dimZ; kStart += slicesPerThread)
+    {
+        const size_t kEnd = std::min(kStart + slicesPerThread, dimZ);
+        tasks.emplace_back(std::async(std::launch::async, [=, &grid, &samplesProcessed, &minBits, &maxBits]() {
+            for (size_t k = kStart; k < kEnd; ++k)
+            {
+                for (size_t j = 0; j < dimY; ++j)
+                {
+                    for (size_t i = 0; i < dimX; ++i)
+                    {
+                        const size_t idx = k * dimY * dimX + j * dimX + i;
+                        const float value = static_cast<float>(grid.getData(i, j, k));
+
+                        rawScalars[idx] = value;
+
+                        if (static_cast<double>(value) != noDataValue)
+                        {
+                            atomicMinFloat(minBits, value);
+                            atomicMaxFloat(maxBits, value);
+                        }
+
+                        const size_t count = ++samplesProcessed;
+                        if (count % samplesPerStep == 0 && m_currentSteps < progressHi)
+                        {
+                            ++m_currentSteps;
+                            emit stepProgress(m_currentSteps);
+                        }
+                    }
+                }
+            }
+        }));
+    }
+    for (auto& task : tasks)
+    {
+        task.get();
+    }
+
+    m_currentSteps = progressHi;
+    emit stepProgress(progressHi);
+
+    float minValueF, maxValueF;
+    const uint32_t minB = minBits.load();
+    const uint32_t maxB = maxBits.load();
+    std::memcpy(&minValueF, &minB, sizeof(minValueF));
+    std::memcpy(&maxValueF, &maxB, sizeof(maxValueF));
+
+    double minValue = static_cast<double>(minValueF);
+    double maxValue = static_cast<double>(maxValueF);
+    if (!std::isfinite(minValue) || !std::isfinite(maxValue))
+    {
+        minValue = 0.0;
+        maxValue = 1.0;
+    }
+    else if (!(maxValue > minValue))
+    {
+        maxValue = minValue + 1.0;
+    }
+    return {minValue, maxValue};
 }
 
 }

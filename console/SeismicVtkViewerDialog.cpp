@@ -7,6 +7,7 @@
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
+#include <QShowEvent>
 #include <QSignalBlocker>
 #include <QSpinBox>
 
@@ -282,6 +283,27 @@ SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLR
             ui->colorMaxDoubleSpinBox->setValue(range[1]);
         }
     }
+}
+
+void SeismicVtkViewerDialog::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
+
+    // The worker calls ResetCamera() while all slices are still hidden, so
+    // the stored bounds don't reflect whichever axes the dialog turned on
+    // from its .ui defaults. Reset once more here — after the window is
+    // sized and the visible slices are final — so the user sees the data
+    // framed correctly on first open. Runs only on the first show to avoid
+    // clobbering subsequent camera manipulation by the user.
+    if (m_initialCameraReset) return;
+    m_initialCameraReset = true;
+
+    if (m_renderWindow == nullptr) return;
+    vtkRenderer* renderer = firstRenderer(m_renderWindow);
+    if (renderer == nullptr) return;
+
+    renderer->ResetCamera();
+    m_renderWindow->Render();
 }
 
 void SeismicVtkViewerDialog::done(int result)

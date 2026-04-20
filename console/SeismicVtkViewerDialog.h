@@ -27,11 +27,13 @@ public:
 
 protected:
     void done(int result) override;
+    void showEvent(QShowEvent* event) override;
 
 private:
     Ui::SeismicVtkViewerDialog *ui;
 
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
+    bool m_initialCameraReset = false;
 };
 
 }

@@ -2,18 +2,23 @@
 #include "ui_SeismicVtkViewerDialog.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
+#include <QCheckBox>
+#include <QDoubleSpinBox>
 #include <QSignalBlocker>
+#include <QSpinBox>
 
-#include <vtkRendererCollection.h>
-#include <vtkActor.h>
-#include <vtkActorCollection.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkImageData.h>
+#include <vtkImageProperty.h>
 #include <vtkImageSlice.h>
 #include <vtkImageSliceMapper.h>
-#include <vtkImageData.h>
 #include <vtkProp3D.h>
 #include <vtkPropCollection.h>
+#include <vtkRendererCollection.h>
+#include <vtkScalarsToColors.h>
 
 namespace syntheticSeismic {
 namespace widgets {
@@ -29,8 +34,9 @@ vtkRenderer* firstRenderer(vtkGenericOpenGLRenderWindow* window)
     return renderers->GetNextItem();
 }
 
-// The single vtkImageSlice actor the worker installs.
-vtkImageSlice* findImageSlice(vtkRenderer* renderer)
+// The worker installs one vtkImageSlice per axis. Identify each by its
+// mapper's SliceOrientation (0=X, 1=Y, 2=Z) and return the one that matches.
+vtkImageSlice* findSliceForAxis(vtkRenderer* renderer, int axis)
 {
     if (renderer == nullptr) return nullptr;
     vtkPropCollection* props = renderer->GetViewProps();
@@ -38,22 +44,16 @@ vtkImageSlice* findImageSlice(vtkRenderer* renderer)
     props->InitTraversal();
     while (vtkProp* prop = props->GetNextProp())
     {
-        if (auto slice = vtkImageSlice::SafeDownCast(prop))
+        auto slice = vtkImageSlice::SafeDownCast(prop);
+        if (slice == nullptr) continue;
+        auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper());
+        if (mapper == nullptr) continue;
+        if (mapper->GetOrientation() == axis)
         {
             return slice;
         }
     }
     return nullptr;
-}
-
-// The outline wireframe actor the worker installs alongside the slice.
-vtkActor* findOutlineActor(vtkRenderer* renderer)
-{
-    if (renderer == nullptr) return nullptr;
-    vtkActorCollection* actors = renderer->GetActors();
-    if (actors == nullptr) return nullptr;
-    actors->InitTraversal();
-    return actors->GetNextActor();
 }
 
 void extentForAxis(vtkImageData* image, int axis, int& lo, int& hi)
@@ -62,6 +62,59 @@ void extentForAxis(vtkImageData* image, int axis, int& lo, int& hi)
     image->GetExtent(ext);
     lo = ext[axis * 2];
     hi = ext[axis * 2 + 1];
+}
+
+// Converts a 0–100% slider value into the matching integer slice index along
+// the given axis, clamped to the data's extent.
+int percentToSliceIndex(vtkImageData* image, int axis, int percent)
+{
+    int lo = 0, hi = 0;
+    extentForAxis(image, axis, lo, hi);
+    const double t = std::max(0, std::min(100, percent)) / 100.0;
+    const int idx = lo + static_cast<int>(std::round(t * (hi - lo)));
+    return std::max(lo, std::min(hi, idx));
+}
+
+// Fetches the color transfer function driving the slices (all three slices
+// share the same vtkImageProperty, so any one's LUT is the same function).
+vtkColorTransferFunction* findColorTransfer(vtkRenderer* renderer)
+{
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        if (auto slice = findSliceForAxis(renderer, axis))
+        {
+            if (auto prop = slice->GetProperty())
+            {
+                return vtkColorTransferFunction::SafeDownCast(prop->GetLookupTable());
+            }
+        }
+    }
+    return nullptr;
+}
+
+// Rebuilds the blue → white → red seismic ramp between [min, max] in place,
+// preserving the pointer so anything referencing it (scalar bar, slice
+// properties) updates automatically on the next render.
+void applySeismicColorMap(vtkColorTransferFunction* lut, double min, double max)
+{
+    if (lut == nullptr || !(max > min)) return;
+    const double mid = 0.5 * (min + max);
+    const int steps = 8;
+
+    lut->RemoveAllPoints();
+    lut->SetColorSpaceToRGB();
+    for (int i = 0; i <= steps; ++i)
+    {
+        const double t = static_cast<double>(i) / steps;
+        const double val = min + t * (mid - min);
+        lut->AddRGBPoint(val, t, t, 1.0);
+    }
+    for (int i = 1; i <= steps; ++i)
+    {
+        const double t = static_cast<double>(i) / steps;
+        const double val = mid + t * (max - mid);
+        lut->AddRGBPoint(val, 1.0, 1.0 - t, 1.0 - t);
+    }
 }
 
 }
@@ -99,81 +152,83 @@ SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLR
         m_renderWindow->Render();
     });
 
-    connect(ui->sliceAxisComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](const int index) -> void {
-        // Enable/disable the position spinbox first so the UI can't get
-        // stuck disabled even if VTK state is unexpected.
-        ui->slicePositionSpinBox->setEnabled(index > 0);
-        if (index > 0)
-        {
-            QSignalBlocker block(ui->slicePositionSpinBox);
-            ui->slicePositionSpinBox->setValue(50);
-        }
+    // One (checkbox, spinbox) pair per axis. The checkbox drives visibility
+    // of that axis's slice; the spinbox drives its slice index.
+    const std::array<QCheckBox*, 3> axisCheckBoxes = {{
+        ui->sliceXCheckBox, ui->sliceYCheckBox, ui->sliceZCheckBox,
+    }};
+    const std::array<QSpinBox*, 3> axisSpinBoxes = {{
+        ui->sliceXSpinBox, ui->sliceYSpinBox, ui->sliceZSpinBox,
+    }};
 
-        if (m_renderWindow == nullptr) return;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        QCheckBox* checkBox = axisCheckBoxes[axis];
+        QSpinBox* spinBox = axisSpinBoxes[axis];
 
-        vtkRenderer* renderer = firstRenderer(m_renderWindow);
-        if (renderer == nullptr) return;
+        connect(checkBox, &QCheckBox::toggled, this, [this, axis, spinBox](bool checked) {
+            if (m_renderWindow == nullptr) return;
+            vtkRenderer* renderer = firstRenderer(m_renderWindow);
+            if (renderer == nullptr) return;
+            vtkImageSlice* slice = findSliceForAxis(renderer, axis);
+            if (slice == nullptr) return;
 
-        vtkImageSlice* slice = findImageSlice(renderer);
-        vtkActor* outline = findOutlineActor(renderer);
+            slice->SetVisibility(checked);
 
-        if (index == 0) // None
-        {
-            if (slice) slice->SetVisibility(false);
-            if (outline) outline->SetVisibility(true);
+            // Apply the spinbox's current position when we turn on a slice so
+            // its position reflects the UI state the user can see.
+            if (checked)
+            {
+                if (auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper()))
+                {
+                    if (vtkImageData* image = mapper->GetInput())
+                    {
+                        mapper->SetSliceNumber(percentToSliceIndex(image, axis, spinBox->value()));
+                    }
+                }
+            }
+
+            spinBox->setEnabled(checked);
             m_renderWindow->Render();
-            return;
-        }
+        });
 
-        if (slice == nullptr) return;
+        connect(spinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this, axis](int value) {
+            if (m_renderWindow == nullptr) return;
+            vtkRenderer* renderer = firstRenderer(m_renderWindow);
+            if (renderer == nullptr) return;
+            vtkImageSlice* slice = findSliceForAxis(renderer, axis);
+            if (slice == nullptr) return;
 
-        auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper());
-        if (mapper == nullptr) return;
-        vtkImageData* image = mapper->GetInput();
-        if (image == nullptr) return;
+            auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper());
+            if (mapper == nullptr) return;
+            vtkImageData* image = mapper->GetInput();
+            if (image == nullptr) return;
 
-        const int axis = index - 1; // 0 = X, 1 = Y, 2 = Z
-        int lo = 0, hi = 0;
-        extentForAxis(image, axis, lo, hi);
-        const int midSlice = lo + (hi - lo) / 2;
+            mapper->SetSliceNumber(percentToSliceIndex(image, axis, value));
+            m_renderWindow->Render();
+        });
+    }
 
-        if (axis == 0) mapper->SetOrientationToX();
-        else if (axis == 1) mapper->SetOrientationToY();
-        else               mapper->SetOrientationToZ();
-        mapper->SetSliceNumber(midSlice);
-
-        slice->SetVisibility(true);
-        // Hide the outline in slice mode — the user wanted just the selected
-        // slice on screen, not the surrounding volume box.
-        if (outline) outline->SetVisibility(false);
-
-        m_renderWindow->Render();
-    });
-
-    connect(ui->slicePositionSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](const int value) -> void {
+    // Color range inputs: two double spinboxes drive the min/max of the
+    // seismic color ramp. We rebuild the color transfer function in place so
+    // the shared scalar bar and slice properties observe the change on the
+    // next render.
+    auto rebuildColorRange = [this]() {
         if (m_renderWindow == nullptr) return;
-
-        const int axisIndex = ui->sliceAxisComboBox->currentIndex();
-        if (axisIndex == 0) return;
+        const double lo = ui->colorMinDoubleSpinBox->value();
+        const double hi = ui->colorMaxDoubleSpinBox->value();
+        if (!(hi > lo)) return;
 
         vtkRenderer* renderer = firstRenderer(m_renderWindow);
         if (renderer == nullptr) return;
-        vtkImageSlice* slice = findImageSlice(renderer);
-        if (slice == nullptr) return;
-        auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper());
-        if (mapper == nullptr) return;
-        vtkImageData* image = mapper->GetInput();
-        if (image == nullptr) return;
+        vtkColorTransferFunction* lut = findColorTransfer(renderer);
+        if (lut == nullptr) return;
 
-        const int axis = axisIndex - 1;
-        int lo = 0, hi = 0;
-        extentForAxis(image, axis, lo, hi);
-        const double t = std::max(0, std::min(100, value)) / 100.0;
-        const int sliceNum = lo + static_cast<int>(std::round(t * (hi - lo)));
-        mapper->SetSliceNumber(std::max(lo, std::min(hi, sliceNum)));
-
+        applySeismicColorMap(lut, lo, hi);
         m_renderWindow->Render();
-    });
+    };
+    connect(ui->colorMinDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [rebuildColorRange](double) { rebuildColorRange(); });
+    connect(ui->colorMaxDoubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [rebuildColorRange](double) { rebuildColorRange(); });
 
     connect(ui->resetCameraPushButton, &QPushButton::clicked, this, [this]() -> void {
         if (m_renderWindow == nullptr) return;
@@ -189,6 +244,44 @@ SeismicVtkViewerDialog::SeismicVtkViewerDialog(vtkSmartPointer<vtkGenericOpenGLR
 
         m_renderWindow->Render();
     });
+
+    // Apply the initial checkbox state (set in the .ui) to the scene. This
+    // makes whichever axes are checked by default visible on first show,
+    // without requiring the user to toggle them. Also seed the color-range
+    // spinboxes from the colormap the worker built so the user starts with
+    // the actual data range (not the placeholder values in the .ui).
+    if (vtkRenderer* renderer = firstRenderer(m_renderWindow))
+    {
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const bool checked = axisCheckBoxes[axis]->isChecked();
+            axisSpinBoxes[axis]->setEnabled(checked);
+            if (vtkImageSlice* slice = findSliceForAxis(renderer, axis))
+            {
+                slice->SetVisibility(checked);
+                if (checked)
+                {
+                    if (auto mapper = vtkImageSliceMapper::SafeDownCast(slice->GetMapper()))
+                    {
+                        if (vtkImageData* image = mapper->GetInput())
+                        {
+                            mapper->SetSliceNumber(percentToSliceIndex(image, axis, axisSpinBoxes[axis]->value()));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (vtkColorTransferFunction* lut = findColorTransfer(renderer))
+        {
+            double range[2] = {0.0, 1.0};
+            lut->GetRange(range);
+            QSignalBlocker blockMin(ui->colorMinDoubleSpinBox);
+            QSignalBlocker blockMax(ui->colorMaxDoubleSpinBox);
+            ui->colorMinDoubleSpinBox->setValue(range[0]);
+            ui->colorMaxDoubleSpinBox->setValue(range[1]);
+        }
+    }
 }
 
 void SeismicVtkViewerDialog::done(int result)

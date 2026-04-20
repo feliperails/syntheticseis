@@ -69,8 +69,47 @@ void RegularGridWorker::buildGrid()
     const size_t dimX = m_regularGrid->getNumberOfCellsInX();
     const size_t dimY = m_regularGrid->getNumberOfCellsInY();
     const size_t dimZ = m_regularGrid->getNumberOfCellsInZ();
-    const size_t totalSamples = dimX * dimY * dimZ;
     const double noDataValue = static_cast<double>(m_regularGrid->getNoDataValue());
+
+    // Trim trailing empty X slices: walk backward from i = dimX-1 and drop
+    // YZ planes where every cell is either noData or a single constant value
+    // (fuzzy compare — the grid stores doubles, so a slice that is nominally
+    // uniform may differ in the last few ULPs from processing). The first
+    // slice with real variation becomes the right edge of the rendered
+    // volume, so a large no-data block at the end of X does not dominate
+    // the rendered extent.
+    auto sliceHasVariation = [&](size_t i) -> bool {
+        bool refSet = false;
+        double refValue = 0.0;
+        const double absTol = 1e-9;
+        const double relTol = 1e-9;
+        for (size_t k = 0; k < dimZ; ++k)
+        {
+            for (size_t j = 0; j < dimY; ++j)
+            {
+                const double v = static_cast<double>(m_regularGrid->getData(i, j, k));
+                if (v == noDataValue) continue;
+                if (!refSet) { refValue = v; refSet = true; continue; }
+                const double diff = std::abs(v - refValue);
+                const double scale = std::max(std::abs(v), std::abs(refValue));
+                if (diff > absTol && diff > relTol * scale) return true;
+            }
+        }
+        return false;
+    };
+
+    size_t effectiveDimX = dimX;
+    while (effectiveDimX > 1 && !sliceHasVariation(effectiveDimX - 1))
+    {
+        --effectiveDimX;
+    }
+    if (effectiveDimX != dimX)
+    {
+        qInfo().noquote() << "RegularGridWorker: trimmed" << (dimX - effectiveDimX)
+                          << "trailing empty X slices (kept" << effectiveDimX << "of" << dimX << ").";
+    }
+
+    const size_t totalSamples = effectiveDimX * dimY * dimZ;
 
     // Seismic viewer pattern borrowed from CimaView3D (cs2i-senai-cimatec):
     // the data is rendered as a set of axis-aligned slice planes textured
@@ -80,7 +119,7 @@ void RegularGridWorker::buildGrid()
     // amplitude at that (x, y, z) point, so interior cells are visible by
     // construction — unlike surface rendering, which only draws the hull.
     auto imageData = vtkSmartPointer<vtkImageData>::New();
-    imageData->SetDimensions(static_cast<int>(dimX), static_cast<int>(dimY), static_cast<int>(dimZ));
+    imageData->SetDimensions(static_cast<int>(effectiveDimX), static_cast<int>(dimY), static_cast<int>(dimZ));
     imageData->SetOrigin(0.0, 0.0, 0.0);
     // Z spacing negated so depth (increasing k) goes downward in world space,
     // matching the EclipseGridWorker convention expected by VtkViewerDialog slicing.
@@ -128,9 +167,9 @@ void RegularGridWorker::buildGrid()
             {
                 for (size_t j = 0; j < dimY; ++j)
                 {
-                    for (size_t i = 0; i < dimX; ++i)
+                    for (size_t i = 0; i < effectiveDimX; ++i)
                     {
-                        const size_t idx = k * dimY * dimX + j * dimX + i;
+                        const size_t idx = k * dimY * effectiveDimX + j * effectiveDimX + i;
                         const float value = static_cast<float>(m_regularGrid->getData(i, j, k));
 
                         rawScalars[idx] = value;
@@ -215,32 +254,45 @@ void RegularGridWorker::buildGrid()
         colorTransfer->AddRGBPoint(val, 1.0, 1.0 - t, 1.0 - t);
     }
 
-    // Semi-transparent slice planes: CimaView3D's n-slices view shows each
-    // plane through the others, so when three axis-aligned slices cross at a
-    // point you can read the data on all three at once instead of the frontmost
-    // plane hiding the others. 0.85 mirrors the opacity level visible in the
-    // reference figure (imgs/n-slices.png).
+    // Opaque slices: the frontmost plane shows solid amplitudes instead of
+    // blending with whatever plane is behind it. Useful when three slices
+    // cross and the user wants to read the exact colour of the frontmost one
+    // rather than a mix.
     vtkNew<vtkImageProperty> imageProperty;
     imageProperty->SetLookupTable(colorTransfer);
     imageProperty->UseLookupTableScalarRangeOn();
     imageProperty->SetInterpolationTypeToLinear();
-    imageProperty->SetOpacity(0.85);
+    imageProperty->SetOpacity(1.0);
 
-    // One slice actor using vtkImageSliceMapper — the simple axis-aligned
-    // image slicer. The dialog sets SetOrientation(0/1/2) for X/Y/Z and
-    // SetSliceNumber(k) for the voxel-index position; vtkImageSliceMapper
-    // handles bounds, re-rendering and caching without needing a vtkPlane.
-    // Starts hidden (axis = None in the combo) and at slice index 0.
-    auto sliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
-    sliceMapper->SetInputData(imageData);
-    sliceMapper->SetOrientationToX();
-    sliceMapper->SetSliceNumber(static_cast<int>(dimX) / 2);
+    // Three slice actors, one per axis. Each is driven independently by its
+    // checkbox (visibility) and spinbox (slice number) in SeismicVtkViewerDialog.
+    // vtkImageSliceMapper's SetOrientationTo{X,Y,Z}() + SetSliceNumber(k) is
+    // the canonical way to do an axis-aligned slice on vtkImageData; no
+    // vtkPlane indirection is needed.
+    const int midIndex[3] = {
+        static_cast<int>(effectiveDimX) / 2,
+        static_cast<int>(dimY) / 2,
+        static_cast<int>(dimZ) / 2,
+    };
+    std::array<vtkSmartPointer<vtkImageSlice>, 3> slices;
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        auto sliceMapper = vtkSmartPointer<vtkImageSliceMapper>::New();
+        sliceMapper->SetInputData(imageData);
+        if (axis == 0) sliceMapper->SetOrientationToX();
+        else if (axis == 1) sliceMapper->SetOrientationToY();
+        else               sliceMapper->SetOrientationToZ();
+        sliceMapper->SetSliceNumber(midIndex[axis]);
 
-    auto slice = vtkSmartPointer<vtkImageSlice>::New();
-    slice->SetMapper(sliceMapper);
-    slice->SetProperty(imageProperty);
-    slice->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
-    slice->SetVisibility(false);
+        auto slice = vtkSmartPointer<vtkImageSlice>::New();
+        slice->SetMapper(sliceMapper);
+        slice->SetProperty(imageProperty);
+        slice->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
+        // Start hidden; the dialog shows whichever axes the user ticks.
+        slice->SetVisibility(false);
+
+        slices[axis] = slice;
+    }
 
     // m_clipPlane is retained for API compatibility (getClipPlane()) but is
     // no longer the slicing mechanism; vtkImageSliceMapper uses integer
@@ -249,23 +301,11 @@ void RegularGridWorker::buildGrid()
     m_clipPlane->SetNormal(1.0, 0.0, 0.0);
     m_clipPlane->SetOrigin(0.0, 0.0, 0.0);
 
-    // Wireframe outline of the volume so the user sees the extent even when
-    // the slice planes don't cover the full cube.
-    auto outlineFilter = vtkSmartPointer<vtkOutlineFilter>::New();
-    outlineFilter->SetInputData(imageData);
-
-    auto outlineMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    outlineMapper->SetInputConnection(outlineFilter->GetOutputPort());
-
-    auto outlineActor = vtkSmartPointer<vtkActor>::New();
-    outlineActor->SetMapper(outlineMapper);
-    outlineActor->GetProperty()->SetColor(0.7, 0.7, 0.7);
-    outlineActor->GetProperty()->SetLineWidth(1.0);
-    outlineActor->SetScale(1.0, 1.0, M_ZOOM_FACTOR_Z);
-
     auto renderer = vtkSmartPointer<vtkRenderer>::New();
-    renderer->AddViewProp(slice);
-    renderer->AddActor(outlineActor);
+    for (auto& s : slices)
+    {
+        renderer->AddViewProp(s);
+    }
 
     vtkNew<vtkScalarBarActor> scalarBar;
     scalarBar->SetLookupTable(colorTransfer);
